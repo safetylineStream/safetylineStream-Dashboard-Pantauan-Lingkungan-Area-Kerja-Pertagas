@@ -47,8 +47,8 @@ def norm_level(v):
 
 # ------------------------------------------------------------------ ArcGIS REST
 class ArcGIS:
-    def __init__(self, get, cfg, log):
-        self.get, self.cfg, self.log = get, cfg, log
+    def __init__(self, get, cfg, log, sisa=None):
+        self.get, self.cfg, self.log, self.sisa = get, cfg, log, sisa
         self.token = None
         user, pw = os.environ.get("ONEMAP_USERNAME", ""), os.environ.get("ONEMAP_PASSWORD", "")
         if user and pw:
@@ -65,7 +65,9 @@ class ArcGIS:
         p = {"f": "json", **params}
         if self.token:
             p["token"] = self.token
-        js = self.get(url, params=p, timeout=180).json()
+        if self.sisa and self.sisa() < 40:
+            raise TimeoutError("anggaran waktu habis — data gerakan tanah dilewati untuk run ini")
+        js = self.get(url, params=p, timeout=60).json()
         if isinstance(js, dict) and js.get("error"):
             raise RuntimeError(f"ArcGIS error {js['error'].get('code')}: {js['error'].get('message')}")
         return js
@@ -327,7 +329,7 @@ def run(ctx):
         zones, src, periode = None, None, None
         try:
             if arc is None:
-                arc = ArcGIS(get, gcfg, log)
+                arc = ArcGIS(get, gcfg, log, ctx.get("sisa_waktu"))
             last_err = None
             for url in lay["urls"]:
                 try:
@@ -348,9 +350,13 @@ def run(ctx):
                             zones.append((g, lv, f["attributes"]))
                     src, periode = f"ESDM One Map · {lyr.get('name')}", lyr.get("name")
                     break
+                except TimeoutError as e:
+                    last_err = e
+                    log("   ", e)
+                    break
                 except Exception as e:  # noqa
                     last_err = e
-                    log("   gagal:", e)
+                    log("   gagal:", str(e)[:200])
             if zones is None:
                 raise last_err or RuntimeError("layanan tidak tersedia")
         except Exception as e:  # noqa

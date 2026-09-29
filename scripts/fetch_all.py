@@ -52,17 +52,42 @@ def log(*a):
     print(f"[{datetime.now(WIB):%H:%M:%S}]", *a, flush=True)
 
 
-def get(url, params=None, headers=None, timeout=90, tries=3):
+# Batas waktu total satu kali jalan. Bila habis, sumber yang belum diambil dilewati
+# dan data lama dipakai — supaya satu server yang macet tidak menggagalkan semuanya.
+T0 = time.time()
+BUDGET_S = float(os.environ.get("BUDGET_MENIT", "12")) * 60
+CONNECT_TIMEOUT = 15
+
+
+class WaktuHabis(TimeoutError):
+    pass
+
+
+def sisa_waktu():
+    return BUDGET_S - (time.time() - T0)
+
+
+def get(url, params=None, headers=None, timeout=45, tries=2):
+    """GET dengan batas koneksi 15 dtk, batas baca `timeout`, maks. `tries` percobaan,
+    dan tidak pernah melewati sisa anggaran waktu."""
     last = None
     for i in range(tries):
+        left = sisa_waktu()
+        if left < 20:
+            raise WaktuHabis("anggaran waktu habis, sumber dilewati")
         try:
-            r = requests.get(url, params=params, headers={**UA, **(headers or {})}, timeout=timeout)
+            r = requests.get(url, params=params, headers={**UA, **(headers or {})},
+                             timeout=(CONNECT_TIMEOUT, min(timeout, left - 5)))
             r.raise_for_status()
             return r
+        except (requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError) as e:
+            last = e
+            log(f"  tidak bisa terhubung ke server ({type(e).__name__}) — tidak dicoba ulang")
+            break
         except Exception as e:  # noqa
             last = e
-            log(f"  percobaan {i+1} gagal: {e}")
-            time.sleep(4 * (i + 1))
+            log(f"  percobaan {i+1} gagal: {str(e)[:160]}")
+            time.sleep(3)
     raise last
 
 
@@ -144,7 +169,7 @@ def fetch_sipongi():
     params += [("satelit[]", s) for s in h["satelit"]]
     params += [("confidence[]", c) for c in h["confidence"]]
     params += [("provinsi", ""), ("kabkota", "")]
-    r = get(h["sipongi_endpoint"], params=params, headers={"Referer": h["sipongi_referer"]}, timeout=180)
+    r = get(h["sipongi_endpoint"], params=params, headers={"Referer": h["sipongi_referer"]}, timeout=90)
     js = r.json()
     feats = js.get("features") if isinstance(js, dict) else js
     if feats is None and isinstance(js, dict):
@@ -178,7 +203,7 @@ def fetch_firms(bbox):
     out = []
     for src in CFG["hotspot"]["firms_sources"]:
         url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{src}/{area}/1"
-        r = get(url, timeout=120)
+        r = get(url, timeout=60)
         for row in csv.DictReader(io.StringIO(r.text)):
             c = str(row.get("confidence", "")).lower()
             conf = {"h": "high", "n": "medium", "l": "low"}.get(c)
@@ -314,7 +339,7 @@ def fetch_openmeteo(points):
 
 def bmkg_now(adm4):
     """Ambil prakiraan BMKG terdekat dengan jam sekarang untuk satu kode adm4."""
-    js = get("https://api.bmkg.go.id/publik/prakiraan-cuaca", params={"adm4": adm4}, timeout=60).json()
+    js = get("https://api.bmkg.go.id/publik/prakiraan-cuaca", params={"adm4": adm4}, timeout=30).json()
     rows = [x for day in js["data"][0]["cuaca"] for x in day]
     best = min(rows, key=lambda x: abs(datetime.fromisoformat(x["local_datetime"]).replace(tzinfo=WIB) - NOW))
     return {"sumber": "BMKG", "waktu": best["local_datetime"], "suhu": best.get("t"), "rh": best.get("hu"),
@@ -366,7 +391,19 @@ def main():
         prev = json.loads((DATA / "latest.json").read_text(encoding="utf-8"))
     status = {}
     out = {"generated_at": NOW.isoformat(timespec="minutes"), "areas": assets.areas,
-           "radius": {"hotspot": CFG["hotspot"]["radius_km"], "gempa": CFG["gempa"]["radius_km"]}}
+           "radius": {"hotspot": CFG["hotspot"]["radius_km"], "gempa": CFG["gempa"]["radius_km"]},
+           # nilai awal = data lama bertanda stale; ditimpa bila pengambilan baru berhasil
+           "hotspot": {**prev.get("hotspot", {}), "stale": True},
+           "gempa": {**prev.get("gempa", {}), "stale": True},
+           "cuaca": prev.get("cuaca", []),
+           "gerakan_tanah": {**prev.get("gerakan_tanah", {}), "stale": True}}
+    if prev.get("demo"):
+        out["demo"] = True
+
+    def simpan():
+        """Tulis latest.json setelah tiap sumber — hasil parsial tetap tersimpan."""
+        out["status_sumber"] = status
+        (DATA / "latest.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     # Hotspot
     raw, src = None, None
@@ -401,6 +438,8 @@ def main():
     else:
         out["hotspot"] = {**prev.get("hotspot", {}), "stale": True}
 
+    simpan()
+
     # Gempa
     try:
         log("Gempa: BMKG ...")
@@ -410,6 +449,8 @@ def main():
         traceback.print_exc()
         status["bmkg_gempa"] = {"ok": False, "pesan": str(e)[:200]}
         out["gempa"] = {**prev.get("gempa", {}), "stale": True}
+
+    simpan()
 
     # Cuaca
     try:
@@ -421,25 +462,30 @@ def main():
         status["cuaca"] = {"ok": False, "pesan": str(e)[:200]}
         out["cuaca"] = prev.get("cuaca", [])
 
-    # Gerakan tanah (PVMBG)
+    simpan()
+
+    # Gerakan tanah (PVMBG) — paling akhir karena paling berat
     try:
         import gerakan_tanah
         log("Gerakan tanah (PVMBG) ...")
         out["gerakan_tanah"], st = gerakan_tanah.run({"get": get, "log": log, "CFG": CFG, "ROOT": ROOT, "DATA": DATA,
-                                                      "NOW": NOW, "assets": assets, "prev": prev})
+                                                      "NOW": NOW, "assets": assets, "prev": prev,
+                                                      "sisa_waktu": sisa_waktu})
         status.update(st)
     except Exception as e:  # noqa
         traceback.print_exc()
         status["pvmbg"] = {"ok": False, "pesan": str(e)[:200]}
         out["gerakan_tanah"] = {**prev.get("gerakan_tanah", {}), "stale": True}
 
-    out["status_sumber"] = status
     # Selama masih ada bagian yang berasal dari data contoh, tetap tandai sebagai demo
     if prev.get("demo"):
         fresh = all(status.get(k, {}).get("ok") for k in ("bmkg_gempa", "cuaca")) and not out["hotspot"].get("stale")
-        if not fresh:
+        if fresh:
+            out.pop("demo", None)
+        else:
             out["demo"] = True
-    (DATA / "latest.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    simpan()
+    log(f"Durasi: {time.time() - T0:.0f} detik")
     log("Selesai →", DATA / "latest.json")
     log(json.dumps(status, ensure_ascii=False))
     if not any(v.get("ok") for v in status.values()):
