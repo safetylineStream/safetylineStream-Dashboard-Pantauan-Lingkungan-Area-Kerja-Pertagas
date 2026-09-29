@@ -2,9 +2,10 @@ name: Update Data Harian
 
 on:
   schedule:
+    # GitHub memakai jam UTC. 23:00 UTC = 06:00 WIB, 10:00 UTC = 17:00 WIB
     - cron: "0 23 * * *"
     - cron: "0 10 * * *"
-  workflow_dispatch:
+  workflow_dispatch:   # tombol "Run workflow" untuk update manual kapan saja
 
 permissions:
   contents: write
@@ -16,11 +17,11 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -28,16 +29,19 @@ jobs:
       - name: Install dependensi
         run: pip install -r requirements.txt
 
-      - name: Ambil data hotspot, gempa, cuaca, gerakan tanah
+      - name: Ambil data hotspot, gempa, cuaca & analisis jarak ke aset
         env:
-          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
-          ONEMAP_USERNAME: ${{ secrets.ONEMAP_USERNAME }}
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}           # opsional, cadangan bila SiPongi gagal
+          ONEMAP_USERNAME: ${{ secrets.ONEMAP_USERNAME }}     # opsional, akun ESDM One Map
           ONEMAP_PASSWORD: ${{ secrets.ONEMAP_PASSWORD }}
-          MAGMA_APP_ID: ${{ secrets.MAGMA_APP_ID }}
+          MAGMA_APP_ID: ${{ secrets.MAGMA_APP_ID }}           # opsional, APP_ID stakeholder MAGMA/PVMBG
           MAGMA_SECRET_KEY: ${{ secrets.MAGMA_SECRET_KEY }}
         run: python scripts/fetch_all.py
+        timeout-minutes: 16
+        continue-on-error: true
 
       - name: Simpan hasil ke repositori
+        if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
