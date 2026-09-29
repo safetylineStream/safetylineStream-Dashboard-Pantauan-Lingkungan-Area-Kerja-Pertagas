@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pemantauan Lingkungan Pertagas</title>
+<meta name="description" content="Dashboard pemantauan hotspot karhutla, gempa bumi & tsunami, cuaca dan kualitas udara per wilayah kerja PT Pertamina Gas">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f2f1ed;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --brand:#0b4ea2;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b; --quake:#6a3fb5;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232321;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --brand:#3987e5;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --quake:#9085e9;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232321;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --brand:#3987e5;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --quake:#9085e9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--brand)}
+.wrap{max-width:1440px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+h1{font-size:20px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink-2);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface);font-size:12px;color:var(--ink-2);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.banner{padding:10px 14px;border-radius:10px;background:#fff4d6;color:#5a4300;border:1px solid #f1d58a;margin-bottom:12px;font-size:13px}
+:root[data-theme="dark"] .banner{background:#3a2f10;color:#f5dc9a;border-color:#6b5520}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .banner{background:#3a2f10;color:#f5dc9a;border-color:#6b5520}}
+
+/* Tab wilayah */
+.tabbar{position:sticky;top:0;z-index:1000;background:var(--page);padding:8px 0 0;margin-bottom:12px;border-bottom:1px solid var(--grid)}
+.tabs-row{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin}
+.tab{appearance:none;border:0;background:transparent;color:var(--ink-2);font:inherit;font-size:14px;padding:10px 14px 11px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:8px;border-radius:8px 8px 0 0}
+.tab:hover{background:var(--surface-2);color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:650;border-bottom-color:var(--tab-c,var(--ink))}
+.tab .sw{width:10px;height:10px;border-radius:3px;flex:none}
+.tab .cnt{font-size:11px;font-weight:650;padding:0 6px;border-radius:999px;line-height:18px}
+.tab .cnt.k{background:var(--critical);color:#fff}
+.tab .cnt.w{background:var(--serious);color:#1a0d06}
+.tab .cnt.p{background:var(--warning);color:#2a1d00}
+.tab .cnt.ok{background:var(--surface-2);color:var(--good)}
+
+.area-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.area-head h2{font-size:18px;margin:0;display:flex;align-items:center;gap:10px}
+.area-head .sw{width:14px;height:14px;border-radius:4px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tools label{font-size:12px;color:var(--ink-2)}
+select,button{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+button{cursor:pointer}
+button:hover{background:var(--surface-2)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);min-width:0}
+.card h3{font-size:14px;margin:0;padding:12px 14px 0;font-weight:600}
+.card .note{font-size:12px;color:var(--muted);padding:2px 14px 0}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.kpi{padding:12px 14px}
+.kpi .lbl{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.kpi .val{font-size:28px;font-weight:650;margin-top:2px;line-height:1.1}
+.kpi .hint{font-size:12px;color:var(--muted);margin-top:2px}
+.grid-main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:12px;margin-bottom:12px}
+#map{height:540px;border-radius:0 0 12px 12px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 14px 10px;font-size:12px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.line{width:16px;height:3px;border-radius:2px;display:inline-block}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.list{max-height:250px;overflow:auto;padding:8px 6px 10px}
+.item{display:flex;gap:10px;padding:8px;border-radius:8px;cursor:pointer}
+.item:hover{background:var(--surface-2)}
+.item .t{font-weight:600;font-size:13px}
+.item .m{font-size:12px;color:var(--ink-2)}
+.badge{font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border)}
+.b-kritis{background:color-mix(in srgb,var(--critical) 16%,transparent);color:var(--critical)}
+.b-waspada{background:color-mix(in srgb,var(--serious) 18%,transparent);color:#b4502a}
+.b-pantau{background:color-mix(in srgb,var(--warning) 22%,transparent);color:#8a5d00}
+.b-luar{background:var(--surface-2);color:var(--ink-2)}
+.b-aman{background:var(--surface-2);color:var(--good)}
+.b-tsunami{background:var(--critical);color:#fff;border-color:transparent}
+:root[data-theme="dark"] .b-waspada{color:var(--serious)} :root[data-theme="dark"] .b-pantau{color:var(--warning)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .b-waspada{color:var(--serious)} :root:not([data-theme="light"]) .b-pantau{color:var(--warning)}}
+.empty{padding:14px;color:var(--muted);font-size:13px}
+.sub-tabs{display:flex;gap:4px;padding:10px 14px 0}
+.sub-tabs button{border-radius:999px;padding:4px 10px;font-size:12px}
+.sub-tabs button.on{background:var(--ink);color:var(--page);border-color:var(--ink)}
+
+/* Ringkasan: kartu wilayah */
+.areas{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:12px}
+.area{display:block;padding:12px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%;min-width:0}
+.area:hover{border-color:var(--axis)}
+.area-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.area-h b{font-size:15px}
+.area .nm{font-size:12px;color:var(--ink-2)}
+.counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0 8px}
+.counts>div{background:var(--surface-2);border-radius:8px;padding:6px 8px;min-width:0}
+.counts .n{font-size:18px;font-weight:650}
+.counts .k{font-size:11px;color:var(--ink-2);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.area .foot{font-size:12px;color:var(--ink-2);display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+.area .go{white-space:nowrap}
+.area .go{color:var(--brand);font-weight:600}
+
+/* Tab wilayah: kartu cuaca */
+.wx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:10px 14px 14px}
+.wx{border:1px solid var(--grid);border-radius:10px;padding:10px 12px}
+.wx .p{font-weight:650;font-size:13.5px}
+.wx .now{display:flex;align-items:baseline;gap:10px;margin:6px 0 4px}
+.wx .temp{font-size:30px;font-weight:650;line-height:1}
+.wx .cond{font-size:13px;color:var(--ink-2)}
+.wx dl{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0 8px}
+.wx dl div{background:var(--surface-2);border-radius:6px;padding:4px 6px}
+.wx dt{font-size:10.5px;color:var(--ink-2)}
+.wx dd{margin:0;font-weight:650;font-size:13px}
+.fc{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;border-top:1px dashed var(--grid);padding-top:6px}
+.fc div{font-size:11.5px;color:var(--ink-2)}
+.fc b{display:block;color:var(--ink);font-size:12px}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.chart-box{position:relative;height:260px;padding:8px 14px 14px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:600;color:var(--ink-2);font-size:12px;position:sticky;top:0;background:var(--surface)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl{max-height:420px;overflow:auto;margin-top:8px}
+.sec{margin-bottom:12px}
+footer{font-size:12px;color:var(--muted);padding:8px 0 24px}
+.leaflet-popup-content{font:13px/1.4 system-ui,sans-serif;margin:10px 12px}
+[hidden]{display:none!important}
+/* Gerakan tanah */
+.gt-body{padding:10px 14px 14px}
+.gt-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.gt-stats>div{background:var(--surface-2);border-radius:10px;padding:8px 10px;min-width:0}
+.gt-stats .n{font-size:22px;font-weight:650;line-height:1.15}
+.gt-stats .k{font-size:12px;color:var(--ink-2)}
+.segbar{margin:4px 0 12px}
+.segbar .lbl{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;margin-bottom:4px}
+.segbar .lbl b{font-weight:600}
+.segbar .bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--surface-2);gap:2px}
+.segbar .bar i{display:block;height:100%}
+.segbar .keys{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--ink-2);margin-top:5px}
+.segbar .keys span{display:inline-flex;align-items:center;gap:5px}
+.gt-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.gt-cols h4{font-size:13px;margin:0 0 6px}
+.gt-cols .tbl{max-height:260px;margin-top:0}
+.b-tinggi{background:color-mix(in srgb,var(--critical) 16%,transparent);color:var(--critical)}
+.b-menengah{background:color-mix(in srgb,var(--serious) 18%,transparent);color:#b4502a}
+.b-rendah{background:color-mix(in srgb,var(--warning) 22%,transparent);color:#8a5d00}
+.b-sangat_rendah{background:var(--surface-2);color:var(--ink-2)}
+:root[data-theme="dark"] .b-menengah{color:var(--serious)} :root[data-theme="dark"] .b-rendah{color:var(--warning)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .b-menengah{color:var(--serious)} :root:not([data-theme="light"]) .b-rendah{color:var(--warning)}}
+.info{padding:10px 12px;border-radius:8px;background:var(--surface-2);font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
+tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
+@media (max-width:1100px){.gt-cols{grid-template-columns:1fr}.gt-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-main{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+@media (max-width:560px){.wrap{padding:12px 16px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#map{height:400px}.kpi .val{font-size:24px}.tab{padding:9px 10px 10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Pemantauan Lingkungan Aset PT Pertamina Gas</h1>
+      <div class="sub">Hotspot karhutla · Gempa bumi &amp; tsunami · Gerakan tanah (PVMBG) · Cuaca, kelembapan &amp; kualitas udara per wilayah kerja</div>
+    </div>
+    <div class="chips" id="status"></div>
+  </header>
+  <div id="banner"></div>
+
+  <nav class="tabbar" aria-label="Wilayah kerja">
+    <div class="tabs-row" id="tabs" role="tablist"></div>
+  </nav>
+
+  <div class="area-head">
+    <h2 id="viewTitle"></h2>
+    <div class="tools">
+      <label for="fConf">Kepercayaan hotspot</label>
+      <select id="fConf">
+        <option value="all">Semua (rendah–tinggi)</option>
+        <option value="mh">Sedang &amp; tinggi</option>
+        <option value="h">Tinggi saja</option>
+      </select>
+      <button id="btnTheme" type="button" title="Ganti tema terang/gelap">◐ Tema</button>
+    </div>
+  </div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <!-- khusus tab Ringkasan -->
+  <section class="areas" id="ovAreas"></section>
+
+  <section class="grid-main">
+    <div class="card">
+      <h3 id="mapTitle">Peta sebaran hotspot &amp; gempa terhadap aset</h3>
+      <div class="note" id="mapNote"></div>
+      <div class="legend" id="legend"></div>
+      <div id="map"></div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h3>Hotspot terdekat dengan aset</h3>
+        <div class="note" id="hsNote"></div>
+        <div class="list" id="hsList"></div>
+      </div>
+      <div class="card">
+        <h3>Gempa bumi &amp; tsunami (BMKG)</h3>
+        <div class="note" id="eqNote"></div>
+        <div class="sub-tabs" id="eqTabs">
+          <button type="button" data-k="terkini" class="on">M 5.0+ terkini</button>
+          <button type="button" data-k="dirasakan">Dirasakan</button>
+        </div>
+        <div class="list" id="eqList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- khusus tab wilayah -->
+  <section class="card sec" id="wxCard">
+    <h3>Cuaca, kelembapan &amp; kualitas udara</h3>
+    <div class="note">Kondisi terkini dan prakiraan 3 hari per titik pantau di wilayah ini</div>
+    <div class="wx-grid" id="wxGrid"></div>
+  </section>
+
+  <section class="card sec" id="gtCard">
+    <h3 id="gtTitle">Gerakan tanah &amp; pergeseran tanah (PVMBG)</h3>
+    <div class="note" id="gtNote"></div>
+    <div class="gt-body" id="gtBody"></div>
+  </section>
+
+  <section class="grid-2">
+    <div class="card">
+      <h3 id="trendTitle">Tren hotspot dekat aset (harian)</h3>
+      <div class="note" id="trendNote"></div>
+      <div class="chart-box"><canvas id="trend"></canvas></div>
+    </div>
+    <div class="card">
+      <h3 id="provTitle">Hotspot per provinsi</h3>
+      <div class="note" id="provNote"></div>
+      <div class="chart-box"><canvas id="prov"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card sec" id="wxTableCard">
+    <h3>Cuaca semua titik pantau</h3>
+    <div class="note">Suhu, kelembapan relatif (RH), angin dan PM2.5 terkini untuk seluruh wilayah</div>
+    <div class="tbl"><table id="wxTable"></table></div>
+  </section>
+
+  <section class="card sec">
+    <h3 id="hsTableTitle">Daftar hotspot dalam radius 25 km dari aset</h3>
+    <div class="note">Urut dari yang paling dekat. Klik baris untuk menuju lokasi di peta.</div>
+    <div class="tbl"><table id="hsTable"></table></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const AREA_COLORS=['--s1','--s2','--s3','--s4','--s5','--s6','--s7','--s8'];
+const STATUS={
+  kritis:{label:'Kritis',icon:'▲',v:'--critical'},
+  waspada:{label:'Waspada',icon:'◆',v:'--serious'},
+  pantau:{label:'Pantau',icon:'●',v:'--warning'},
+  luar:{label:'Di luar radius',icon:'○',v:'--muted'}
+};
+const OV='RINGKASAN';
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(v,d=0)=>(v===null||v===undefined||v==='')?'–':Number(v).toLocaleString('id-ID',{maximumFractionDigits:d,minimumFractionDigits:d});
+const bust='?t='+Date.now();
+
+let DATA,ASSETS,HIST=[],GT={prakiraan:null,zkgt:null},map,layers={},areaColor={},charts={},AREAS=[];
+const GT_LV=['tinggi','menengah','rendah','sangat_rendah'];
+const GT_INFO={tinggi:{label:'Tinggi',v:'--critical'},menengah:{label:'Menengah',v:'--serious'},rendah:{label:'Rendah',v:'--warning'},sangat_rendah:{label:'Sangat rendah',v:'--axis'}};
+const state={tab:OV,conf:'all',eqTab:'terkini'};
+try{const t=localStorage.getItem('pg-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}
+
+async function load(){
+  const [d,a,h]=await Promise.all([
+    fetch('data/latest.json'+bust).then(r=>r.json()),
+    fetch('data/assets.geojson'+bust).then(r=>r.json()),
+    fetch('data/history/ringkasan.json'+bust).then(r=>r.ok?r.json():[]).catch(()=>[])
+  ]);
+  DATA=d;ASSETS=a;HIST=h;
+  const gj=u=>fetch(u+bust).then(r=>r.ok?r.json():null).catch(()=>null);
+  [GT.prakiraan,GT.zkgt]=await Promise.all([gj('data/gerakan_tanah/prakiraan.geojson'),gj('data/gerakan_tanah/zkgt.geojson')]);
+  AREAS=Object.keys(DATA.areas||ASSETS.areas);
+  AREAS.forEach((k,i)=>areaColor[k]=AREA_COLORS[i%AREA_COLORS.length]);
+  const fromHash=decodeURIComponent(location.hash.slice(1)).toUpperCase();
+  state.tab=AREAS.includes(fromHash)?fromHash:OV;
+  initMap();render(true);
+}
+
+/* ---------- helper data ---------- */
+const isOV=()=>state.tab===OV;
+function allHotspots(){
+  const hs=(DATA.hotspot&&DATA.hotspot.dekat_aset)||[];
+  return hs.filter(h=>state.conf==='all'||(state.conf==='mh'&&(h.conf==='medium'||h.conf==='high'))||(state.conf==='h'&&h.conf==='high'));
+}
+const hotspots=()=>allHotspots().filter(h=>isOV()||h.area===state.tab);
+const countBy=(hs,area,st)=>hs.filter(h=>(!area||h.area===area)&&h.status===st).length;
+function worstOf(area){const hs=allHotspots();return countBy(hs,area,'kritis')?'kritis':countBy(hs,area,'waspada')?'waspada':countBy(hs,area,'pantau')?'pantau':null;}
+// gempa dilihat dari sudut pandang tab aktif (jarak ke aset wilayah itu)
+function eqView(g){
+  if(isOV()||!g.per_area||!g.per_area[state.tab]) return {jarak_km:g.jarak_km,aset:g.aset,status:g.status,area:g.area};
+  const p=g.per_area[state.tab];return {jarak_km:p.jarak_km,aset:p.aset,status:p.status,area:state.tab};
+}
+function quakes(kind){
+  const eq=DATA.gempa||{};
+  const lst=kind==='all'?[...(eq.terbaru?[eq.terbaru]:[]),...(eq.terkini||[]),...(eq.dirasakan||[])]:(eq[kind]||[]);
+  const seen=new Set();
+  return lst.filter(g=>{const k=g.lat+','+g.lon+','+g.mag+','+g.waktu;if(seen.has(k))return false;seen.add(k);return true;});
+}
+function badge(st){if(!st)return '<span class="badge b-aman">✓ Aman</span>';const s=STATUS[st]||STATUS.luar;return `<span class="badge b-${st}">${s.icon} ${s.label}</span>`}
+const when=iso=>iso?new Date(iso).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})+' WIB':'–';
+
+/* ---------- tab ---------- */
+function renderTabs(){
+  const hs=allHotspots();
+  const tab=(id,label,color,extra)=>`<button class="tab" role="tab" id="tab-${id}" aria-selected="${state.tab===id}" data-id="${id}" style="--tab-c:${color?css(color):'var(--ink)'}">${color?`<span class="sw" style="background:${css(color)}"></span>`:''}${label}${extra||''}</button>`;
+  const ovCnt=countBy(hs,null,'kritis');
+  let h=tab(OV,'Ringkasan semua',null,ovCnt?`<span class="cnt k" title="Hotspot kritis">▲${ovCnt}</span>`:'');
+  AREAS.forEach(k=>{
+    const w=worstOf(k);
+    const n=w?countBy(hs,k,w):0;
+    const cnt=w?`<span class="cnt ${w[0]}" title="${STATUS[w].label}">${STATUS[w].icon}${n}</span>`:'<span class="cnt ok" title="Tidak ada hotspot dalam radius">✓</span>';
+    h+=tab(k,k,areaColor[k],cnt);
+  });
+  $('#tabs').innerHTML=h;
+  document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>selectTab(b.dataset.id));
+  const act=$('#tab-'+state.tab);if(act)act.scrollIntoView({block:'nearest',inline:'nearest'});
+}
+function selectTab(id){
+  state.tab=id;
+  history.replaceState(null,'',id===OV?location.pathname:'#'+id);
+  render(true);
+  window.scrollTo({top:Math.min(scrollY,$('.tabbar').offsetTop),behavior:'smooth'});
+}
+$('#tabs').addEventListener('keydown',e=>{
+  if(!['ArrowLeft','ArrowRight'].includes(e.key))return;
+  const ids=[OV,...AREAS];let i=ids.indexOf(state.tab);
+  i=(i+(e.key==='ArrowRight'?1:-1)+ids.length)%ids.length;selectTab(ids[i]);$('#tab-'+ids[i]).focus();
+});
+
+/* ---------- header ---------- */
+function renderStatus(){
+  const s=DATA.status_sumber||{};
+  const names={sipongi:'SiPongi+',firms:'NASA FIRMS',bmkg_gempa:'BMKG Gempa',cuaca:'Cuaca',pvmbg_prakiraan:'PVMBG Prakiraan GT',pvmbg_zkgt:'PVMBG Zona GT',magma_gertan:'MAGMA Kejadian GT',pvmbg:'PVMBG'};
+  let h=`<span class="chip">Diperbarui: <b>${when(DATA.generated_at)}</b></span>`;
+  for(const [k,v] of Object.entries(s)){
+    if(k==='firms'&&!v.ok&&/belum diisi/.test(v.pesan||''))continue;
+    if(k==='magma_gertan'&&!v.ok&&/belum diisi/.test(v.pesan||'')){h+=`<span class="chip" title="${esc(v.pesan)}"><span class="dot" style="background:${css('--axis')}"></span>MAGMA: belum aktif</span>`;continue;}
+    h+=`<span class="chip" title="${esc(v.pesan||'')}"><span class="dot" style="background:${css(v.ok?'--good':'--critical')}"></span>${names[k]||k}: ${v.ok?'OK':'gagal'}</span>`;
+  }
+  $('#status').innerHTML=h;
+  let b='';
+  if(DATA.demo)b+=`<div class="banner"><b>Data contoh.</b> Angka di halaman ini masih data simulasi untuk pratinjau tampilan. Data asli terisi otomatis setelah GitHub Actions menjalankan workflow <i>Update Data Harian</i> untuk pertama kali.</div>`;
+  const stale=[DATA.hotspot&&DATA.hotspot.stale&&'hotspot',DATA.gempa&&DATA.gempa.stale&&'gempa',(DATA.status_sumber?.cuaca&&!DATA.status_sumber.cuaca.ok)&&'cuaca'].filter(Boolean);
+  if(stale.length)b+=`<div class="banner">Pengambilan data <b>${stale.join(' & ')}</b> terakhir gagal — yang ditampilkan adalah data sebelumnya.</div>`;
+  $('#banner').innerHTML=b;
+}
+function renderTitle(){
+  if(isOV()){$('#viewTitle').innerHTML='Ringkasan semua wilayah kerja';return;}
+  const k=state.tab;
+  $('#viewTitle').innerHTML=`<span class="sw" style="background:${css(areaColor[k])}"></span>${k} — ${esc(DATA.areas[k].nama)} ${badge(worstOf(k))}`;
+}
+
+/* ---------- KPI ---------- */
+function kpi(lbl,val,hint,color,icon){return `<div class="card kpi"><div class="lbl">${color?`<span style="color:${css(color)}">${icon}</span>`:''}${lbl}</div><div class="val">${val}</div><div class="hint">${hint}</div></div>`}
+function renderKPIs(){
+  const hs=hotspots(),r=DATA.radius.hotspot,area=isOV()?null:state.tab;
+  const qs=quakes('all').map(g=>({...g,...eqView(g)}));
+  const near=qs.slice().sort((a,b)=>a.jarak_km-b.jarak_km)[0];
+  const tsu=qs.some(g=>g.tsunami);const last=(DATA.gempa||{}).terbaru;
+  let h=kpi(`Hotspot ≤ ${r.kritis} km`,countBy(hs,area,'kritis'),'Kritis — cek lapangan segera','--critical','▲')+
+    kpi(`Hotspot ${r.kritis}–${r.waspada} km`,countBy(hs,area,'waspada'),'Waspada — patroli ROW','--serious','◆')+
+    kpi(`Hotspot ${r.waspada}–${r.pantau} km`,countBy(hs,area,'pantau'),'Pantau — koordinasi Manggala Agni/BPBD','--warning','●');
+  if(isOV()){
+    h+=kpi('Hotspot nasional',fmt(DATA.hotspot?.total_nasional),`${DATA.hotspot?.periode_jam||24} jam terakhir · ${esc(DATA.hotspot?.sumber||'-')}`);
+  }else{
+    const pa=(DATA.hotspot?.provinsi_area||{})[area]||{};
+    const tot=Object.values(pa).reduce((a,b)=>a+b,0);
+    h+=kpi('Hotspot provinsi wilayah',fmt(tot),Object.keys(pa).length?Object.entries(pa).map(([p,n])=>`${esc(p)} ${n}`).join(' · '):'Atur di config/monitoring.json');
+  }
+  h+=kpi(isOV()?'Gempa terdekat dari aset':`Gempa terdekat dari aset ${area}`,near?`M ${fmt(near.mag,1)}`:'–',near?`${fmt(near.jarak_km)} km dari ${esc(near.aset)}${isOV()?` (${near.area})`:''} · ${esc(near.waktu)}`:'Tidak ada data')+
+    kpi('Status tsunami',tsu?'<span class="badge b-tsunami">⚠ BERPOTENSI</span>':'Aman',last?`Gempa terakhir: M ${fmt(last.mag,1)} · ${esc(last.wilayah)}`:'',tsu?'--critical':'--good',tsu?'⚠':'✓');
+  $('#kpis').innerHTML=h;
+}
+
+/* ---------- Ringkasan: kartu wilayah ---------- */
+function renderOverviewAreas(){
+  const el=$('#ovAreas');el.hidden=!isOV();if(!isOV())return;
+  const hs=allHotspots(),r=DATA.radius.hotspot;
+  el.innerHTML=AREAS.map(k=>{
+    const wx=(DATA.cuaca||[]).filter(w=>w.area===k);
+    const t=wx.map(w=>w.suhu).filter(x=>x!=null),rh=wx.map(w=>w.rh).filter(x=>x!=null);
+    const rng=a=>a.length?(Math.min(...a)===Math.max(...a)?fmt(a[0]):`${fmt(Math.min(...a))}–${fmt(Math.max(...a))}`):'–';
+    const qs=quakes('all').filter(g=>g.per_area&&g.per_area[k]).sort((a,b)=>a.per_area[k].jarak_km-b.per_area[k].jarak_km)[0];
+    return `<button type="button" class="card area" data-id="${k}">
+      <div class="area-h"><div><b><i class="line" style="background:${css(areaColor[k])};vertical-align:middle;margin-right:6px"></i>${k}</b><div class="nm">${esc(DATA.areas[k].nama)}</div></div>${badge(worstOf(k))}</div>
+      <div class="counts">
+        <div><div class="n">${countBy(hs,k,'kritis')}</div><div class="k"><span style="color:${css('--critical')}">▲</span>≤ ${r.kritis} km</div></div>
+        <div><div class="n">${countBy(hs,k,'waspada')}</div><div class="k"><span style="color:${css('--serious')}">◆</span>≤ ${r.waspada} km</div></div>
+        <div><div class="n">${countBy(hs,k,'pantau')}</div><div class="k"><span style="color:${css('--warning')}">●</span>≤ ${r.pantau} km</div></div>
+      </div>
+      <div class="foot"><span>Suhu ${rng(t)}°C · RH ${rng(rh)}%</span></div>
+      <div class="foot"><span>Gerakan tanah (prakiraan): ${(()=>{const p=((DATA.gerakan_tanah||{}).prakiraan||{}).per_area?.[k];return p?`${gtBadge(p.terburuk)} ${fmt(p.pipa_km?.tinggi,1)} km pipa zona tinggi`:'–'})()}</span></div>
+      <div class="foot"><span>${qs?`Gempa terdekat ${fmt(qs.per_area[k].jarak_km)} km (M ${fmt(qs.mag,1)})`:'Tidak ada gempa'}</span><span class="go">Buka ›</span></div>
+    </button>`;}).join('');
+  el.querySelectorAll('.area').forEach(b=>b.onclick=()=>selectTab(b.dataset.id));
+}
+
+/* ---------- Peta ---------- */
+function initMap(){
+  map=L.map('map',{preferCanvas:true}).setView([-2.5,103],5);
+  const base={
+    'Peta jalan (OSM)':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}),
+    'Citra satelit (Esri)':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles © Esri'})
+  };
+  base['Peta jalan (OSM)'].addTo(map);
+  layers.pipa=L.layerGroup().addTo(map);layers.fas=L.layerGroup().addTo(map);
+  layers.gtZona=L.layerGroup();layers.gtPrak=L.layerGroup().addTo(map);layers.gtEv=L.layerGroup().addTo(map);
+  layers.hs=L.layerGroup().addTo(map);layers.eq=L.layerGroup().addTo(map);layers.wx=L.layerGroup().addTo(map);
+  L.control.layers(base,{'Jalur pipa':layers.pipa,'Fasilitas':layers.fas,'Hotspot':layers.hs,'Gempa':layers.eq,
+    'Prakiraan gerakan tanah (bulan ini)':layers.gtPrak,'Zona kerentanan gerakan tanah':layers.gtZona,'Kejadian gerakan tanah (MAGMA)':layers.gtEv,'Label cuaca':layers.wx},{collapsed:true}).addTo(map);
+  map.createPane('gt');map.getPane('gt').style.zIndex=350;
+  L.control.scale({imperial:false}).addTo(map);
+}
+function drawMap(fit){
+  Object.values(layers).forEach(l=>l.clearLayers());
+  const inTab=f=>isOV()||f.properties.area===state.tab;
+  const feats=ASSETS.features.filter(inTab);
+  const gtStyle=f=>{const c=css((GT_INFO[f.properties.level]||GT_INFO.sangat_rendah).v);return {pane:'gt',color:c,weight:1,opacity:.7,fillColor:c,fillOpacity:f.properties.level==='sangat_rendah'?.12:.28}};
+  const gtPop=(title)=>(f,l)=>l.bindPopup(`<b>${title}</b><br>Tingkat: ${gtBadge(f.properties.level)}<br>${Object.entries(f.properties).filter(([k])=>!['level','label'].includes(k)).slice(0,6).map(([k,v])=>`<span style="color:var(--muted)">${esc(k)}:</span> ${esc(v)}`).join('<br>')}`);
+  if(GT.prakiraan)L.geoJSON(GT.prakiraan,{style:gtStyle,onEachFeature:gtPop('Prakiraan potensi gerakan tanah'+(GT.prakiraan.periode?` — ${esc(GT.prakiraan.periode)}`:''))}).addTo(layers.gtPrak);
+  if(GT.zkgt)L.geoJSON(GT.zkgt,{style:gtStyle,onEachFeature:gtPop('Zona kerentanan gerakan tanah')}).addTo(layers.gtZona);
+  gtEvents().forEach(e=>{
+    L.marker([e.lat,e.lon],{icon:L.divIcon({className:'',iconSize:[18,18],iconAnchor:[9,9],html:`<div style="width:18px;height:18px;display:grid;place-items:center;background:${css('--quake')};color:#fff;border:2px solid var(--surface);border-radius:4px;transform:rotate(45deg);font:700 10px system-ui"><span style="transform:rotate(-45deg)">GT</span></div>`})})
+      .bindPopup(evPopup(e)).addTo(layers.gtEv);
+  });
+  const pipa=L.geoJSON({type:'FeatureCollection',features:feats.filter(f=>f.properties.kind==='pipa')},{
+    style:f=>({color:css(areaColor[f.properties.area]),weight:3,opacity:.9}),
+    onEachFeature:(f,l)=>l.bindPopup(`<b>${esc(f.properties.name)}</b><br>${f.properties.area} · ${esc(f.properties.grup)}`)
+  }).addTo(layers.pipa);
+  feats.filter(f=>f.properties.kind==='fasilitas').forEach(f=>{
+    const [x,y]=f.geometry.coordinates;
+    L.circleMarker([y,x],{radius:isOV()?3:5,weight:1.5,color:css('--surface'),fillColor:css(areaColor[f.properties.area]),fillOpacity:1})
+      .bindPopup(`<b>${esc(f.properties.name)}</b><br>${f.properties.area} · ${esc(f.properties.grup)}`).addTo(layers.fas);
+  });
+  const order={luar:0,pantau:1,waspada:2,kritis:3};
+  hotspots().slice().sort((a,b)=>order[a.status]-order[b.status]).forEach(h=>{
+    L.circleMarker([h.lat,h.lon],{radius:h.status==='luar'?4:7,weight:2,color:css('--surface'),fillColor:css(STATUS[h.status].v),fillOpacity:.95})
+      .bindPopup(hsPopup(h)).addTo(layers.hs);
+  });
+  quakes('all').forEach(g=>{
+    const c=css(g.tsunami?'--critical':'--quake');
+    L.circleMarker([g.lat,g.lon],{radius:Math.max(6,(g.mag-2)*4),weight:2,color:c,fillColor:c,fillOpacity:.25}).bindPopup(eqPopup(g)).addTo(layers.eq);
+  });
+  if(!isOV())(DATA.cuaca||[]).filter(w=>w.area===state.tab).forEach(w=>{
+    L.marker([w.lat,w.lon],{icon:L.divIcon({className:'',html:`<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1px 5px;font:600 11px system-ui;color:var(--ink);white-space:nowrap;transform:translate(8px,-22px)">${fmt(w.suhu)}° · RH ${fmt(w.rh)}%</div>`,iconSize:null})})
+      .bindPopup(`<b>${esc(w.nama)}</b><br>${esc(w.cuaca)} · ${fmt(w.suhu,1)}°C · RH ${fmt(w.rh)}%<br>Angin ${fmt(w.angin_kmh)} km/j dari ${esc(w.angin_arah)} · PM2.5 ${fmt(w.pm25)} µg/m³`).addTo(layers.wx);
+  });
+  if(fit){
+    const b=pipa.getBounds();layers.fas.eachLayer(l=>b.extend(l.getLatLng()));
+    if(b.isValid())map.fitBounds(b,{padding:[24,24],maxZoom:11});
+  }
+  let lg=(isOV()?AREAS:[state.tab]).map(k=>`<span><i class="line" style="background:${css(areaColor[k])}"></i>${k}</span>`).join('');
+  lg+=['kritis','waspada','pantau','luar'].map(k=>`<span><i class="dot" style="background:${css(STATUS[k].v)}"></i>${STATUS[k].label}</span>`).join('');
+  lg+=`<span><i class="dot" style="border:2px solid ${css('--quake')};width:10px;height:10px"></i>Episentrum gempa</span>`;
+  if(GT.prakiraan||GT.zkgt)lg+=`<span style="margin-left:6px">Gerakan tanah:</span>`+GT_LV.map(k=>`<span><i style="display:inline-block;width:12px;height:10px;border-radius:2px;background:${css(GT_INFO[k].v)};opacity:.6"></i>${GT_INFO[k].label}</span>`).join('');
+  if(gtEvents().length)lg+=`<span><i style="display:inline-block;width:10px;height:10px;background:${css('--quake')};transform:rotate(45deg);border-radius:2px"></i>Kejadian GT</span>`;
+  $('#legend').innerHTML=lg;
+  const r=DATA.radius.hotspot;
+  $('#mapTitle').textContent=isOV()?'Peta semua wilayah kerja':`Peta wilayah ${state.tab}`;
+  $('#mapNote').textContent=`Radius dari jalur pipa/fasilitas terdekat: kritis ≤ ${r.kritis} km · waspada ≤ ${r.waspada} km · pantau ≤ ${r.pantau} km.`;
+}
+function hsPopup(h){
+  return `<b>Hotspot ${badge(h.status)}</b><br>${fmt(h.jarak_km,2)} km dari <b>${esc(h.aset)}</b> (${h.area})<br>`+
+    `Fasilitas terdekat: ${esc(h.fasilitas)} (${fmt(h.jarak_fasilitas_km,1)} km)<br>`+
+    `${esc([h.desa,h.kec,h.kab,h.prov].filter(x=>x&&x!=='-').join(', '))}<br>`+
+    `Satelit: ${esc(h.sumber)} · kepercayaan: ${esc(h.conf)}<br>${esc(h.waktu)}<br>`+
+    `<span style="color:var(--muted)">${h.lat}, ${h.lon}</span> · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${h.lat},${h.lon}">Google Maps</a>`;
+}
+function eqPopup(g){
+  const v=eqView(g);
+  return `<b>Gempa M ${fmt(g.mag,1)}</b> ${g.tsunami?'<span class="badge b-tsunami">⚠ Berpotensi tsunami</span>':''}<br>${esc(g.waktu)}<br>${esc(g.wilayah)}<br>Kedalaman ${esc(g.kedalaman)}<br>`+
+    `${esc(g.potensi)}<br>${g.dirasakan?'Dirasakan: '+esc(g.dirasakan)+'<br>':''}`+
+    `<b>${fmt(v.jarak_km)} km</b> dari aset ${isOV()?'terdekat':v.area}: ${esc(v.aset)}${isOV()?` (${v.area})`:''} ${badge(v.status)}`+
+    (g.shakemap?`<br><a href="${esc(g.shakemap)}" target="_blank" rel="noopener">Lihat shakemap BMKG</a>`:'');
+}
+
+/* ---------- Daftar samping ---------- */
+function renderLists(){
+  const hs=hotspots().filter(h=>h.status!=='luar'),rp=DATA.radius.hotspot.pantau;
+  $('#hsNote').textContent=hs.length?`${hs.length} hotspot dalam radius ${rp} km${isOV()?'':' dari aset '+state.tab}`:'';
+  $('#hsList').innerHTML=hs.length?hs.slice(0,40).map((h,i)=>`<div class="item" data-i="${i}">
+      <div style="min-width:64px">${badge(h.status)}</div>
+      <div><div class="t">${fmt(h.jarak_km,2)} km · ${esc(h.aset)}</div>
+      <div class="m">${isOV()?h.area+' · ':''}${esc([h.desa,h.kab].filter(x=>x&&x!=='-').join(', ')||h.prov)} · ${esc(h.conf)}</div></div></div>`).join('')
+    :`<div class="empty">✓ Tidak ada hotspot dalam radius ${rp} km dari aset${isOV()?'':' '+state.tab} pada periode ini.</div>`;
+  document.querySelectorAll('#hsList .item').forEach(el=>el.onclick=()=>{const h=hs[+el.dataset.i];map.setView([h.lat,h.lon],13);L.popup().setLatLng([h.lat,h.lon]).setContent(hsPopup(h)).openOn(map);});
+
+  const eq=quakes(state.eqTab).map(g=>({g,v:eqView(g)}));
+  if(!isOV())eq.sort((a,b)=>a.v.jarak_km-b.v.jarak_km);
+  $('#eqNote').textContent=isOV()?'Urut waktu; jarak ke aset terdekat mana pun':`Urut dari yang terdekat ke aset ${state.tab}`;
+  $('#eqList').innerHTML=eq.length?eq.map(({g,v},i)=>`<div class="item" data-i="${i}">
+      <div style="min-width:52px;font-weight:650;font-size:18px">${fmt(g.mag,1)}</div>
+      <div><div class="t">${esc(g.wilayah)}</div>
+      <div class="m">${esc(g.waktu)} · ${fmt(v.jarak_km)} km dari ${esc(v.aset)}${isOV()?` (${v.area})`:''}</div>
+      <div style="margin-top:3px">${badge(v.status)} ${g.tsunami?'<span class="badge b-tsunami">⚠ Berpotensi tsunami</span>':`<span class="m">${esc(g.potensi)}</span>`}</div></div></div>`).join('')
+    :'<div class="empty">Tidak ada data gempa.</div>';
+  document.querySelectorAll('#eqList .item').forEach(el=>el.onclick=()=>{const g=eq[+el.dataset.i].g;map.setView([g.lat,g.lon],7);L.popup().setLatLng([g.lat,g.lon]).setContent(eqPopup(g)).openOn(map);});
+}
+
+/* ---------- Cuaca ---------- */
+function renderWeather(){
+  $('#wxCard').hidden=isOV();$('#wxTableCard').hidden=!isOV();
+  if(!isOV()){
+    const rows=(DATA.cuaca||[]).filter(w=>w.area===state.tab);
+    const day=d=>new Date(d+'T00:00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+    $('#wxGrid').innerHTML=rows.length?rows.map(w=>`<div class="wx">
+        <div class="p">${esc(w.nama)}</div>
+        <div class="now"><span class="temp">${fmt(w.suhu,1)}°</span><span class="cond">${esc(w.cuaca)}<br>terasa ${fmt(w.terasa,1)}°C</span></div>
+        <dl>
+          <div><dt>Kelembapan</dt><dd>${fmt(w.rh)}%</dd></div>
+          <div><dt>Angin</dt><dd>${fmt(w.angin_kmh)} <small>${esc(w.angin_arah)}</small></dd></div>
+          <div><dt>Hujan</dt><dd>${fmt(w.hujan_mm,1)} mm</dd></div>
+          <div><dt>PM2.5</dt><dd>${fmt(w.pm25)}</dd></div>
+        </dl>
+        <div class="fc">${(w.prakiraan||[]).map(p=>`<div><b>${day(p.tanggal)}</b>${esc(p.cuaca)}<br>${fmt(p.tmin)}–${fmt(p.tmax)}° · hujan ${fmt(p.peluang_hujan)}%</div>`).join('')}</div>
+        <div class="note" style="padding:6px 0 0">Sumber: ${esc(w.sumber)}${w.jarak_pandang?` · jarak pandang ${esc(w.jarak_pandang)}`:''}</div>
+      </div>`).join(''):'<div class="empty">Belum ada titik cuaca untuk wilayah ini. Tambahkan di config/monitoring.json → titik_cuaca.</div>';
+  }else{
+    const rows=DATA.cuaca||[];
+    $('#wxTable').innerHTML=`<thead><tr><th>Wilayah</th><th>Titik pantau</th><th>Kondisi</th><th class="num">Suhu °C</th><th class="num">RH %</th><th>Angin km/j</th><th class="num">PM2.5</th><th>Besok</th></tr></thead><tbody>`+
+      rows.map(w=>`<tr><td>${w.area}</td><td>${esc(w.nama)}</td><td>${esc(w.cuaca)}</td><td class="num">${fmt(w.suhu,1)}</td><td class="num">${fmt(w.rh)}</td><td>${fmt(w.angin_kmh)} ${esc(w.angin_arah)}</td><td class="num">${fmt(w.pm25)}</td><td>${w.prakiraan&&w.prakiraan[1]?`${esc(w.prakiraan[1].cuaca)} · hujan ${fmt(w.prakiraan[1].peluang_hujan)}%`:'–'}</td></tr>`).join('')+'</tbody>';
+  }
+}
+
+/* ---------- Tabel hotspot ---------- */
+function renderHsTable(){
+  const hs=hotspots();
+  $('#hsTableTitle').textContent=`Daftar hotspot dalam radius 25 km dari aset${isOV()?'':' '+state.tab}`;
+  $('#hsTable').innerHTML=`<thead><tr><th>Status</th><th class="num">Jarak (km)</th>${isOV()?'<th>Wilayah</th>':''}<th>Aset terdekat</th><th>Fasilitas terdekat</th><th>Lokasi</th><th>Satelit</th><th>Kepercayaan</th><th>Waktu</th><th>Koordinat</th></tr></thead><tbody>`+
+    (hs.length?hs.map((h,i)=>`<tr data-i="${i}" style="cursor:pointer"><td>${badge(h.status)}</td><td class="num">${fmt(h.jarak_km,2)}</td>${isOV()?`<td>${h.area}</td>`:''}<td>${esc(h.aset)}</td><td>${esc(h.fasilitas)} (${fmt(h.jarak_fasilitas_km,1)} km)</td><td>${esc([h.desa,h.kec,h.kab,h.prov].filter(x=>x&&x!=='-').join(', '))}</td><td>${esc(h.sumber)}</td><td>${esc(h.conf)}</td><td>${esc(h.waktu)}</td><td>${h.lat}, ${h.lon}</td></tr>`).join('')
+    :`<tr><td colspan="10" class="empty">Tidak ada hotspot dalam radius 25 km dari aset.</td></tr>`)+'</tbody>';
+  document.querySelectorAll('#hsTable tbody tr[data-i]').forEach(el=>el.onclick=()=>{const h=hs[+el.dataset.i];window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});map.setView([h.lat,h.lon],13);L.popup().setLatLng([h.lat,h.lon]).setContent(hsPopup(h)).openOn(map);});
+}
+
+/* ---------- Grafik ---------- */
+function renderCharts(){
+  Chart.defaults.font.family='system-ui,-apple-system,"Segoe UI",sans-serif';
+  Chart.defaults.font.size=12;Chart.defaults.color=css('--ink-2');Chart.defaults.borderColor=css('--grid');
+  Object.values(charts).forEach(c=>c.destroy());
+  const dates=[...new Set(HIST.map(r=>r.tanggal))].sort();
+  const labels=dates.map(d=>new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}));
+  const rp=DATA.radius.hotspot.pantau;
+  let cfg;
+  if(isOV()){
+    $('#trendTitle').textContent=`Tren hotspot ≤ ${rp} km dari aset, per wilayah`;
+    $('#trendNote').textContent='Jumlah harian hotspot dalam radius pantau';
+    cfg={type:'line',data:{labels,datasets:AREAS.map(k=>({label:k,data:dates.map(d=>{const r=HIST.find(x=>x.tanggal===d&&x.area===k);return r?(+r.kritis)+(+r.waspada)+(+r.pantau):null}),
+      borderColor:css(areaColor[k]),backgroundColor:css(areaColor[k]),borderWidth:2,pointRadius:dates.length>40?0:3,pointHoverRadius:5,tension:.25,spanGaps:true}))},
+      options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,usePointStyle:true}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y} hotspot`}}},
+        scales:{y:{beginAtZero:true,ticks:{precision:0},grid:{color:css('--grid')}},x:{grid:{display:false}}}}};
+  }else{
+    const k=state.tab;
+    $('#trendTitle').textContent=`Tren hotspot dekat aset ${k}, per status`;
+    $('#trendNote').textContent=`Jumlah harian hotspot ≤ ${rp} km, dipecah menurut radius`;
+    const ser=['kritis','waspada','pantau'];
+    cfg={type:'bar',data:{labels,datasets:ser.map(s=>({label:`${STATUS[s].icon} ${STATUS[s].label}`,data:dates.map(d=>{const r=HIST.find(x=>x.tanggal===d&&x.area===k);return r?+r[s]:0}),
+      backgroundColor:css(STATUS[s].v),borderColor:css('--surface'),borderWidth:{top:2},borderRadius:3,borderSkipped:false,barPercentage:.8,categoryPercentage:.9}))},
+      options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}`}}},
+        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{precision:0},grid:{color:css('--grid')}}}}};
+  }
+  if(!dates.length)$('#trendNote').textContent+=' — riwayat mulai terkumpul setelah update pertama';
+  charts.trend=new Chart($('#trend'),cfg);
+
+  const src=isOV()?(DATA.hotspot?.provinsi_pantauan||{}):((DATA.hotspot?.provinsi_area||{})[state.tab]||{});
+  const ent=Object.entries(src).sort((a,b)=>b[1]-a[1]);
+  $('#provTitle').textContent=isOV()?`Hotspot di provinsi wilayah kerja (${DATA.hotspot?.periode_jam||24} jam)`:`Hotspot di provinsi wilayah ${state.tab} (${DATA.hotspot?.periode_jam||24} jam)`;
+  $('#provNote').textContent=isOV()?`Total nasional ${fmt(DATA.hotspot?.total_nasional)} titik; provinsi di luar wilayah kerja: ${fmt(DATA.hotspot?.provinsi_lain)} titik`:'Semua hotspot di provinsi tempat wilayah ini beroperasi, tanpa batas radius';
+  charts.prov=new Chart($('#prov'),{type:'bar',data:{labels:ent.map(e=>e[0]),datasets:[{label:'Hotspot',data:ent.map(e=>e[1]),backgroundColor:css(isOV()?'--s1':areaColor[state.tab]),borderRadius:4,borderSkipped:'start',barPercentage:.7,categoryPercentage:.85,maxBarThickness:36}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x} titik`}}},
+      scales:{x:{beginAtZero:true,ticks:{precision:0},grid:{color:css('--grid')}},y:{grid:{display:false}}}}});
+}
+
+/* ---------- Gerakan tanah (PVMBG) ---------- */
+const gtBadge=lv=>lv?`<span class="badge b-${lv}">${GT_INFO[lv].label}</span>`:'<span class="badge b-aman">Di luar zona</span>';
+function gtEvents(){
+  const k=((DATA.gerakan_tanah||{}).kejadian||{}).data||[];
+  return isOV()?k:k.filter(e=>e.per_area&&e.per_area[state.tab]&&e.per_area[state.tab].jarak_km<=(((DATA.gerakan_tanah||{}).kejadian||{}).radius_km||{pantau:25}).pantau*4);
+}
+function evView(e){
+  const rad=(((DATA.gerakan_tanah||{}).kejadian||{}).radius_km)||{kritis:2,waspada:10,pantau:25};
+  const d=isOV()?e.jarak_km:(e.per_area?.[state.tab]?.jarak_km??e.jarak_km), aset=isOV()?e.aset:(e.per_area?.[state.tab]?.aset??e.aset);
+  const st=d<=rad.kritis?'kritis':d<=rad.waspada?'waspada':d<=rad.pantau?'pantau':'luar';
+  return {jarak_km:d,aset,status:st,area:isOV()?e.area:state.tab};
+}
+function evPopup(e){const v=evView(e);
+  return `<b>Kejadian gerakan tanah</b> ${badge(v.status)}<br>${esc(e.waktu)} ${esc(e.zona||'')}<br>${esc([e.desa,e.kec,e.kab,e.provinsi].filter(x=>x&&x!=='-').join(', '))}<br>`+
+    `<b>${fmt(v.jarak_km,1)} km</b> dari ${esc(v.aset)}${isOV()?` (${v.area})`:''}<br>${esc(e.kerentanan||'')}`+
+    (e.rekomendasi?`<br><span style="color:var(--muted)">Rekomendasi PVMBG:</span> ${esc(e.rekomendasi.slice(0,260))}…`:'')+
+    (e.url?`<br><a href="${esc(e.url)}" target="_blank" rel="noopener">Laporan lengkap di MAGMA</a>`:'');
+}
+function segbar(title,sub,km,total){
+  const sum=GT_LV.reduce((a,k)=>a+(km[k]||0),0), out=Math.max(0,total-sum);
+  const w=v=>total>0?(v/total*100):0;
+  return `<div class="segbar"><div class="lbl"><b>${title}</b><span>${sub}</span></div>
+    <div class="bar" role="img" aria-label="${title}">${GT_LV.map(k=>km[k]>0?`<i title="${GT_INFO[k].label}: ${fmt(km[k],1)} km" style="width:${w(km[k])}%;background:${css(GT_INFO[k].v)}"></i>`:'').join('')}${out>0?`<i title="Di luar zona terpetakan: ${fmt(out,1)} km" style="width:${w(out)}%;background:transparent"></i>`:''}</div>
+    <div class="keys">${GT_LV.map(k=>`<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${css(GT_INFO[k].v)}"></i>${GT_INFO[k].label} <b style="color:var(--ink)">${fmt(km[k]||0,1)} km</b></span>`).join('')}<span>Di luar zona terpetakan ${fmt(out,1)} km</span></div></div>`;
+}
+function renderGT(){
+  const gt=DATA.gerakan_tanah||{}, P=gt.prakiraan||{}, Zk=gt.zkgt||{}, K=gt.kejadian||{};
+  const sources=`Sumber: PVMBG – Badan Geologi. Prakiraan: ${esc(P.periode||'–')}${P.diambil?` (diambil ${when(P.diambil)})`:''} · Zona kerentanan: ${esc(Zk.sumber||'–')} · analisis dalam koridor ${fmt(gt.koridor_km||2)} km dari aset`;
+  $('#gtNote').innerHTML=sources;
+  const none=!P.tersedia&&!Zk.tersedia;
+  const setup=`<div class="info"><b>Data zona & prakiraan belum masuk.</b> Layanan GIS ESDM One Map belum bisa diakses otomatis. Isi secret <code>ONEMAP_USERNAME</code>/<code>ONEMAP_PASSWORD</code>, atau unggah peta ke folder <code>gerakan_tanah_raw/</code> (lihat README bagian B7). Status: ${esc((DATA.status_sumber?.pvmbg_prakiraan||{}).pesan||'-')}</div>`;
+  const evInfo=K.tersedia?'':`<div class="info"><b>Laporan kejadian (MAGMA) belum aktif.</b> ${/belum diisi/.test(K.pesan||'')?'Ajukan APP_ID stakeholder ke PVMBG, lalu isi secret <code>MAGMA_APP_ID</code> dan <code>MAGMA_SECRET_KEY</code>.':'Pengambilan terakhir gagal: '+esc(K.pesan||'')} Sementara itu, pantau manual di <a href="https://magma.esdm.go.id/v1/gerakan-tanah/tanggapan" target="_blank" rel="noopener">MAGMA – Tanggapan Gerakan Tanah</a>.</div>`;
+  if(isOV()){
+    $('#gtTitle').textContent='Gerakan tanah & pergeseran tanah (PVMBG) — perbandingan antarwilayah';
+    const rows=AREAS.map(k=>{
+      const p=(P.per_area||{})[k]||{}, z=(Zk.per_area||{})[k]||{};
+      const ev=(K.data||[]).filter(e=>e.per_area&&e.per_area[k]).sort((a,b)=>a.per_area[k].jarak_km-b.per_area[k].jarak_km)[0];
+      const fasHi=(p.fasilitas||[]).filter(f=>f.level==='tinggi'||f.level==='menengah').length;
+      return `<tr class="link" data-id="${k}"><td style="white-space:nowrap"><i class="line" style="background:${css(areaColor[k])};vertical-align:middle;margin-right:6px"></i><b>${k}</b></td><td class="num">${fmt(p.total_pipa_km??z.total_pipa_km,1)}</td>
+        <td class="num">${fmt(p.pipa_km?.tinggi,1)}</td><td class="num">${fmt(p.pipa_km?.menengah,1)}</td><td class="num">${fmt(fasHi)}</td><td>${gtBadge(p.terburuk)}</td>
+        <td class="num">${fmt(z.pipa_km?.tinggi,1)}</td><td class="num">${fmt(z.pipa_km?.menengah,1)}</td>
+        <td>${ev?`${fmt(ev.per_area[k].jarak_km,1)} km · ${esc(ev.waktu?.slice(0,10))}`:'–'}</td></tr>`;}).join('');
+    $('#gtBody').innerHTML=(none?setup:'')+evInfo+`<div class="tbl" style="margin-top:0"><table><thead><tr><th>Wilayah</th><th class="num">Panjang pipa (km)</th><th class="num">Prakiraan: pipa zona tinggi (km)</th><th class="num">Prakiraan: pipa zona menengah (km)</th><th class="num">Fasilitas zona menengah–tinggi</th><th>Tingkat prakiraan terburuk</th><th class="num">Kerentanan: pipa zona tinggi (km)</th><th class="num">Kerentanan: pipa zona menengah (km)</th><th>Kejadian GT terdekat</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="note" style="padding:6px 0 0">Klik baris untuk membuka tab wilayah. Prakiraan = peta potensi gerakan tanah bulan berjalan (dipengaruhi prakiraan curah hujan). Kerentanan = kondisi geologi dasar (tetap).</div>`;
+    document.querySelectorAll('#gtBody tr.link').forEach(r=>r.onclick=()=>selectTab(r.dataset.id));
+    return;
+  }
+  const k=state.tab, p=(P.per_area||{})[k], z=(Zk.per_area||{})[k];
+  $('#gtTitle').textContent=`Gerakan tanah & pergeseran tanah di wilayah ${k} (PVMBG)`;
+  const evs=gtEvents().map(e=>({e,v:evView(e)})).sort((a,b)=>a.v.jarak_km-b.v.jarak_km);
+  const near=evs[0];
+  // gabungkan tingkat fasilitas dari prakiraan & zona
+  const fmap={};
+  (p?.fasilitas||[]).forEach(f=>{fmap[f.aset]={...fmap[f.aset],aset:f.aset,prak:f.level,lat:f.lat,lon:f.lon}});
+  (z?.fasilitas||[]).forEach(f=>{fmap[f.aset]={...fmap[f.aset],aset:f.aset,zona:f.level,lat:f.lat,lon:f.lon}});
+  const rank=lv=>lv?GT_LV.indexOf(lv):9;
+  const fas=Object.values(fmap).filter(f=>rank(f.prak)<=1||rank(f.zona)<=1).sort((a,b)=>Math.min(rank(a.prak),rank(a.zona))-Math.min(rank(b.prak),rank(b.zona)));
+  const segs=(p?.segmen||[]);
+  const total=p?.total_pipa_km??z?.total_pipa_km??0;
+  if(none&&!K.tersedia){$('#gtBody').innerHTML=setup+evInfo;return;}
+  $('#gtBody').innerHTML=(none?setup:'')+`
+    <div class="gt-stats">
+      <div><div class="n" style="color:${css('--critical')}">${fmt(p?.pipa_km?.tinggi,1)} km</div><div class="k">Pipa di zona prakiraan <b>Tinggi</b> bulan ini</div></div>
+      <div><div class="n">${fmt(p?.pipa_km?.menengah,1)} km</div><div class="k">Pipa di zona prakiraan <b>Menengah</b></div></div>
+      <div><div class="n">${fmt(fas.length)}</div><div class="k">Fasilitas di zona menengah–tinggi (prakiraan/kerentanan)</div></div>
+      <div><div class="n">${near?fmt(near.v.jarak_km,1)+' km':'–'}</div><div class="k">${near?`Kejadian GT terdekat · ${esc(near.e.waktu?.slice(0,10))}`:`Tidak ada kejadian GT tercatat ${K.tersedia?`(${K.hari} hari)`:''}`}</div></div>
+    </div>
+    ${p?segbar(`Prakiraan potensi gerakan tanah${P.periode?' — '+esc(P.periode):''}`,`total jalur pipa ${fmt(total,1)} km`,p.pipa_km,total):''}
+    ${z?segbar('Zona kerentanan gerakan tanah (kondisi geologi dasar)',`total jalur pipa ${fmt(total,1)} km`,z.pipa_km,total):''}
+    ${evInfo}
+    <div class="gt-cols">
+      <div><h4>Fasilitas di zona menengah–tinggi</h4><div class="tbl"><table><thead><tr><th>Fasilitas</th><th>Prakiraan</th><th>Kerentanan</th></tr></thead><tbody>
+        ${fas.length?fas.map((f,i)=>`<tr class="link" data-lat="${f.lat}" data-lon="${f.lon}"><td>${esc(f.aset)}</td><td>${gtBadge(f.prak)}</td><td>${gtBadge(f.zona)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Tidak ada fasilitas di zona menengah–tinggi.</td></tr>'}</tbody></table></div></div>
+      <div><h4>Segmen pipa di zona prakiraan menengah–tinggi</h4><div class="tbl"><table><thead><tr><th>Segmen / ruas</th><th>Tingkat</th><th class="num">Panjang (km)</th></tr></thead><tbody>
+        ${segs.length?segs.map(s=>`<tr><td>${esc(s.aset)}</td><td>${gtBadge(s.level)}</td><td class="num">${fmt(s.km,2)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Tidak ada segmen di zona menengah–tinggi.</td></tr>'}</tbody></table></div></div>
+      <div><h4>Laporan kejadian gerakan tanah (MAGMA)</h4><div class="tbl"><table><thead><tr><th class="num">Jarak</th><th>Lokasi &amp; waktu</th></tr></thead><tbody>
+        ${evs.length?evs.slice(0,30).map(({e,v},i)=>`<tr class="link" data-ev="${i}"><td class="num">${fmt(v.jarak_km,1)} km<br>${badge(v.status)}</td><td>${esc([e.desa,e.kec,e.kab].filter(x=>x&&x!=='-').join(', '))}<br><span style="color:var(--muted)">${esc(e.waktu)}</span></td></tr>`).join(''):'<tr><td colspan="2" class="empty">Belum ada data kejadian.</td></tr>'}</tbody></table></div></div>
+    </div>`;
+  const toMap=(lat,lon,z,html)=>{window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);};
+  document.querySelectorAll('#gtBody tr[data-lat]').forEach(r=>r.onclick=()=>toMap(+r.dataset.lat,+r.dataset.lon,14));
+  document.querySelectorAll('#gtBody tr[data-ev]').forEach(r=>r.onclick=()=>{const e=evs[+r.dataset.ev].e;toMap(e.lat,e.lon,13,evPopup(e));});
+}
+
+function renderFoot(){
+  $('#foot').innerHTML=`Sumber data: <a href="https://sipongi.gakkum.kehutanan.go.id/sebaran-titik-panas" target="_blank" rel="noopener">SiPongi+ Kemenhut</a> (satelit NASA MODIS/VIIRS) ·
+   <a href="https://inatews.bmkg.go.id/" target="_blank" rel="noopener">BMKG InaTEWS</a> (data.bmkg.go.id) ·
+   Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (ESDM One Map, <a href="https://magma.esdm.go.id/" target="_blank" rel="noopener">MAGMA Indonesia</a>) · Cuaca: BMKG / <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> · Aset: KMZ wilayah kerja Pertagas.<br>
+   Hotspot adalah indikasi titik panas dari satelit, bukan konfirmasi kebakaran, sehingga wajib diverifikasi di lapangan. Jarak dihitung ke jalur pipa/fasilitas terdekat. Untuk peringatan dini tsunami resmi, selalu rujuk BMKG.`;
+}
+
+function render(fit){renderStatus();renderTabs();renderTitle();renderKPIs();renderOverviewAreas();drawMap(fit);renderLists();renderWeather();renderGT();renderCharts();renderHsTable();renderFoot();}
+
+$('#fConf').onchange=e=>{state.conf=e.target.value;render(false)};
+$('#btnTheme').onclick=()=>{const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  const nx=cur==='dark'?'light':'dark';document.documentElement.dataset.theme=nx;try{localStorage.setItem('pg-theme',nx)}catch(e){};render(false)};
+document.querySelectorAll('#eqTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#eqTabs button').forEach(x=>x.classList.toggle('on',x===b));state.eqTab=b.dataset.k;renderLists()});
+window.addEventListener('hashchange',()=>{const id=decodeURIComponent(location.hash.slice(1)).toUpperCase();const t=AREAS.includes(id)?id:OV;if(t!==state.tab){state.tab=t;render(true);}});
+setInterval(()=>location.reload(),30*60*1000);
+load().catch(e=>{document.querySelector('.wrap').insertAdjacentHTML('afterbegin',`<div class="banner">Gagal memuat data: ${esc(e.message)}. Jika membuka file langsung dari komputer, jalankan lewat GitHub Pages atau <code>python -m http.server</code>.</div>`)});
+</script>
+</body>
+</html>

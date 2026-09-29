@@ -1,0 +1,88 @@
+{
+  "_petunjuk": "Atur radius analisis, titik cuaca, dan provinsi pantauan di sini. Setelah diubah, commit — workflow berikutnya otomatis memakai nilai baru.",
+  "hotspot": {
+    "sumber_utama": "sipongi",
+    "sipongi_endpoint": "https://opsroom.sipongidata.my.id/api/opsroom/indoHotspot",
+    "sipongi_referer": "https://sipongi.gakkum.kehutanan.go.id/sebaran-titik-panas",
+    "satelit": [
+      "NASA-MODIS",
+      "NASA-SNPP",
+      "NASA-NOAA20",
+      "NASA-NOAA21"
+    ],
+    "confidence": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "periode_jam": 24,
+    "firms_sources": [
+      "VIIRS_SNPP_NRT",
+      "VIIRS_NOAA20_NRT",
+      "VIIRS_NOAA21_NRT",
+      "MODIS_NRT"
+    ],
+    "radius_km": {
+      "kritis": 1,
+      "waspada": 3,
+      "pantau": 5
+    },
+    "simpan_hotspot_sampai_km": 25
+  },
+  "gempa": {
+    "radius_km": {
+      "kritis": 50,
+      "waspada": 150,
+      "pantau": 300
+    },
+    "magnitudo_min_kritis": 5.0
+  },
+  "gerakan_tanah": {
+    "_petunjuk": "Data PVMBG. Layanan dicoba berurutan; bila semua gagal dipakai file manual di gerakan_tanah_raw/ (zkgt.* / prakiraan.*).",
+    "layanan": [
+      {"id": "prakiraan", "nama": "Prakiraan Potensi Gerakan Tanah Bulanan", "refresh_hari": 1,
+       "urls": ["https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Prakiraan_Gerakan_Tanah_Bulanan/MapServer",
+                "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Prakiraan_Gerakan_Tanah_Bulanan/MapServer"]},
+      {"id": "zkgt", "nama": "Zona Kerentanan Gerakan Tanah", "refresh_hari": 30,
+       "urls": ["https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Zona_Kerentanan_Gerakan_Tanah/MapServer",
+                "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Zona_Kerentanan_Gerakan_Tanah/MapServer"]}
+    ],
+    "token_url": "https://geoportal.esdm.go.id/gis4/tokens/generateToken",
+    "koridor_km": 5,
+    "magma_api": "https://magma.esdm.go.id/api",
+    "kejadian_hari": 60,
+    "kejadian_radius_km": {"kritis": 2, "waspada": 10, "pantau": 25}
+  },
+  "provinsi_pantauan": [
+    "Aceh",
+    "Sumatera Utara",
+    "Riau",
+    "Jambi",
+    "Sumatera Selatan",
+    "Banten",
+    "DKI Jakarta",
+    "Jawa Barat"
+  ],
+  "provinsi_area": {
+    "ONSA": ["Aceh", "Sumatera Utara"],
+    "OCSA": ["Jambi", "Sumatera Selatan"],
+    "ODA": ["Riau"],
+    "OSSA": ["Sumatera Selatan"],
+    "OWJA": ["Banten", "DKI Jakarta", "Jawa Barat"]
+  },
+  "titik_cuaca": [
+    {"area": "ONSA", "nama": "SM Arun (Lhokseumawe)", "lat": 5.2216, "lon": 97.0776, "adm4": ""},
+    {"area": "ONSA", "nama": "SKG Pangkalan Brandan", "lat": 4.0173, "lon": 98.2762, "adm4": ""},
+    {"area": "ONSA", "nama": "SM Belawan (Medan)", "lat": 3.7734, "lon": 98.6712, "adm4": ""},
+    {"area": "ODA", "nama": "Metering Station Duri", "lat": 1.2602, "lon": 101.2345, "adm4": ""},
+    {"area": "ODA", "nama": "Metering Station Dumai", "lat": 1.6729, "lon": 101.4741, "adm4": ""},
+    {"area": "OCSA", "nama": "SP3 Tempino (Jambi)", "lat": -1.7945, "lon": 103.5143, "adm4": ""},
+    {"area": "OCSA", "nama": "Booster Station KM 139", "lat": -2.5179, "lon": 104.088, "adm4": ""},
+    {"area": "OSSA", "nama": "Kantor Distrik Palembang", "lat": -3.1023, "lon": 104.7038, "adm4": ""},
+    {"area": "OSSA", "nama": "SM Pulau Layang", "lat": -3.0073, "lon": 104.835, "adm4": ""},
+    {"area": "OWJA", "nama": "Ujung barat jalur (± Cilegon)", "lat": -5.995, "lon": 106.0046, "adm4": ""},
+    {"area": "OWJA", "nama": "Muara Karang / Utara Jakarta", "lat": -6.1099, "lon": 106.7805, "adm4": ""},
+    {"area": "OWJA", "nama": "Simpul Bekasi – Cikarang", "lat": -6.304, "lon": 107.1432, "adm4": ""},
+    {"area": "OWJA", "nama": "Ujung timur jalur (± Cirebon)", "lat": -6.7333, "lon": 108.5409, "adm4": ""}
+  ]
+}
