@@ -70,7 +70,8 @@
     "ODA": ["Riau"],
     "OSSA": ["Sumatera Selatan"],
     "OWJA": ["Banten", "DKI Jakarta", "Jawa Barat"],
-    "OKA": ["Kalimantan Timur"]
+    "OKA": ["Kalimantan Timur"],
+    "ORA": ["Riau"]
   },
   "titik_cuaca": [
     {"area": "ONSA", "nama": "SM Arun (Lhokseumawe)", "lat": 5.2216, "lon": 97.0776, "adm4": ""},
@@ -89,6 +90,10 @@
     {"area": "OKA", "nama": "Ujung selatan jalur (± Balikpapan)", "lat": -1.2446, "lon": 116.8171, "adm4": ""},
     {"area": "OKA", "nama": "LBCV 1 SENBAL (± Senipah)", "lat": -1.0237, "lon": 117.1117, "adm4": ""},
     {"area": "OKA", "nama": "LBCV 3 – lateral IKN", "lat": -1.0907, "lon": 116.9045, "adm4": ""},
-    {"area": "OKA", "nama": "Ujung utara jalur (± Bontang)", "lat": 0.1826, "lon": 117.4879, "adm4": ""}
+    {"area": "OKA", "nama": "Ujung utara jalur (± Bontang)", "lat": 0.1826, "lon": 117.4879, "adm4": ""},
+    {"area": "ORA", "nama": "Minas Tank Farm", "lat": 0.7461, "lon": 101.4629, "adm4": ""},
+    {"area": "ORA", "nama": "Tie-in Libo (Kandis)", "lat": 0.9244, "lon": 101.1578, "adm4": ""},
+    {"area": "ORA", "nama": "Station Batang", "lat": 1.5503, "lon": 101.1797, "adm4": ""},
+    {"area": "ORA", "nama": "Pig Launcher Seg-8 (Balam–Bangko)", "lat": 1.6697, "lon": 100.7622, "adm4": ""}
   ]
 }

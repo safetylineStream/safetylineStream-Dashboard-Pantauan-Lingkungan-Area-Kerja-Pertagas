@@ -18,6 +18,9 @@
     },
     "OKA": {
       "nama": "Operation Kalimantan Area"
+    },
+    "ORA": {
+      "nama": "Operation Rokan Area"
     }
   },
   "files": [
@@ -28,7 +31,8 @@
     {"file": "OSSA_Distrik_Palembang.kmz", "area": "OSSA", "lines": ["JALUR PIPA", "JALUR PIPA GRPU"], "points": ["Kantor & SM", "ASET JALUR PIPA", "ASET GRPU"]},
     {"file": "OSSA_Aset_Jalur_Pipa.kmz", "area": "OSSA", "lines": [], "points": ["*"]},
     {"file": "OWJA_Pipa.kmz", "area": "OWJA", "lines": ["*"], "points": []},
-    {"file": "OKA_Pipeline_Gabungan.kmz", "area": "OKA", "lines": ["Jalur Pipa OKA (DIGIO)", "Jalur Pipa SENBAL (As-Built)"], "points": ["Fasilitas"]}
+    {"file": "OKA_Pipeline_Gabungan.kmz", "area": "OKA", "lines": ["Jalur Pipa OKA (DIGIO)", "Jalur Pipa SENBAL (As-Built)"], "points": ["Fasilitas"]},
+    {"file": "ORA_Pipa_Minyak_Rokan.kmz", "area": "ORA", "lines": ["Jalur Pipa Minyak Rokan"], "points": ["Fasilitas"]}
   ],
   "simplify_tolerance_deg": 0.0003
 }
