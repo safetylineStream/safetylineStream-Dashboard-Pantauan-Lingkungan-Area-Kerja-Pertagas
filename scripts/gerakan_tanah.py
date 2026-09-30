@@ -215,8 +215,8 @@ def analyse(zones, assets_ll, areas):
     return res
 
 
-def area_envelopes(assets_ll, pad=0.05, tile=0.5):
-    """Grid envelope ±0,5° yang hanya menutupi daerah sekitar aset (menghindari unduhan besar)."""
+def area_envelopes(assets_ll, pad=0.05, tile=1.5):
+    """Grid envelope ±1,5° yang hanya menutupi daerah sekitar aset (menghindari unduhan besar)."""
     envs = set()
     for g, _ in assets_ll:
         x0, y0, x1, y1 = g.bounds
@@ -311,7 +311,12 @@ def run(ctx):
     arc = None
     out = {"sumber": "PVMBG – Badan Geologi (ESDM One Map / MAGMA Indonesia)", "koridor_km": gcfg.get("koridor_km", 2)}
 
-    for lay in gcfg["layanan"]:
+    # Layer yang belum punya data diambil lebih dulu, supaya tidak selalu kalah oleh layer lain
+    def prioritas(lay):
+        m = pv.get(lay["id"]) or {}
+        ada = (outdir / f"{lay['id']}.geojson").exists() and m.get("tersedia") and not m.get("demo")
+        return (1 if ada else 0, m.get("diambil") or "")
+    for lay in sorted(gcfg["layanan"], key=prioritas):
         lid = lay["id"]
         cache = outdir / f"{lid}.geojson"
         meta = pv.get(lid) or {}
@@ -321,6 +326,8 @@ def run(ctx):
                 age_ok = (NOW - datetime.fromisoformat(meta["diambil"])).days < lay.get("refresh_hari", 1)
             except ValueError:
                 pass
+        if meta.get("wilayah") != sorted(areas):
+            age_ok = False  # ada wilayah kerja baru/berubah → ambil ulang supaya ikut dianalisis
         if age_ok and not meta.get("demo"):
             out[lid] = meta
             status[f"pvmbg_{lid}"] = {"ok": True, "pesan": "cache masih berlaku"}
@@ -382,7 +389,8 @@ def run(ctx):
         cache.write_text(json.dumps(to_fc(clipped, periode), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         per_area = analyse([(g, lv) for g, lv, _ in clipped], assets_ll, areas)
         out[lid] = {"tersedia": True, "nama": lay["nama"], "sumber": src, "periode": periode,
-                    "diambil": NOW.isoformat(timespec="minutes"), "jumlah_poligon": len(clipped), "per_area": per_area}
+                    "diambil": NOW.isoformat(timespec="minutes"), "jumlah_poligon": len(clipped), "per_area": per_area,
+                    "wilayah": sorted(areas)}
         status.setdefault(f"pvmbg_{lid}", {"ok": True, "jumlah": len(clipped)})
 
     # Laporan kejadian (MAGMA)

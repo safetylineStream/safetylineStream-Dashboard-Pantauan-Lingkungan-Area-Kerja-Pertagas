@@ -18,12 +18,15 @@ Hasil:
 Setiap sumber berdiri sendiri: bila satu gagal, data lama sumber itu dipertahankan
 dan ditandai "stale" sehingga dashboard tetap tampil.
 """
+import contextlib
 import csv
 import io
 import json
 import math
 import os
+import signal
 import sys
+import threading
 import time
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -67,6 +70,24 @@ def sisa_waktu():
     return BUDGET_S - (time.time() - T0)
 
 
+@contextlib.contextmanager
+def batas_waktu(detik):
+    """Hentikan blok bila melebihi `detik` (hanya di thread utama Linux/macOS; selain itu diabaikan)."""
+    if not hasattr(signal, "SIGALRM") or threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
+    def _habis(signum, frame):
+        raise requests.exceptions.Timeout(f"permintaan melebihi {detik:.0f} detik")
+    lama = signal.signal(signal.SIGALRM, _habis)
+    signal.setitimer(signal.ITIMER_REAL, max(1.0, detik))
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, lama)
+
+
 def get(url, params=None, headers=None, timeout=45, tries=2):
     """GET dengan batas koneksi 15 dtk, batas baca `timeout`, maks. `tries` percobaan,
     dan tidak pernah melewati sisa anggaran waktu."""
@@ -76,13 +97,18 @@ def get(url, params=None, headers=None, timeout=45, tries=2):
         if left < 20:
             raise WaktuHabis("anggaran waktu habis, sumber dilewati")
         try:
-            r = requests.get(url, params=params, headers={**UA, **(headers or {})},
-                             timeout=(CONNECT_TIMEOUT, min(timeout, left - 5)))
+            batas = min(timeout, left - 5)
+            # Batas TOTAL waktu satu permintaan (koneksi + unduh). Server yang mengirim data
+            # sangat pelan tidak memicu read-timeout biasa, jadi dipakai alarm sistem.
+            with batas_waktu(batas):
+                r = requests.get(url, params=params, headers={**UA, **(headers or {})},
+                                 timeout=(CONNECT_TIMEOUT, min(30, batas)))
             r.raise_for_status()
             return r
-        except (requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError) as e:
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError,
+                requests.exceptions.ChunkedEncodingError) as e:
             last = e
-            log(f"  tidak bisa terhubung ke server ({type(e).__name__}) — tidak dicoba ulang")
+            log(f"  server tidak merespons/terlalu lambat ({type(e).__name__}: {str(e)[:80]}) — tidak dicoba ulang")
             break
         except Exception as e:  # noqa
             last = e
