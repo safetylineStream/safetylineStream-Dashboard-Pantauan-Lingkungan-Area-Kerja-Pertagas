@@ -40,7 +40,7 @@
   "gerakan_tanah": {
     "_petunjuk": "Data PVMBG. Layanan dicoba berurutan; bila semua gagal dipakai file manual di gerakan_tanah_raw/ (zkgt.* / prakiraan.*).",
     "layanan": [
-      {"id": "prakiraan", "nama": "Prakiraan Potensi Gerakan Tanah Bulanan", "refresh_hari": 1,
+      {"id": "prakiraan", "nama": "Prakiraan Potensi Gerakan Tanah Bulanan", "refresh_hari": 3,
        "urls": ["https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Prakiraan_Gerakan_Tanah_Bulanan/MapServer",
                 "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Prakiraan_Gerakan_Tanah_Bulanan/MapServer"]},
       {"id": "zkgt", "nama": "Zona Kerentanan Gerakan Tanah", "refresh_hari": 30,
@@ -61,14 +61,16 @@
     "Sumatera Selatan",
     "Banten",
     "DKI Jakarta",
-    "Jawa Barat"
+    "Jawa Barat",
+    "Kalimantan Timur"
   ],
   "provinsi_area": {
     "ONSA": ["Aceh", "Sumatera Utara"],
     "OCSA": ["Jambi", "Sumatera Selatan"],
     "ODA": ["Riau"],
     "OSSA": ["Sumatera Selatan"],
-    "OWJA": ["Banten", "DKI Jakarta", "Jawa Barat"]
+    "OWJA": ["Banten", "DKI Jakarta", "Jawa Barat"],
+    "OKA": ["Kalimantan Timur"]
   },
   "titik_cuaca": [
     {"area": "ONSA", "nama": "SM Arun (Lhokseumawe)", "lat": 5.2216, "lon": 97.0776, "adm4": ""},
@@ -83,6 +85,10 @@
     {"area": "OWJA", "nama": "Ujung barat jalur (± Cilegon)", "lat": -5.995, "lon": 106.0046, "adm4": ""},
     {"area": "OWJA", "nama": "Muara Karang / Utara Jakarta", "lat": -6.1099, "lon": 106.7805, "adm4": ""},
     {"area": "OWJA", "nama": "Simpul Bekasi – Cikarang", "lat": -6.304, "lon": 107.1432, "adm4": ""},
-    {"area": "OWJA", "nama": "Ujung timur jalur (± Cirebon)", "lat": -6.7333, "lon": 108.5409, "adm4": ""}
+    {"area": "OWJA", "nama": "Ujung timur jalur (± Cirebon)", "lat": -6.7333, "lon": 108.5409, "adm4": ""},
+    {"area": "OKA", "nama": "Ujung selatan jalur (± Balikpapan)", "lat": -1.2446, "lon": 116.8171, "adm4": ""},
+    {"area": "OKA", "nama": "LBCV 1 SENBAL (± Senipah)", "lat": -1.0237, "lon": 117.1117, "adm4": ""},
+    {"area": "OKA", "nama": "LBCV 3 – lateral IKN", "lat": -1.0907, "lon": 116.9045, "adm4": ""},
+    {"area": "OKA", "nama": "Ujung utara jalur (± Bontang)", "lat": 0.1826, "lon": 117.4879, "adm4": ""}
   ]
 }

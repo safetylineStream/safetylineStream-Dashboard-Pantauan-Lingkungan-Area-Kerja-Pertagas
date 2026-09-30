@@ -1,20 +1,34 @@
 {
   "_petunjuk": "Daftar file aset (KMZ/KML/SHP-zip) di folder assets_raw/. 'lines' = pola nama folder yang berisi jalur pipa, 'points' = pola nama folder fasilitas (stasiun, LBCV, kantor). Pola tidak peka huruf besar/kecil. Pola '*' = ambil semua. Setelah menambah file, jalankan workflow 'Build Aset' atau: python scripts/build_assets.py",
   "areas": {
-    "ONSA": {"nama": "Operation North Sumatera Area"},
-    "OCSA": {"nama": "Operation Central Sumatera Area"},
-    "ODA":  {"nama": "Operation Dumai Area"},
-    "OSSA": {"nama": "Operation South Sumatera Area"},
-    "OWJA": {"nama": "Operation West Java Area"}
+    "ONSA": {
+      "nama": "Operation North Sumatera Area"
+    },
+    "OCSA": {
+      "nama": "Operation Central Sumatera Area"
+    },
+    "ODA": {
+      "nama": "Operation Dumai Area"
+    },
+    "OSSA": {
+      "nama": "Operation South Sumatera Area"
+    },
+    "OWJA": {
+      "nama": "Operation West Java Area"
+    },
+    "OKA": {
+      "nama": "Operation Kalimantan Area"
+    }
   },
   "files": [
-    {"file": "ONSA_Pipa.kmz",               "area": "ONSA", "lines": ["*"], "points": []},
-    {"file": "ONSA_Compile_Juli2026.kmz",   "area": "ONSA", "lines": [], "points": ["Station", "MLBV", "Box Valve"]},
-    {"file": "OCSA_Pipeline_ILI.kmz",       "area": "OCSA", "lines": ["Pipeline"], "points": ["Station & Manifold"]},
-    {"file": "ODA_ROW_Pipeline.kmz",        "area": "ODA",  "lines": ["A. Pipeline PGDD", "B. Pipeline TGI"], "points": ["Metering Station", "2. Tagging"]},
-    {"file": "OSSA_Distrik_Palembang.kmz",  "area": "OSSA", "lines": ["JALUR PIPA", "JALUR PIPA GRPU"], "points": ["Kantor & SM", "ASET JALUR PIPA", "ASET GRPU"]},
-    {"file": "OSSA_Aset_Jalur_Pipa.kmz",    "area": "OSSA", "lines": [], "points": ["*"]},
-    {"file": "OWJA_Pipa.kmz",               "area": "OWJA", "lines": ["*"], "points": []}
+    {"file": "ONSA_Pipa.kmz", "area": "ONSA", "lines": ["*"], "points": []},
+    {"file": "ONSA_Compile_Juli2026.kmz", "area": "ONSA", "lines": [], "points": ["Station", "MLBV", "Box Valve"]},
+    {"file": "OCSA_Pipeline_ILI.kmz", "area": "OCSA", "lines": ["Pipeline"], "points": ["Station & Manifold"]},
+    {"file": "ODA_ROW_Pipeline.kmz", "area": "ODA", "lines": ["A. Pipeline PGDD", "B. Pipeline TGI"], "points": ["Metering Station", "2. Tagging"]},
+    {"file": "OSSA_Distrik_Palembang.kmz", "area": "OSSA", "lines": ["JALUR PIPA", "JALUR PIPA GRPU"], "points": ["Kantor & SM", "ASET JALUR PIPA", "ASET GRPU"]},
+    {"file": "OSSA_Aset_Jalur_Pipa.kmz", "area": "OSSA", "lines": [], "points": ["*"]},
+    {"file": "OWJA_Pipa.kmz", "area": "OWJA", "lines": ["*"], "points": []},
+    {"file": "OKA_Pipeline_Gabungan.kmz", "area": "OKA", "lines": ["Jalur Pipa OKA (DIGIO)", "Jalur Pipa SENBAL (As-Built)"], "points": ["Fasilitas"]}
   ],
   "simplify_tolerance_deg": 0.0003
 }
