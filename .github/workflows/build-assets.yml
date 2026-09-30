@@ -15,35 +15,65 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  jalankan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}   # selalu versi terbaru, bukan versi saat workflow dipicu
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -r requirements.txt
 
-      - name: Konversi KMZ/SHP → data/assets.geojson
+      - name: Install dependensi
+        run: pip install -r requirements.txt
+
+      - name: Konversi KMZ/SHP ke data aset
         run: python scripts/build_assets.py
 
-      - name: Hitung ulang jarak hotspot & gempa terhadap aset baru
+      - name: Hitung ulang hotspot, gempa & cuaca terhadap aset
         env:
+          BAGIAN: utama
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
-          ONEMAP_USERNAME: ${{ secrets.ONEMAP_USERNAME }}     # opsional, akun ESDM One Map
+          ONEMAP_USERNAME: ${{ secrets.ONEMAP_USERNAME }}
           ONEMAP_PASSWORD: ${{ secrets.ONEMAP_PASSWORD }}
-          MAGMA_APP_ID: ${{ secrets.MAGMA_APP_ID }}           # opsional, APP_ID stakeholder MAGMA/PVMBG
+          MAGMA_APP_ID: ${{ secrets.MAGMA_APP_ID }}
           MAGMA_SECRET_KEY: ${{ secrets.MAGMA_SECRET_KEY }}
         run: python scripts/fetch_all.py
         timeout-minutes: 16
         continue-on-error: true
 
-      - name: Simpan hasil
+      - name: Hitung ulang gerakan tanah terhadap aset
+        env:
+          BAGIAN: gerakan_tanah
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+          ONEMAP_USERNAME: ${{ secrets.ONEMAP_USERNAME }}
+          ONEMAP_PASSWORD: ${{ secrets.ONEMAP_PASSWORD }}
+          MAGMA_APP_ID: ${{ secrets.MAGMA_APP_ID }}
+          MAGMA_SECRET_KEY: ${{ secrets.MAGMA_SECRET_KEY }}
+        run: python scripts/fetch_all.py
+        timeout-minutes: 16
+        continue-on-error: true
+
+      - name: Simpan hasil ke repositori
         if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/
-          git diff --cached --quiet || (git commit -m "Build ulang aset $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M WIB')" && git pull --rebase origin ${{ github.ref_name }} && git push)
+          # Simpan hasil baru, ambil versi terbaru repositori, lalu timpa folder data saja.
+          # Dengan cara ini tidak pernah terjadi bentrok dengan data yang disimpan run lain.
+          cp -r data "$RUNNER_TEMP/data_baru"
+          for i in 1 2 3; do
+            git fetch -q origin ${{ github.ref_name }}
+            git reset -q --hard origin/${{ github.ref_name }}
+            rm -rf data && cp -r "$RUNNER_TEMP/data_baru" data
+            git add -A data/
+            if git diff --cached --quiet; then echo "Tidak ada perubahan data."; exit 0; fi
+            git commit -q -m "Build ulang aset $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M WIB')"
+            git push -q origin HEAD:${{ github.ref_name }} && exit 0
+            echo "Push ditolak (ada perubahan baru), mencoba lagi..."; sleep 5
+          done
+          exit 1

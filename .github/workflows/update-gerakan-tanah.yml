@@ -1,10 +1,9 @@
-name: Update Data Harian
+name: Update Gerakan Tanah (PVMBG)
 
-# Hotspot, gempa, cuaca & kualitas udara. Jam GitHub = UTC: 23:00 UTC = 06:00 WIB, 10:00 UTC = 17:00 WIB
+# Dipisah karena server PVMBG/ESDM lambat. 21:30 UTC = 04:30 WIB setiap hari.
 on:
   schedule:
-    - cron: "0 23 * * *"
-    - cron: "0 10 * * *"
+    - cron: "30 21 * * *"
   workflow_dispatch:
 
 permissions:
@@ -31,9 +30,9 @@ jobs:
       - name: Install dependensi
         run: pip install -r requirements.txt
 
-      - name: Ambil hotspot, gempa, cuaca & analisis jarak ke aset
+      - name: Ambil data gerakan tanah PVMBG & analisis terhadap aset
         env:
-          BAGIAN: utama
+          BAGIAN: gerakan_tanah
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
           ONEMAP_USERNAME: ${{ secrets.ONEMAP_USERNAME }}
           ONEMAP_PASSWORD: ${{ secrets.ONEMAP_PASSWORD }}
@@ -57,7 +56,7 @@ jobs:
             rm -rf data && cp -r "$RUNNER_TEMP/data_baru" data
             git add -A data/
             if git diff --cached --quiet; then echo "Tidak ada perubahan data."; exit 0; fi
-            git commit -q -m "Update data $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M WIB')"
+            git commit -q -m "Update gerakan tanah $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M WIB')"
             git push -q origin HEAD:${{ github.ref_name }} && exit 0
             echo "Push ditolak (ada perubahan baru), mencoba lagi..."; sleep 5
           done
