@@ -570,6 +570,25 @@
 "status": "waspada"
 },
 {
+"lat": -2.9074,
+"lon": 104.45461,
+"conf": "medium",
+"sumber": "NASA-MODIS",
+"waktu_utc": "2026-09-30T08:37:00.000000Z",
+"waktu": "Rabu, 30 September 2026 15:37:00",
+"prov": "Sumatera Selatan",
+"kab": "Banyuasin",
+"kec": "Banyuasin Iii",
+"desa": "Pangkalan Panji",
+"jarak_km": 1.85,
+"area": "OCSA",
+"aset": "Segment 10 KP 77-52",
+"jenis_aset": "pipa",
+"fasilitas": "Booster Station KM 52",
+"jarak_fasilitas_km": 2.7,
+"status": "waspada"
+},
+{
 "lat": -0.98489,
 "lon": 117.12566,
 "conf": "medium",
@@ -893,6 +912,25 @@
 "status": "waspada"
 },
 {
+"lat": -6.01035,
+"lon": 105.98481,
+"conf": "medium",
+"sumber": "NASA-MODIS",
+"waktu_utc": "2026-09-30T08:35:00.000000Z",
+"waktu": "Rabu, 30 September 2026 15:35:00",
+"prov": "Banten",
+"kab": "Kota Cilegon",
+"kec": "Ciwandan",
+"desa": "Kubangsari",
+"jarak_km": 2.74,
+"area": "OWJA",
+"aset": "Jalur Pipa OWJA #26",
+"jenis_aset": "pipa",
+"fasilitas": "Meter Arwana Keramik",
+"jarak_fasilitas_km": 345.6,
+"status": "waspada"
+},
+{
 "lat": 0.13488,
 "lon": 117.41222,
 "conf": "medium",
@@ -1213,6 +1251,25 @@
 "jenis_aset": "pipa",
 "fasilitas": "FUTURE GRPU",
 "jarak_fasilitas_km": 4.7,
+"status": "pantau"
+},
+{
+"lat": 0.84685,
+"lon": 101.39101,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-09-29T18:41:00.000000Z",
+"waktu": "Rabu, 30 September 2026 01:41:00",
+"prov": "Riau",
+"kab": "Siak",
+"kec": "Minas",
+"desa": "Minas Barat",
+"jarak_km": 4.52,
+"area": "ORA",
+"aset": "Segmen 2 Minas Tank Farm-NBS",
+"jenis_aset": "pipa",
+"fasilitas": "Tie-in GS-6 (TP-007)-B",
+"jarak_fasilitas_km": 5.5,
 "status": "pantau"
 },
 {
