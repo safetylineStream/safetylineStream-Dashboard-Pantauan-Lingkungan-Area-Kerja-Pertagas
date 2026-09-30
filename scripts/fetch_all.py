@@ -410,111 +410,133 @@ def update_history(areas, hotspots, total_nasional):
 
 
 # ---------------------------------------------------------------- main
+GT_KEYS = ("pvmbg", "pvmbg_prakiraan", "pvmbg_zkgt", "magma_gertan")
+
+
 def main():
+    """BAGIAN=utama → hotspot, gempa, cuaca · BAGIAN=gerakan_tanah → data PVMBG saja · BAGIAN=semua (bawaan)."""
+    bagian = os.environ.get("BAGIAN", "semua").strip().lower()
+    utama, gt = bagian in ("utama", "semua"), bagian in ("gerakan_tanah", "semua")
+    log(f"Mode: {bagian} · anggaran waktu {BUDGET_S/60:.0f} menit")
     assets = Assets()
     prev = {}
     if (DATA / "latest.json").exists():
         prev = json.loads((DATA / "latest.json").read_text(encoding="utf-8"))
-    status = {}
-    out = {"generated_at": NOW.isoformat(timespec="minutes"), "areas": assets.areas,
+    prev_status = prev.get("status_sumber", {})
+    # status bagian yang tidak dijalankan kali ini dibawa dari run sebelumnya
+    status = {k: v for k, v in prev_status.items() if (k in GT_KEYS) != gt} if bagian != "semua" else {}
+    durasi = dict(prev.get("durasi_detik", {})) if bagian != "semua" else {}
+    out = {"generated_at": NOW.isoformat(timespec="minutes") if utama else prev.get("generated_at", NOW.isoformat(timespec="minutes")),
+           "areas": assets.areas,
            "radius": {"hotspot": CFG["hotspot"]["radius_km"], "gempa": CFG["gempa"]["radius_km"]},
-           # nilai awal = data lama bertanda stale; ditimpa bila pengambilan baru berhasil
-           "hotspot": {**prev.get("hotspot", {}), "stale": True},
-           "gempa": {**prev.get("gempa", {}), "stale": True},
+           "hotspot": {**prev.get("hotspot", {}), **({"stale": True} if utama else {})},
+           "gempa": {**prev.get("gempa", {}), **({"stale": True} if utama else {})},
            "cuaca": prev.get("cuaca", []),
-           "gerakan_tanah": {**prev.get("gerakan_tanah", {}), "stale": True}}
+           "gerakan_tanah": {**prev.get("gerakan_tanah", {}), **({"stale": True} if gt else {})}}
+    if gt:
+        out["gerakan_tanah_diperbarui"] = NOW.isoformat(timespec="minutes")
+    elif prev.get("gerakan_tanah_diperbarui"):
+        out["gerakan_tanah_diperbarui"] = prev["gerakan_tanah_diperbarui"]
     if prev.get("demo"):
         out["demo"] = True
 
     def simpan():
         """Tulis latest.json setelah tiap sumber — hasil parsial tetap tersimpan."""
         out["status_sumber"] = status
+        out["durasi_detik"] = durasi
         (DATA / "latest.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
-    # Hotspot
-    raw, src = None, None
-    try:
-        log("Hotspot: SiPongi ...")
-        raw, src = fetch_sipongi(), "SiPongi+ (Kemenhut)"
-        log(f"  {len(raw)} titik nasional")
-    except Exception as e:  # noqa
-        status["sipongi"] = {"ok": False, "pesan": str(e)[:200]}
-        log("  SiPongi gagal:", e)
-    if raw is None or os.environ.get("FIRMS_ALWAYS") == "1":
+    def catat(nama, t0):
+        durasi[nama] = round(time.time() - t0)
+        log(f"  ⏱ {nama}: {durasi[nama]} detik")
+
+    if utama:
+        # Hotspot
+        t = time.time()
+        raw, src = None, None
         try:
-            log("Hotspot: NASA FIRMS ...")
-            f = fetch_firms(assets.bbox)
-            raw = (raw or []) + f
-            src = (src + " + " if src else "") + "NASA FIRMS"
-            status["firms"] = {"ok": True, "jumlah": len(f)}
+            log("Hotspot: SiPongi ...")
+            raw, src = fetch_sipongi(), "SiPongi+ (Kemenhut)"
+            log(f"  {len(raw)} titik nasional")
         except Exception as e:  # noqa
-            status["firms"] = {"ok": False, "pesan": str(e)[:200]}
-            log("  FIRMS:", e)
-    if raw is not None:
-        near, per_prov = analyse_hotspots(raw, assets)
-        status.setdefault("sipongi", {"ok": True, "jumlah": len(raw)})
-        pantau = set(CFG["provinsi_pantauan"])
-        out["hotspot"] = {"sumber": src, "periode_jam": CFG["hotspot"]["periode_jam"], "diperbarui": NOW.isoformat(timespec="minutes"),
-                          "total_nasional": len(raw), "per_provinsi": per_prov,
-                          "provinsi_pantauan": {p: per_prov.get(p, 0) for p in CFG["provinsi_pantauan"]},
-                          "provinsi_area": {a: {p: per_prov.get(p, 0) for p in ps} for a, ps in CFG.get("provinsi_area", {}).items()},
-                          "provinsi_lain": sum(v for k, v in per_prov.items() if k not in pantau),
-                          "dekat_aset": near, "stale": False}
-        update_history(assets.areas, near, len(raw))
-    else:
-        out["hotspot"] = {**prev.get("hotspot", {}), "stale": True}
+            status["sipongi"] = {"ok": False, "pesan": str(e)[:200]}
+            log("  SiPongi gagal:", e)
+        if raw is None or os.environ.get("FIRMS_ALWAYS") == "1":
+            try:
+                log("Hotspot: NASA FIRMS ...")
+                f = fetch_firms(assets.bbox)
+                raw = (raw or []) + f
+                src = (src + " + " if src else "") + "NASA FIRMS"
+                status["firms"] = {"ok": True, "jumlah": len(f)}
+            except Exception as e:  # noqa
+                status["firms"] = {"ok": False, "pesan": str(e)[:200]}
+                log("  FIRMS:", e)
+        if raw is not None:
+            near, per_prov = analyse_hotspots(raw, assets)
+            status.setdefault("sipongi", {"ok": True, "jumlah": len(raw)})
+            pantau = set(CFG["provinsi_pantauan"])
+            out["hotspot"] = {"sumber": src, "periode_jam": CFG["hotspot"]["periode_jam"], "diperbarui": NOW.isoformat(timespec="minutes"),
+                              "total_nasional": len(raw), "per_provinsi": per_prov,
+                              "provinsi_pantauan": {p: per_prov.get(p, 0) for p in CFG["provinsi_pantauan"]},
+                              "provinsi_area": {a: {p: per_prov.get(p, 0) for p in ps} for a, ps in CFG.get("provinsi_area", {}).items()},
+                              "provinsi_lain": sum(v for k, v in per_prov.items() if k not in pantau),
+                              "dekat_aset": near, "stale": False}
+            update_history(assets.areas, near, len(raw))
+        catat("hotspot", t)
+        simpan()
 
-    simpan()
+        # Gempa
+        t = time.time()
+        try:
+            log("Gempa: BMKG ...")
+            out["gempa"] = {**fetch_gempa(assets), "sumber": "BMKG InaTEWS", "stale": False}
+            status["bmkg_gempa"] = {"ok": True}
+        except Exception as e:  # noqa
+            traceback.print_exc()
+            status["bmkg_gempa"] = {"ok": False, "pesan": str(e)[:200]}
+        catat("gempa", t)
+        simpan()
 
-    # Gempa
-    try:
-        log("Gempa: BMKG ...")
-        out["gempa"] = {**fetch_gempa(assets), "sumber": "BMKG InaTEWS", "stale": False}
-        status["bmkg_gempa"] = {"ok": True}
-    except Exception as e:  # noqa
-        traceback.print_exc()
-        status["bmkg_gempa"] = {"ok": False, "pesan": str(e)[:200]}
-        out["gempa"] = {**prev.get("gempa", {}), "stale": True}
+        # Cuaca
+        t = time.time()
+        try:
+            log("Cuaca & kualitas udara ...")
+            out["cuaca"] = fetch_cuaca()
+            status["cuaca"] = {"ok": True, "jumlah_titik": len(out["cuaca"])}
+        except Exception as e:  # noqa
+            traceback.print_exc()
+            status["cuaca"] = {"ok": False, "pesan": str(e)[:200]}
+        catat("cuaca", t)
+        simpan()
 
-    simpan()
-
-    # Cuaca
-    try:
-        log("Cuaca & kualitas udara ...")
-        out["cuaca"] = fetch_cuaca()
-        status["cuaca"] = {"ok": True, "jumlah_titik": len(out["cuaca"])}
-    except Exception as e:  # noqa
-        traceback.print_exc()
-        status["cuaca"] = {"ok": False, "pesan": str(e)[:200]}
-        out["cuaca"] = prev.get("cuaca", [])
-
-    simpan()
-
-    # Gerakan tanah (PVMBG) — paling akhir karena paling berat
-    try:
-        import gerakan_tanah
-        log("Gerakan tanah (PVMBG) ...")
-        out["gerakan_tanah"], st = gerakan_tanah.run({"get": get, "log": log, "CFG": CFG, "ROOT": ROOT, "DATA": DATA,
-                                                      "NOW": NOW, "assets": assets, "prev": prev,
-                                                      "sisa_waktu": sisa_waktu})
-        status.update(st)
-    except Exception as e:  # noqa
-        traceback.print_exc()
-        status["pvmbg"] = {"ok": False, "pesan": str(e)[:200]}
-        out["gerakan_tanah"] = {**prev.get("gerakan_tanah", {}), "stale": True}
+    if gt:
+        # Gerakan tanah (PVMBG) — dijalankan di workflow tersendiri karena servernya lambat
+        t = time.time()
+        for k in GT_KEYS:
+            status.pop(k, None)
+        try:
+            import gerakan_tanah
+            log("Gerakan tanah (PVMBG) ...")
+            out["gerakan_tanah"], st = gerakan_tanah.run({"get": get, "log": log, "CFG": CFG, "ROOT": ROOT, "DATA": DATA,
+                                                          "NOW": NOW, "assets": assets, "prev": prev,
+                                                          "sisa_waktu": sisa_waktu})
+            status.update(st)
+        except Exception as e:  # noqa
+            traceback.print_exc()
+            status["pvmbg"] = {"ok": False, "pesan": str(e)[:200]}
+        catat("gerakan_tanah", t)
 
     # Selama masih ada bagian yang berasal dari data contoh, tetap tandai sebagai demo
-    if prev.get("demo"):
+    if prev.get("demo") and utama:
         fresh = all(status.get(k, {}).get("ok") for k in ("bmkg_gempa", "cuaca")) and not out["hotspot"].get("stale")
         if fresh:
             out.pop("demo", None)
-        else:
-            out["demo"] = True
     simpan()
-    log(f"Durasi: {time.time() - T0:.0f} detik")
+    log(f"Durasi total: {time.time() - T0:.0f} detik")
     log("Selesai →", DATA / "latest.json")
     log(json.dumps(status, ensure_ascii=False))
-    if not any(v.get("ok") for v in status.values()):
+    jalan = [k for k in status if (k in GT_KEYS) == gt or bagian == "semua"]
+    if jalan and not any(status[k].get("ok") for k in jalan):
         sys.exit("Semua sumber gagal")
 
 
