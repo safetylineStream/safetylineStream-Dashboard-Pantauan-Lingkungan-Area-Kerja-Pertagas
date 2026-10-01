@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pemantauan Lingkungan Pertagas</title>
-<meta name="description" content="Dashboard pemantauan hotspot karhutla, gempa bumi & tsunami, cuaca dan kualitas udara per wilayah kerja PT Pertamina Gas">
+<meta name="description" content="Dashboard pemantauan hotspot karhutla, gempa bumi & tsunami, potensi longsor NASA LHASA, cuaca dan kualitas udara per wilayah kerja PT Pertamina Gas">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -169,11 +169,19 @@ footer{font-size:12px;color:var(--muted);padding:8px 0 24px}
 .b-menengah{background:color-mix(in srgb,var(--serious) 18%,transparent);color:#b4502a}
 .b-rendah{background:color-mix(in srgb,var(--warning) 22%,transparent);color:#8a5d00}
 .b-sangat_rendah{background:var(--surface-2);color:var(--ink-2)}
+.b-sedang{background:color-mix(in srgb,var(--serious) 18%,transparent);color:#b4502a}
+:root[data-theme="dark"] .b-sedang{color:var(--serious)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .b-sedang{color:var(--serious)}}
+.ls-cols{display:grid;grid-template-columns:3fr 2fr;gap:12px}
+.ls-cols h4{font-size:13px;margin:0 0 6px}
+.ls-cols .tbl{max-height:300px;margin-top:0}
+.pbar{display:inline-block;width:46px;height:6px;border-radius:3px;background:var(--surface-2);vertical-align:middle;margin-right:6px;overflow:hidden}
+.pbar i{display:block;height:100%}
 :root[data-theme="dark"] .b-menengah{color:var(--serious)} :root[data-theme="dark"] .b-rendah{color:var(--warning)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .b-menengah{color:var(--serious)} :root:not([data-theme="light"]) .b-rendah{color:var(--warning)}}
 .info{padding:10px 12px;border-radius:8px;background:var(--surface-2);font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
 tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
-@media (max-width:1100px){.gt-cols{grid-template-columns:1fr}.gt-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-main{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+@media (max-width:1100px){.gt-cols,.ls-cols{grid-template-columns:1fr}.gt-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-main{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
 @media (max-width:560px){.wrap{padding:12px 16px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#map{height:400px}.kpi .val{font-size:24px}.tab{padding:9px 10px 10px}}
 </style>
 </head>
@@ -182,7 +190,7 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
   <header>
     <div>
       <h1>Pemantauan Lingkungan Aset PT Pertamina Gas</h1>
-      <div class="sub">Hotspot karhutla · Gempa bumi &amp; tsunami · Gerakan tanah (PVMBG) · Cuaca, kelembapan &amp; kualitas udara per wilayah kerja</div>
+      <div class="sub">Hotspot karhutla · Gempa bumi &amp; tsunami · Gerakan tanah (PVMBG) · Potensi longsor harian (NASA LHASA) · Cuaca, kelembapan &amp; kualitas udara per wilayah kerja</div>
     </div>
     <div class="chips" id="status"></div>
   </header>
@@ -248,6 +256,16 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
     <div class="gt-body" id="gtBody"></div>
   </section>
 
+  <section class="card sec" id="lsCard">
+    <h3 id="lsTitle">Potensi longsor harian terhadap jalur pipa (NASA LHASA)</h3>
+    <div class="note" id="lsNote"></div>
+    <div class="sub-tabs" id="lsTabs">
+      <button type="button" data-k="hari_ini" class="on">Hari ini (nowcast)</button>
+      <button type="button" data-k="besok">Besok (prakiraan)</button>
+    </div>
+    <div class="gt-body" id="lsBody"></div>
+  </section>
+
   <section class="grid-2">
     <div class="card">
       <h3 id="trendTitle">Tren hotspot dekat aset (harian)</h3>
@@ -291,10 +309,13 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const fmt=(v,d=0)=>(v===null||v===undefined||v==='')?'–':Number(v).toLocaleString('id-ID',{maximumFractionDigits:d,minimumFractionDigits:d});
 const bust='?t='+Date.now();
 
-let DATA,ASSETS,HIST=[],GT={prakiraan:null,zkgt:null},map,layers={},areaColor={},charts={},AREAS=[];
+let DATA,ASSETS,HIST=[],GT={prakiraan:null,zkgt:null},LS=null,LSR=null,map,layers={},areaColor={},charts={},AREAS=[];
 const GT_LV=['tinggi','menengah','rendah','sangat_rendah'];
 const GT_INFO={tinggi:{label:'Tinggi',v:'--critical'},menengah:{label:'Menengah',v:'--serious'},rendah:{label:'Rendah',v:'--warning'},sangat_rendah:{label:'Sangat rendah',v:'--axis'}};
-const state={tab:OV,conf:'all',eqTab:'terkini'};
+const state={tab:OV,conf:'all',eqTab:'terkini',ls:'hari_ini'};
+const LS_LV=['tinggi','sedang','rendah'];
+const LS_INFO={tinggi:{label:'Tinggi',v:'--critical'},sedang:{label:'Sedang',v:'--serious'},rendah:{label:'Rendah',v:'--warning'}};
+const LS_PROD={hari_ini:'hari ini',besok:'besok'};
 try{const t=localStorage.getItem('pg-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}
 
 async function load(){
@@ -305,7 +326,7 @@ async function load(){
   ]);
   DATA=d;ASSETS=a;HIST=h;
   const gj=u=>fetch(u+bust).then(r=>r.ok?r.json():null).catch(()=>null);
-  [GT.prakiraan,GT.zkgt]=await Promise.all([gj('data/gerakan_tanah/prakiraan.geojson'),gj('data/gerakan_tanah/zkgt.geojson')]);
+  [GT.prakiraan,GT.zkgt,LS,LSR]=await Promise.all([gj('data/gerakan_tanah/prakiraan.geojson'),gj('data/gerakan_tanah/zkgt.geojson'),gj('data/lhasa/lhasa.json'),gj('data/lhasa/ruas.geojson')]);
   AREAS=Object.keys(DATA.areas||ASSETS.areas);
   AREAS.forEach((k,i)=>areaColor[k]=AREA_COLORS[i%AREA_COLORS.length]);
   const fromHash=decodeURIComponent(location.hash.slice(1)).toUpperCase();
@@ -375,6 +396,11 @@ function renderStatus(){
     if(v.sebagian){h+=`<span class="chip" title="${esc(v.pesan||'')}"><span class="dot" style="background:${css('--warning')}"></span>${names[k]||k}: proses ${esc(v.progres)}</span>`;continue;}
     h+=`<span class="chip" title="${esc(v.pesan||'')}"><span class="dot" style="background:${css(v.ok?'--good':'--critical')}"></span>${names[k]||k}: ${v.ok?'OK':'gagal'}</span>`;
   }
+  if(LS){
+    const st=LS.status||{}, p=(LS.produk||{}).hari_ini||{};
+    const ok=st.hari_ini?.ok, old=p.kedaluwarsa;
+    h+=`<span class="chip" title="${esc(st.hari_ini?.pesan||'')}"><span class="dot" style="background:${css(ok?'--good':old?'--warning':'--critical')}"></span>NASA LHASA: ${ok?'OK':old?'data lama':'gagal'}</span>`;
+  }
   $('#status').innerHTML=h;
   let b='';
   if(DATA.demo)b+=`<div class="banner"><b>Data contoh.</b> Angka di halaman ini masih data simulasi untuk pratinjau tampilan. Data asli terisi otomatis setelah GitHub Actions menjalankan workflow <i>Update Data Harian</i> untuk pertama kali.</div>`;
@@ -428,6 +454,7 @@ function renderOverviewAreas(){
       </div>
       <div class="foot"><span>Suhu ${rng(t)}°C · RH ${rng(rh)}%</span></div>
       <div class="foot"><span>Gerakan tanah (prakiraan): ${(()=>{const p=((DATA.gerakan_tanah||{}).prakiraan||{}).per_area?.[k];return p?`${gtBadge(p.terburuk)} ${fmt(p.pipa_km?.tinggi,1)} km pipa zona tinggi`:'–'})()}</span></div>
+      <div class="foot"><span>Longsor NASA LHASA hari ini: ${(()=>{const a=lsArea(k,'hari_ini');return a?`${lsBadge(a.terburuk)} ${fmt((a.pipa_km.tinggi||0)+(a.pipa_km.sedang||0),1)} km pipa ≥ sedang`:'–'})()}</span></div>
       <div class="foot"><span>${qs?`Gempa terdekat ${fmt(qs.per_area[k].jarak_km)} km (M ${fmt(qs.mag,1)})`:'Tidak ada gempa'}</span><span class="go">Buka ›</span></div>
     </button>`;}).join('');
   el.querySelectorAll('.area').forEach(b=>b.onclick=()=>selectTab(b.dataset.id));
@@ -443,9 +470,9 @@ function initMap(){
   base['Peta jalan (OSM)'].addTo(map);
   layers.pipa=L.layerGroup().addTo(map);layers.fas=L.layerGroup().addTo(map);
   layers.gtZona=L.layerGroup();layers.gtPrak=L.layerGroup().addTo(map);layers.gtEv=L.layerGroup().addTo(map);
-  layers.hs=L.layerGroup().addTo(map);layers.eq=L.layerGroup().addTo(map);layers.wx=L.layerGroup().addTo(map);
+  layers.ls=L.layerGroup().addTo(map);layers.hs=L.layerGroup().addTo(map);layers.eq=L.layerGroup().addTo(map);layers.wx=L.layerGroup().addTo(map);
   L.control.layers(base,{'Jalur pipa':layers.pipa,'Fasilitas':layers.fas,'Hotspot':layers.hs,'Gempa':layers.eq,
-    'Prakiraan gerakan tanah (bulan ini)':layers.gtPrak,'Zona kerentanan gerakan tanah':layers.gtZona,'Kejadian gerakan tanah (MAGMA)':layers.gtEv,'Label cuaca':layers.wx},{collapsed:true}).addTo(map);
+    'Prakiraan gerakan tanah (bulan ini)':layers.gtPrak,'Zona kerentanan gerakan tanah':layers.gtZona,'Kejadian gerakan tanah (MAGMA)':layers.gtEv,'Potensi longsor NASA LHASA':layers.ls,'Label cuaca':layers.wx},{collapsed:true}).addTo(map);
   map.createPane('gt');map.getPane('gt').style.zIndex=350;
   L.control.scale({imperial:false}).addTo(map);
 }
@@ -470,6 +497,13 @@ function drawMap(fit){
     L.circleMarker([y,x],{radius:isOV()?3:5,weight:1.5,color:css('--surface'),fillColor:css(areaColor[f.properties.area]),fillOpacity:1})
       .bindPopup(`<b>${esc(f.properties.name)}</b><br>${f.properties.area} · ${esc(f.properties.grup)}`).addTo(layers.fas);
   });
+  if(LSR){
+    const rk={rendah:0,sedang:1,tinggi:2};
+    (LSR.features||[]).filter(f=>f.properties.produk===state.ls&&inTab(f)).sort((a,b)=>rk[a.properties.level]-rk[b.properties.level]).forEach(f=>{
+      const c=css(LS_INFO[f.properties.level].v);
+      L.geoJSON(f,{style:{color:c,weight:7,opacity:.85,lineCap:'round'}}).bindPopup(lsPopup(f.properties)).addTo(layers.ls);
+    });
+  }
   const order={luar:0,pantau:1,waspada:2,kritis:3};
   hotspots().slice().sort((a,b)=>order[a.status]-order[b.status]).forEach(h=>{
     L.circleMarker([h.lat,h.lon],{radius:h.status==='luar'?4:7,weight:2,color:css('--surface'),fillColor:css(STATUS[h.status].v),fillOpacity:.95})
@@ -491,6 +525,7 @@ function drawMap(fit){
   lg+=['kritis','waspada','pantau','luar'].map(k=>`<span><i class="dot" style="background:${css(STATUS[k].v)}"></i>${STATUS[k].label}</span>`).join('');
   lg+=`<span><i class="dot" style="border:2px solid ${css('--quake')};width:10px;height:10px"></i>Episentrum gempa</span>`;
   if(GT.prakiraan||GT.zkgt)lg+=`<span style="margin-left:6px">Gerakan tanah:</span>`+GT_LV.map(k=>`<span><i style="display:inline-block;width:12px;height:10px;border-radius:2px;background:${css(GT_INFO[k].v)};opacity:.6"></i>${GT_INFO[k].label}</span>`).join('');
+  if(LSR&&(LSR.features||[]).length)lg+=`<span style="margin-left:6px">Longsor LHASA ${LS_PROD[state.ls]}:</span>`+LS_LV.map(k=>`<span><i class="line" style="height:5px;background:${css(LS_INFO[k].v)}"></i>${LS_INFO[k].label}</span>`).join('');
   if(gtEvents().length)lg+=`<span><i style="display:inline-block;width:10px;height:10px;background:${css('--quake')};transform:rotate(45deg);border-radius:2px"></i>Kejadian GT</span>`;
   $('#legend').innerHTML=lg;
   const r=DATA.radius.hotspot;
@@ -692,18 +727,84 @@ function renderGT(){
   document.querySelectorAll('#gtBody tr[data-ev]').forEach(r=>r.onclick=()=>{const e=evs[+r.dataset.ev].e;toMap(e.lat,e.lon,13,evPopup(e));});
 }
 
+/* ---------- Potensi longsor NASA LHASA ---------- */
+const lsBadge=lv=>lv?`<span class="badge b-${lv}">${LS_INFO[lv].label}</span>`:'<span class="badge b-aman">✓ Di bawah ambang</span>';
+const lsArea=(k,prod)=>(((LS||{}).produk||{})[prod||state.ls]||{}).per_area?.[k]||null;
+const pbar=p=>`<span class="pbar"><i style="width:${Math.min(100,(p||0)*100)}%;background:${css(p>=LS.ambang.tinggi?'--critical':p>=LS.ambang.sedang?'--serious':p>=LS.ambang.rendah?'--warning':'--axis')}"></i></span>${fmt((p||0)*100)}%`;
+function lsPopup(r){
+  return `<b>Potensi longsor NASA LHASA (${LS_PROD[state.ls]})</b><br>${esc(r.aset)}${isOV()&&r.area?` (${r.area})`:''}<br>Tingkat: ${lsBadge(r.level)}<br>`+
+    `Peluang longsor maks.: <b>${fmt((r.p_maks??r.p)*100)}%</b>${r.km!=null?` · panjang ruas ${fmt(r.km,2)} km`:''}<br>`+
+    (r.lat!=null?`<span style="color:var(--muted)">${r.lat}, ${r.lon}</span> · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${r.lat},${r.lon}">Google Maps</a>`:'');
+}
+function lsSegbar(a){
+  const total=a.total_pipa_km||0, km=a.pipa_km||{}, sum=LS_LV.reduce((s,k)=>s+(km[k]||0),0), rest=Math.max(0,total-sum);
+  const w=v=>total>0?(v/total*100):0;
+  return `<div class="segbar"><div class="lbl"><b>Panjang jalur pipa menurut tingkat potensi longsor (${LS_PROD[state.ls]})</b><span>total ${fmt(total,1)} km</span></div>
+    <div class="bar" role="img" aria-label="Sebaran potensi longsor sepanjang pipa">${LS_LV.map(k=>km[k]>0?`<i title="${LS_INFO[k].label}: ${fmt(km[k],1)} km" style="width:${Math.max(.6,w(km[k]))}%;background:${css(LS_INFO[k].v)}"></i>`:'').join('')}${rest>0?`<i title="Di bawah ambang: ${fmt(rest,1)} km" style="width:${w(rest)}%;background:transparent"></i>`:''}</div>
+    <div class="keys">${LS_LV.map(k=>`<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${css(LS_INFO[k].v)}"></i>${LS_INFO[k].label} <b style="color:var(--ink)">${fmt(km[k]||0,1)} km</b></span>`).join('')}<span>Di bawah ambang ${fmt(rest,1)} km</span></div></div>`;
+}
+function renderLS(){
+  document.querySelectorAll('#lsTabs button').forEach(x=>x.classList.toggle('on',x.dataset.k===state.ls));
+  if(!LS){
+    $('#lsNote').textContent='Sumber: NASA Goddard – Landslide Hazard Assessment for Situational Awareness (LHASA 2)';
+    $('#lsBody').innerHTML=`<div class="info"><b>Data LHASA belum ada.</b> Jalankan workflow <i>Update Potensi Longsor (NASA LHASA)</i> di tab Actions GitHub. Selanjutnya data diperbarui otomatis pukul 05:15 dan 16:15 WIB.</div>`;
+    return;
+  }
+  const P=(LS.produk||{})[state.ls]||{}, st=(LS.status||{})[state.ls]||{}, A=LS.ambang;
+  $('#lsNote').innerHTML=`Sumber: NASA LHASA 2 — peluang longsor akibat hujan (satelit GPM IMERG + kelembapan tanah), resolusi ± 1 km. Berkas NASA diperbarui ${when(P.berkas_diperbarui)} · dianalisis ${when(LS.diambil)} · titik sampel tiap ${fmt(LS.interval_m)} m sepanjang pipa, nilai tertinggi dalam ± ${fmt(LS.koridor_piksel)} km. Ambang NASA: rendah ≥ ${fmt(A.rendah*100)}% · sedang ≥ ${fmt(A.sedang*100)}% · tinggi ≥ ${fmt(A.tinggi*100)}%.`;
+  let warn='';
+  if(P.kedaluwarsa)warn=`<div class="info"><b>Data NASA belum diperbarui.</b> Berkas LHASA terakhir diperbarui ${when(P.berkas_diperbarui)} (± ${fmt(P.umur_jam/24,1)} hari lalu). NASA menyediakan data ini "best effort" dan servernya kadang berhenti. Angka di bawah mungkin tidak mencerminkan hujan hari ini; cek <a href="https://landslides.nasa.gov/viewer" target="_blank" rel="noopener">NASA Landslide Viewer</a>.</div>`;
+  else if(P.stale||!st.ok)warn=`<div class="info"><b>Pengambilan LHASA terakhir gagal</b>${st.pesan?`: ${esc(st.pesan)}`:''}. Yang ditampilkan adalah data sebelumnya.</div>`;
+  if(!P.per_area){$('#lsBody').innerHTML=warn||'<div class="empty">Belum ada data untuk produk ini.</div>';return;}
+  if(isOV()){
+    $('#lsTitle').textContent='Potensi longsor harian terhadap jalur pipa (NASA LHASA) — perbandingan antarwilayah';
+    const rows=AREAS.map(k=>{
+      const a=P.per_area[k];if(!a)return '';
+      const b=lsArea(k,state.ls==='hari_ini'?'besok':'hari_ini');
+      return `<tr class="link" data-id="${k}"><td style="white-space:nowrap"><i class="line" style="background:${css(areaColor[k])};vertical-align:middle;margin-right:6px"></i><b>${k}</b></td>
+        <td class="num">${fmt(a.total_pipa_km,1)}</td><td class="num">${fmt(a.pipa_km.tinggi,1)}</td><td class="num">${fmt(a.pipa_km.sedang,1)}</td><td class="num">${fmt(a.pipa_km.rendah,1)}</td>
+        <td class="num">${fmt(a.fasilitas.length)}</td><td>${pbar(a.p_maks)}</td><td>${lsBadge(a.terburuk)}</td><td>${b?lsBadge(b.terburuk):'–'}</td></tr>`;}).join('');
+    $('#lsBody').innerHTML=warn+`<div class="tbl" style="margin-top:0"><table><thead><tr><th>Wilayah</th><th class="num">Panjang pipa (km)</th><th class="num">Pipa tingkat tinggi (km)</th><th class="num">Pipa tingkat sedang (km)</th><th class="num">Pipa tingkat rendah (km)</th><th class="num">Fasilitas ≥ rendah</th><th>Peluang maks.</th><th>Tingkat terburuk (${LS_PROD[state.ls]})</th><th>Tingkat terburuk (${state.ls==='hari_ini'?'besok':'hari ini'})</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="note" style="padding:6px 0 0">Klik baris untuk membuka tab wilayah. LHASA melengkapi peta prakiraan bulanan PVMBG dengan pemicu hujan harian; bukan pengganti laporan resmi PVMBG/BMKG dan wajib diverifikasi di lapangan.</div>`;
+    document.querySelectorAll('#lsBody tr.link').forEach(r=>r.onclick=()=>selectTab(r.dataset.id));
+    return;
+  }
+  const k=state.tab, a=P.per_area[k];
+  $('#lsTitle').textContent=`Potensi longsor harian di jalur pipa ${k} (NASA LHASA)`;
+  if(!a){$('#lsBody').innerHTML=warn+'<div class="empty">Tidak ada aset wilayah ini dalam data LHASA.</div>';return;}
+  const ruas=a.ruas||[], fas=a.fasilitas||[];
+  $('#lsBody').innerHTML=warn+`
+    <div class="gt-stats">
+      <div><div class="n" style="color:${css('--critical')}">${fmt(a.pipa_km.tinggi,1)} km</div><div class="k">Pipa tingkat <b>Tinggi</b> (${LS_PROD[state.ls]})</div></div>
+      <div><div class="n">${fmt(a.pipa_km.sedang,1)} km</div><div class="k">Pipa tingkat <b>Sedang</b></div></div>
+      <div><div class="n">${fmt(a.pipa_km.rendah,1)} km</div><div class="k">Pipa tingkat <b>Rendah</b></div></div>
+      <div><div class="n">${fmt((a.p_maks||0)*100)}%</div><div class="k">Peluang longsor tertinggi di koridor pipa · ${fmt(fas.length)} fasilitas ≥ rendah</div></div>
+    </div>
+    ${lsSegbar(a)}
+    <div class="ls-cols">
+      <div><h4>Ruas pipa di tingkat rendah–tinggi${a.jumlah_ruas>ruas.length?` (${ruas.length} teratas dari ${a.jumlah_ruas})`:''}</h4><div class="tbl"><table><thead><tr><th>Ruas pipa</th><th>Tingkat</th><th>Peluang maks.</th><th class="num">Panjang (km)</th></tr></thead><tbody>
+        ${ruas.length?ruas.map((r,i)=>`<tr class="link" data-r="${i}"><td>${esc(r.aset)}</td><td>${lsBadge(r.level)}</td><td>${pbar(r.p_maks)}</td><td class="num">${fmt(r.km,2)}</td></tr>`).join(''):`<tr><td colspan="4" class="empty">✓ Tidak ada ruas pipa di atas ambang rendah (${fmt(A.rendah*100)}%) ${LS_PROD[state.ls]}.</td></tr>`}</tbody></table></div></div>
+      <div><h4>Fasilitas di tingkat rendah–tinggi</h4><div class="tbl"><table><thead><tr><th>Fasilitas</th><th>Tingkat</th><th>Peluang</th></tr></thead><tbody>
+        ${fas.length?fas.map((f,i)=>`<tr class="link" data-f="${i}"><td>${esc(f.aset)}</td><td>${lsBadge(f.level)}</td><td>${pbar(f.p)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">✓ Tidak ada fasilitas di atas ambang rendah.</td></tr>'}</tbody></table></div></div>
+    </div>`;
+  const toMap=(r,z)=>{window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});map.setView([r.lat,r.lon],z);L.popup().setLatLng([r.lat,r.lon]).setContent(lsPopup({...r,area:k})).openOn(map);};
+  document.querySelectorAll('#lsBody tr[data-r]').forEach(el=>el.onclick=()=>toMap(ruas[+el.dataset.r],13));
+  document.querySelectorAll('#lsBody tr[data-f]').forEach(el=>el.onclick=()=>toMap(fas[+el.dataset.f],14));
+}
+
 function renderFoot(){
   $('#foot').innerHTML=`Sumber data: <a href="https://sipongi.gakkum.kehutanan.go.id/sebaran-titik-panas" target="_blank" rel="noopener">SiPongi+ Kemenhut</a> (satelit NASA MODIS/VIIRS) ·
    <a href="https://inatews.bmkg.go.id/" target="_blank" rel="noopener">BMKG InaTEWS</a> (data.bmkg.go.id) ·
-   Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (ESDM One Map, <a href="https://magma.esdm.go.id/" target="_blank" rel="noopener">MAGMA Indonesia</a>) · Cuaca: BMKG / <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> · Aset: KMZ wilayah kerja Pertagas.<br>
+   Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (ESDM One Map, <a href="https://magma.esdm.go.id/" target="_blank" rel="noopener">MAGMA Indonesia</a>) · Potensi longsor: <a href="https://landslides.nasa.gov/viewer" target="_blank" rel="noopener">NASA LHASA 2</a> (Goddard Space Flight Center) · Cuaca: BMKG / <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> · Aset: KMZ wilayah kerja Pertagas.<br>
    Hotspot adalah indikasi titik panas dari satelit, bukan konfirmasi kebakaran, sehingga wajib diverifikasi di lapangan. Jarak dihitung ke jalur pipa/fasilitas terdekat. Untuk peringatan dini tsunami resmi, selalu rujuk BMKG.`;
 }
 
-function render(fit){renderStatus();renderTabs();renderTitle();renderKPIs();renderOverviewAreas();drawMap(fit);renderLists();renderWeather();renderGT();renderCharts();renderHsTable();renderFoot();}
+function render(fit){renderStatus();renderTabs();renderTitle();renderKPIs();renderOverviewAreas();drawMap(fit);renderLists();renderWeather();renderGT();renderLS();renderCharts();renderHsTable();renderFoot();}
 
 $('#fConf').onchange=e=>{state.conf=e.target.value;render(false)};
 $('#btnTheme').onclick=()=>{const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
   const nx=cur==='dark'?'light':'dark';document.documentElement.dataset.theme=nx;try{localStorage.setItem('pg-theme',nx)}catch(e){};render(false)};
+document.querySelectorAll('#lsTabs button').forEach(b=>b.onclick=()=>{state.ls=b.dataset.k;renderLS();drawMap(false)});
 document.querySelectorAll('#eqTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#eqTabs button').forEach(x=>x.classList.toggle('on',x===b));state.eqTab=b.dataset.k;renderLists()});
 window.addEventListener('hashchange',()=>{const id=decodeURIComponent(location.hash.slice(1)).toUpperCase();const t=AREAS.includes(id)?id:OV;if(t!==state.tab){state.tab=t;render(true);}});
 setInterval(()=>location.reload(),30*60*1000);

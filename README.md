@@ -20,6 +20,7 @@ Dashboard ini memantau **hotspot karhutla**, **gempa bumi & tsunami**, **gerakan
 | `scripts/build_assets.py` | Mengubah KMZ/SHP → `data/assets.geojson` |
 | `scripts/fetch_all.py` | Mengambil data harian dan menghitung jarak ke aset |
 | `scripts/gerakan_tanah.py` | Mengambil data gerakan tanah PVMBG dan menghitung panjang pipa/fasilitas di tiap zona |
+| `scripts/lhasa.py` | Mengambil peluang longsor harian NASA LHASA dan menilainya di sepanjang seluruh jalur pipa & fasilitas → `data/lhasa/` |
 | `gerakan_tanah_raw/` | (Opsional) file peta gerakan tanah manual bila layanan online tidak bisa diakses |
 | `.github/workflows/` | Jadwal otomatis (update harian & build aset) |
 
@@ -170,6 +171,14 @@ Jika BMKG gagal diakses, sistem otomatis kembali memakai Open-Meteo. PM2.5 tetap
 - **Cadangan manual:** jika layanan online tidak bisa diakses, unduh peta dari ESDM One Map atau Portal MBG PVMBG, lalu unggah ke `gerakan_tanah_raw/` dengan nama `prakiraan.geojson`/`prakiraan.zip` (SHP) dan `zkgt.geojson`/`zkgt.zip`. Kolom atributnya harus memuat teks *Tinggi / Menengah / Rendah / Sangat Rendah*. Setelah diunggah, jalankan **Update Data Harian**.
 - **Pengaturan** ada di `config/monitoring.json` → `gerakan_tanah` (alamat layanan, koridor, radius kejadian, rentang hari).
 
+### B8. Potensi longsor harian NASA LHASA
+- **Apa ini:** NASA LHASA 2 menghitung *peluang terjadinya longsor* (0–100%) setiap hari dari hujan satelit GPM IMERG, kelembapan tanah, dan kerentanan lereng, dengan resolusi ± 1 km. Ada dua produk: **hari ini** (nowcast) dan **besok** (prakiraan).
+- **Analisis:** setiap jalur pipa dipecah menjadi titik tiap 250 m. Di setiap titik diambil nilai LHASA tertinggi dalam ± 1 km. Hasilnya panjang pipa (km) per tingkat (ambang NASA: **rendah ≥ 10%**, **sedang ≥ 50%**, **tinggi ≥ 90%**), daftar ruas pipa dan fasilitas terdampak, serta ruas berwarna di peta.
+- **Jadwal:** workflow **Update Potensi Longsor (NASA LHASA)** berjalan pukul 05:15 dan 16:15 WIB. Untuk menjalankan pertama kali: tab **Actions** → pilih workflow itu → **Run workflow**.
+- **Bila data NASA tidak diperbarui:** NASA menyediakan data ini *best effort*. Bila berkas di server NASA lebih tua dari `maks_umur_jam` (bawaan 48 jam), panel menampilkan peringatan **Data NASA belum diperbarui** dan chip status berwarna kuning.
+- **Pengaturan** ada di `config/monitoring.json` → `lhasa` (alamat berkas, ambang, jarak titik sampel, lebar koridor).
+- Riwayat harian per wilayah tersimpan di `data/lhasa/riwayat.csv` sebagai bukti audit.
+
 ---
 
 ## Bagian C — Pemecahan masalah
@@ -189,4 +198,5 @@ Jika BMKG gagal diakses, sistem otomatis kembali memakai Open-Meteo. PM2.5 tetap
 - **BMKG InaTEWS** (`data.bmkg.go.id/DataMKG/TEWS/`): data terbuka gempa terbaru, M 5.0+ terkini, dan gempa dirasakan, termasuk keterangan potensi tsunami. Cantumkan BMKG sebagai sumber.
 - **Cuaca**: BMKG (`api.bmkg.go.id`, bila `adm4` diisi) dan Open-Meteo. Kualitas udara dari Open-Meteo Air Quality (model CAMS).
 - **PVMBG – Badan Geologi**: *Zona Kerentanan Gerakan Tanah* dan *Prakiraan Potensi Gerakan Tanah Bulanan* dari layanan GIS ESDM One Map (`geoportal.esdm.go.id/gis4/rest/services/...`), serta laporan tanggapan kejadian gerakan tanah dari API stakeholder MAGMA Indonesia. Struktur kolom layanan GIS dideteksi otomatis. Jika PVMBG mengubah nama layanan, perbarui `urls` di `config/monitoring.json`.
+- **NASA LHASA 2** (Goddard Space Flight Center, `maps.nccs.nasa.gov/download/landslides/latest/`): peluang longsor harian akibat hujan. Bersifat indikatif untuk kesiapsiagaan, bukan pengganti informasi resmi PVMBG.
 - Jarak dihitung dari titik hotspot/episentrum ke **jalur pipa atau fasilitas terdekat** pada `data/assets.geojson`. Geometri pipa telah disederhanakan (±30 m) supaya halaman ringan.

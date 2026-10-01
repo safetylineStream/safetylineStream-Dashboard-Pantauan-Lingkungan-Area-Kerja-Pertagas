@@ -53,6 +53,18 @@
     "kejadian_hari": 60,
     "kejadian_radius_km": {"kritis": 2, "waspada": 10, "pantau": 25}
   },
+  "lhasa": {
+    "_petunjuk": "NASA LHASA 2 — peluang longsor harian (0–1) dari hujan satelit. Ambang mengikuti NASA: rendah ≥ 0,1 · sedang ≥ 0,5 · tinggi ≥ 0,9. interval_m = jarak titik sampel di sepanjang pipa; koridor_piksel 1 = ambil nilai tertinggi dalam ± 1 km di sekitar pipa.",
+    "produk": {
+      "hari_ini": "https://maps.nccs.nasa.gov/download/landslides/latest/today.tif",
+      "besok": "https://maps.nccs.nasa.gov/download/landslides/latest/tomorrow.tif"
+    },
+    "ambang": {"rendah": 0.1, "sedang": 0.5, "tinggi": 0.9},
+    "interval_m": 250,
+    "koridor_piksel": 1,
+    "maks_umur_jam": 48,
+    "maks_ruas_per_wilayah": 40
+  },
   "provinsi_pantauan": [
     "Aceh",
     "Sumatera Utara",
