@@ -54,15 +54,14 @@
     "kejadian_radius_km": {"kritis": 2, "waspada": 10, "pantau": 25}
   },
   "lhasa": {
-    "_petunjuk": "NASA LHASA 2 — peluang longsor harian (0–1) dari hujan satelit. Ambang mengikuti NASA: rendah ≥ 0,1 · sedang ≥ 0,5 · tinggi ≥ 0,9. interval_m = jarak titik sampel di sepanjang pipa; koridor_piksel 1 = ambil nilai tertinggi dalam ± 1 km di sekitar pipa.",
-    "produk": {
-      "hari_ini": "https://maps.nccs.nasa.gov/download/landslides/latest/today.tif",
-      "besok": "https://maps.nccs.nasa.gov/download/landslides/latest/tomorrow.tif"
-    },
-    "ambang": {"rendah": 0.1, "sedang": 0.5, "tinggi": 0.9},
+    "_petunjuk": "Model potensi longsor internal mengikuti algoritma NASA LHASA 1.1. Hujan 7 hari (Open-Meteo) dibandingkan ambang ARI95 NASA (lhasa_statis/ARI95_indonesia.tif) lalu dikombinasikan dengan kerentanan lereng kelas 1–5. rasio_waspada = batas tingkat 'Rendah' (mendekati ambang). kerentanan_sumber dicoba berurutan: manual (lhasa_statis/kerentanan.tif), nasa (peta kerentanan global NASA), dem (kemiringan lereng Copernicus DEM). kelas_lereng_derajat = batas kemiringan untuk kelas 2/3/4/5 bila memakai DEM. Hapus data/lhasa/kerentanan_cache.json untuk menghitung ulang kerentanan.",
     "interval_m": 250,
     "koridor_piksel": 1,
-    "maks_umur_jam": 48,
+    "rasio_waspada": 0.75,
+    "kerentanan_sumber": ["manual", "nasa", "dem"],
+    "kerentanan_nasa_url": "https://gpm.nasa.gov/sites/default/files/downloads/global-landslide-susceptibility-map-2-27-23.tif",
+    "dem_url": "https://copernicus-dem-90m.s3.amazonaws.com/{n}/{n}.tif",
+    "kelas_lereng_derajat": [5, 10, 15, 25],
     "maks_ruas_per_wilayah": 40
   },
   "provinsi_pantauan": [

@@ -20,7 +20,8 @@ Dashboard ini memantau **hotspot karhutla**, **gempa bumi & tsunami**, **gerakan
 | `scripts/build_assets.py` | Mengubah KMZ/SHP → `data/assets.geojson` |
 | `scripts/fetch_all.py` | Mengambil data harian dan menghitung jarak ke aset |
 | `scripts/gerakan_tanah.py` | Mengambil data gerakan tanah PVMBG dan menghitung panjang pipa/fasilitas di tiap zona |
-| `scripts/lhasa.py` | Mengambil peluang longsor harian NASA LHASA dan menilainya di sepanjang seluruh jalur pipa & fasilitas → `data/lhasa/` |
+| `scripts/lhasa.py` | Menghitung potensi longsor harian (algoritma NASA LHASA 1.1) di sepanjang seluruh jalur pipa & fasilitas → `data/lhasa/` |
+| `lhasa_statis/` | Ambang hujan ARI95 resmi NASA (potongan Indonesia) dan, opsional, peta kerentanan manual `kerentanan.tif` |
 | `gerakan_tanah_raw/` | (Opsional) file peta gerakan tanah manual bila layanan online tidak bisa diakses |
 | `.github/workflows/` | Jadwal otomatis (update harian & build aset) |
 
@@ -171,13 +172,19 @@ Jika BMKG gagal diakses, sistem otomatis kembali memakai Open-Meteo. PM2.5 tetap
 - **Cadangan manual:** jika layanan online tidak bisa diakses, unduh peta dari ESDM One Map atau Portal MBG PVMBG, lalu unggah ke `gerakan_tanah_raw/` dengan nama `prakiraan.geojson`/`prakiraan.zip` (SHP) dan `zkgt.geojson`/`zkgt.zip`. Kolom atributnya harus memuat teks *Tinggi / Menengah / Rendah / Sangat Rendah*. Setelah diunggah, jalankan **Update Data Harian**.
 - **Pengaturan** ada di `config/monitoring.json` → `gerakan_tanah` (alamat layanan, koridor, radius kejadian, rentang hari).
 
-### B8. Potensi longsor harian NASA LHASA
-- **Apa ini:** NASA LHASA 2 menghitung *peluang terjadinya longsor* (0–100%) setiap hari dari hujan satelit GPM IMERG, kelembapan tanah, dan kerentanan lereng, dengan resolusi ± 1 km. Ada dua produk: **hari ini** (nowcast) dan **besok** (prakiraan).
-- **Analisis:** setiap jalur pipa dipecah menjadi titik tiap 250 m. Di setiap titik diambil nilai LHASA tertinggi dalam ± 1 km. Hasilnya panjang pipa (km) per tingkat (ambang NASA: **rendah ≥ 10%**, **sedang ≥ 50%**, **tinggi ≥ 90%**), daftar ruas pipa dan fasilitas terdampak, serta ruas berwarna di peta.
-- **Jadwal:** workflow **Update Potensi Longsor (NASA LHASA)** berjalan pukul 05:15 dan 16:15 WIB. Untuk menjalankan pertama kali: tab **Actions** → pilih workflow itu → **Run workflow**.
-- **Bila data NASA tidak diperbarui:** NASA menyediakan data ini *best effort*. Bila berkas di server NASA lebih tua dari `maks_umur_jam` (bawaan 48 jam), panel menampilkan peringatan **Data NASA belum diperbarui** dan chip status berwarna kuning.
-- **Pengaturan** ada di `config/monitoring.json` → `lhasa` (alamat berkas, ambang, jarak titik sampel, lebar koridor).
-- Riwayat harian per wilayah tersimpan di `data/lhasa/riwayat.csv` sebagai bukti audit.
+### B8. Potensi longsor harian (model LHASA internal)
+Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya tidak diperbarui sejak akhir 2025. Karena itu dashboard menghitung sendiri dengan **algoritma terbuka NASA LHASA 1.1** (Kirschbaum & Stanley 2018):
+
+1. **Hujan anteseden 7 hari (ARI)**: curah hujan 6 hari terakhir + hari ini (Open-Meteo), hari terbaru diberi bobot terbesar: `ARI = Σ P(hari−k)/(k+1)² ÷ Σ 1/(k+1)²`, k = 0–6.
+2. **Ambang**: ARI dibandingkan dengan **ARI95** — persentil ke-95 ARI historis per sel 0,1° dari berkas resmi NASA (`lhasa_statis/ARI95_indonesia.tif`, satuan 0,1 mm).
+3. **Kerentanan lereng** kelas 1–5 di sepanjang pipa (dihitung sekali lalu disimpan di `data/lhasa/kerentanan_cache.json`). Sumber dicoba berurutan: file manual `lhasa_statis/kerentanan.tif` → peta kerentanan global NASA → pendekatan kemiringan lereng dari Copernicus DEM (kelas: < 5°, 5–10°, 10–15°, 15–25°, ≥ 25°).
+4. **Pohon keputusan LHASA**: hujan > ambang & kerentanan kelas 3–4 → **Sedang**; hujan > ambang & kelas 5 → **Tinggi**. Tambahan Pertagas (bukan bagian LHASA): hujan ≥ 75% ambang & kelas ≥ 3 → **Rendah** (mendekati ambang).
+
+- **Produk:** *hari ini* dan *besok* (memakai prakiraan hujan besok).
+- **Jadwal:** workflow **Update Potensi Longsor (NASA LHASA)** pukul 05:15 dan 16:15 WIB. Jalankan manual: tab **Actions** → pilih workflow → **Run workflow**.
+- **Pengaturan:** `config/monitoring.json` → `lhasa`. Setelah mengubah aset atau sumber kerentanan, kerentanan dihitung ulang otomatis.
+- **Keterbatasan:** ambang ARI95 NASA dibuat dari hujan satelit IMERG, sedangkan hujan harian di sini dari model cuaca Open-Meteo, jadi nilainya bisa sedikit bergeser. Hasilnya indikatif untuk kesiapsiagaan dan wajib diverifikasi di lapangan; rujukan resmi tetap PVMBG.
+- Riwayat harian per wilayah tersimpan di `data/lhasa/riwayat.csv`.
 
 ---
 
@@ -198,5 +205,5 @@ Jika BMKG gagal diakses, sistem otomatis kembali memakai Open-Meteo. PM2.5 tetap
 - **BMKG InaTEWS** (`data.bmkg.go.id/DataMKG/TEWS/`): data terbuka gempa terbaru, M 5.0+ terkini, dan gempa dirasakan, termasuk keterangan potensi tsunami. Cantumkan BMKG sebagai sumber.
 - **Cuaca**: BMKG (`api.bmkg.go.id`, bila `adm4` diisi) dan Open-Meteo. Kualitas udara dari Open-Meteo Air Quality (model CAMS).
 - **PVMBG – Badan Geologi**: *Zona Kerentanan Gerakan Tanah* dan *Prakiraan Potensi Gerakan Tanah Bulanan* dari layanan GIS ESDM One Map (`geoportal.esdm.go.id/gis4/rest/services/...`), serta laporan tanggapan kejadian gerakan tanah dari API stakeholder MAGMA Indonesia. Struktur kolom layanan GIS dideteksi otomatis. Jika PVMBG mengubah nama layanan, perbarui `urls` di `config/monitoring.json`.
-- **NASA LHASA 2** (Goddard Space Flight Center, `maps.nccs.nasa.gov/download/landslides/latest/`): peluang longsor harian akibat hujan. Bersifat indikatif untuk kesiapsiagaan, bukan pengganti informasi resmi PVMBG.
+- **Potensi longsor**: algoritma NASA LHASA 1.1 (github.com/nasa/LHASA, tag v1.1.1) dihitung internal; ambang ARI95 NASA, hujan Open-Meteo, kerentanan dari peta global NASA atau Copernicus DEM GLO-90 (© DLR/Airbus, ESA). Bersifat indikatif, bukan pengganti informasi resmi PVMBG.
 - Jarak dihitung dari titik hotspot/episentrum ke **jalur pipa atau fasilitas terdekat** pada `data/assets.geojson`. Geometri pipa telah disederhanakan (±30 m) supaya halaman ringan.
