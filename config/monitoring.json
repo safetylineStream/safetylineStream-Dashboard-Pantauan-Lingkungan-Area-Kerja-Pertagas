@@ -62,7 +62,9 @@
     "Banten",
     "DKI Jakarta",
     "Jawa Barat",
-    "Kalimantan Timur"
+    "Kalimantan Timur",
+    "Jawa Tengah",
+    "Jawa Timur"
   ],
   "provinsi_area": {
     "ONSA": ["Aceh", "Sumatera Utara"],
@@ -71,7 +73,8 @@
     "OSSA": ["Sumatera Selatan"],
     "OWJA": ["Banten", "DKI Jakarta", "Jawa Barat"],
     "OKA": ["Kalimantan Timur"],
-    "ORA": ["Riau"]
+    "ORA": ["Riau"],
+    "OEJA": ["Jawa Timur", "Jawa Tengah", "Jawa Barat"]
   },
   "titik_cuaca": [
     {"area": "ONSA", "nama": "SM Arun (Lhokseumawe)", "lat": 5.2216, "lon": 97.0776, "adm4": ""},
@@ -94,6 +97,13 @@
     {"area": "ORA", "nama": "Minas Tank Farm", "lat": 0.7461, "lon": 101.4629, "adm4": ""},
     {"area": "ORA", "nama": "Tie-in Libo (Kandis)", "lat": 0.9244, "lon": 101.1578, "adm4": ""},
     {"area": "ORA", "nama": "Station Batang", "lat": 1.5503, "lon": 101.1797, "adm4": ""},
-    {"area": "ORA", "nama": "Pig Launcher Seg-8 (Balam–Bangko)", "lat": 1.6697, "lon": 100.7622, "adm4": ""}
+    {"area": "ORA", "nama": "Pig Launcher Seg-8 (Balam–Bangko)", "lat": 1.6697, "lon": 100.7622, "adm4": ""},
+    {"area": "OEJA", "nama": "LBCV 14 Cisem (± Tegal–Brebes)", "lat": -6.9064, "lon": 108.9181, "adm4": ""},
+    {"area": "OEJA", "nama": "ORF Semarang", "lat": -6.9495, "lon": 110.4465, "adm4": ""},
+    {"area": "OEJA", "nama": "ADK Pig Launcher (± Cepu)", "lat": -7.0275, "lon": 111.4931, "adm4": ""},
+    {"area": "OEJA", "nama": "GRE Station (Gresik)", "lat": -7.1901, "lon": 112.659, "adm4": ""},
+    {"area": "OEJA", "nama": "ORF Porong", "lat": -7.5408, "lon": 112.7478, "adm4": ""},
+    {"area": "OEJA", "nama": "Grati Station (Pasuruan)", "lat": -7.6492, "lon": 113.0215, "adm4": ""},
+    {"area": "OEJA", "nama": "Pagerungan Island", "lat": -6.9584, "lon": 115.9271, "adm4": ""}
   ]
 }

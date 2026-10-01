@@ -21,6 +21,9 @@
     },
     "ORA": {
       "nama": "Operation Rokan Area"
+    },
+    "OEJA": {
+      "nama": "Operation East Java Area"
     }
   },
   "files": [
@@ -32,7 +35,8 @@
     {"file": "OSSA_Aset_Jalur_Pipa.kmz", "area": "OSSA", "lines": [], "points": ["*"]},
     {"file": "OWJA_Pipa.kmz", "area": "OWJA", "lines": ["*"], "points": []},
     {"file": "OKA_Pipeline_Gabungan.kmz", "area": "OKA", "lines": ["Jalur Pipa OKA (DIGIO)", "Jalur Pipa SENBAL (As-Built)"], "points": ["Fasilitas"]},
-    {"file": "ORA_Pipa_Minyak_Rokan.kmz", "area": "ORA", "lines": ["Jalur Pipa Minyak Rokan"], "points": ["Fasilitas"]}
+    {"file": "ORA_Pipa_Minyak_Rokan.kmz", "area": "ORA", "lines": ["Jalur Pipa Minyak Rokan"], "points": ["Fasilitas"]},
+    {"file": "OEJA_Pipeline_Gabungan.kmz", "area": "OEJA", "lines": ["Jalur Pipa OEJA", "Jalur Pipa Cirebon-Semarang (As-Built)"], "points": ["Fasilitas"]}
   ],
   "simplify_tolerance_deg": 0.0003
 }
