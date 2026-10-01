@@ -250,6 +250,94 @@ def to_fc(zones, periode=None):
     return {"type": "FeatureCollection", "periode": periode, "features": feats}
 
 
+# ------------------------------------------------------------------ unduhan bertahap (bisa dilanjutkan)
+def _tile_key(env):
+    return f"{env[0]:.1f}_{env[1]:.1f}"
+
+
+def _tile_hash(assets_ll, env):
+    from shapely.geometry import box
+    import hashlib
+    b = box(*env)
+    h = hashlib.md5()
+    for g, p in assets_ll:
+        if g.intersects(b):
+            h.update(f"{p['area']}|{p['name']}|{[round(v, 3) for v in g.bounds]}".encode())
+    return h.hexdigest()[:12]
+
+
+def ambil_bertahap(arc, lay, assets_ll, corridor, outdir, NOW, log):
+    """Unduh layer per kotak (tile). Tiap tile yang selesai langsung disimpan ke
+    data/gerakan_tanah/cache_<id>/, sehingga bila waktu habis, run berikutnya melanjutkan
+    tile yang belum ada. Tile diunduh ulang bila kedaluwarsa (refresh_hari), layer berganti
+    (mis. prakiraan bulan baru), atau aset di dalam tile berubah."""
+    from shapely.geometry import box
+    lid = lay["id"]
+    cdir = outdir / f"cache_{lid}"
+    cdir.mkdir(parents=True, exist_ok=True)
+    last_err, url, lyr = None, None, None
+    for u in lay["urls"]:
+        try:
+            log(f"PVMBG {lay['nama']}: {u}")
+            lyr = arc.polygon_layers(u)[0]
+            url = u
+            break
+        except TimeoutError:
+            raise
+        except Exception as e:  # noqa
+            last_err = e
+            log("   gagal:", str(e)[:200])
+    if url is None:
+        raise last_err or RuntimeError("layanan tidak tersedia")
+    rfield, rlabels = renderer_labels(lyr)
+    envs = area_envelopes(assets_ll)
+    total, selesai, baru = len(envs), 0, 0
+    try:
+        for env in envs:
+            key, hsh = _tile_key(env), _tile_hash(assets_ll, env)
+            f = cdir / f"{key}.json"
+            if f.exists():
+                try:
+                    c = json.loads(f.read_text(encoding="utf-8"))
+                    umur = (NOW - datetime.fromisoformat(c["diambil"])).days
+                    if c.get("hash") == hsh and c.get("layer") == lyr.get("name") and umur < lay.get("refresh_hari", 1):
+                        selesai += 1
+                        continue
+                except Exception:  # noqa
+                    pass
+            koridor_tile = corridor.intersection(box(*env))
+            feats = []
+            for ft in arc.query_envelope(url, lyr, env):
+                g = esri_to_shape(ft.get("geometry") or {})
+                lv = pick_level(ft["attributes"], rfield, rlabels)
+                if g is None or not lv:
+                    continue
+                g = g.intersection(koridor_tile)
+                if g.is_empty:
+                    continue
+                attrs = ft["attributes"]
+                oid = next((attrs[k] for k in attrs if k.lower() in ("objectid", "fid", "objectid_1")), None)
+                keep = {k: v for k, v in attrs.items() if isinstance(v, (str, int, float)) and not re.match(r"(?i)^(objectid|fid|shape)", k)}
+                feats.append({"oid": oid, "level": lv, "props": dict(list(keep.items())[:8]),
+                              "geometry": mapping(g.simplify(0.0002, preserve_topology=True))})
+            f.write_text(json.dumps({"hash": hsh, "layer": lyr.get("name"), "diambil": NOW.isoformat(timespec="minutes"),
+                                     "features": feats}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            selesai += 1
+            baru += 1
+            log(f"   tile {selesai}/{total} ({key}) tersimpan: {len(feats)} poligon")
+    except TimeoutError as e:
+        raise TimeoutError(f"unduhan bertahap {selesai}/{total} bagian selesai — dilanjutkan pada run berikutnya ({e})")
+    # semua tile lengkap → gabungkan
+    zones, seen = [], set()
+    for env in envs:
+        c = json.loads((cdir / f"{_tile_key(env)}.json").read_text(encoding="utf-8"))
+        for ft in c["features"]:
+            g = shape(ft["geometry"])
+            zones.append((g, ft["level"], ft["props"]))
+    log(f"   lengkap: {total} bagian ({baru} baru diunduh), {len(zones)} poligon")
+    return zones, f"ESDM One Map · {lyr.get('name')}", lyr.get("name")
+
+
 # ------------------------------------------------------------------ kejadian MAGMA
 def fetch_magma(get, cfg, log, now):
     app_id, secret = os.environ.get("MAGMA_APP_ID", ""), os.environ.get("MAGMA_SECRET_KEY", "")
@@ -316,7 +404,7 @@ def run(ctx):
         m = pv.get(lay["id"]) or {}
         ada = (outdir / f"{lay['id']}.geojson").exists() and m.get("tersedia") and not m.get("demo")
         return (1 if ada else 0, m.get("diambil") or "")
-    for lay in sorted(gcfg["layanan"], key=prioritas):
+    for lay in gcfg["layanan"]:  # urutan config: prakiraan (kecil, penting) dulu, lalu zona kerentanan
         lid = lay["id"]
         cache = outdir / f"{lid}.geojson"
         meta = pv.get(lid) or {}
@@ -337,45 +425,20 @@ def run(ctx):
         try:
             if arc is None:
                 arc = ArcGIS(get, gcfg, log, ctx.get("sisa_waktu"))
-            last_err = None
-            for url in lay["urls"]:
-                try:
-                    log(f"PVMBG {lay['nama']}: {url}")
-                    layers = arc.polygon_layers(url)
-                    lyr = layers[0]
-                    rfield, rlabels = renderer_labels(lyr)
-                    raw = {}
-                    for env in area_envelopes(assets_ll):
-                        for f in arc.query_envelope(url, lyr, env):
-                            oid = next((f["attributes"][k] for k in f["attributes"] if k.lower() in ("objectid", "fid", "objectid_1")), id(f))
-                            raw[oid] = f
-                    zones = []
-                    for f in raw.values():
-                        g = esri_to_shape(f.get("geometry") or {})
-                        lv = pick_level(f["attributes"], rfield, rlabels)
-                        if g is not None and lv:
-                            zones.append((g, lv, f["attributes"]))
-                    src, periode = f"ESDM One Map · {lyr.get('name')}", lyr.get("name")
-                    break
-                except TimeoutError as e:
-                    last_err = e
-                    log("   ", e)
-                    break
-                except Exception as e:  # noqa
-                    last_err = e
-                    log("   gagal:", str(e)[:200])
-            if zones is None:
-                raise last_err or RuntimeError("layanan tidak tersedia")
+            zones, src, periode = ambil_bertahap(arc, lay, assets_ll, corridor, outdir, NOW, log)
         except Exception as e:  # noqa
-            status[f"pvmbg_{lid}"] = {"ok": False, "pesan": str(e)[:200]}
+            # unduhan bertahap belum lengkap / layanan gagal
+            raise_msg = str(e)[:200]
+            status[f"pvmbg_{lid}"] = {"ok": False, "pesan": raise_msg}
+            zones = None
             for ext in (".geojson", ".json", ".zip"):
-                p = manual / f"{lid}{ext}"
-                if p.exists():
-                    log(f"  memakai file manual {p.name}")
-                    zones = [(g, norm_level(pick_level(pr, None, {})), pr) for g, pr in read_manual(p)]
+                pm = manual / f"{lid}{ext}"
+                if pm.exists():
+                    log(f"  memakai file manual {pm.name}")
+                    zones = [(g, norm_level(pick_level(pr, None, {})), pr) for g, pr in read_manual(pm)]
                     zones = [z for z in zones if z[1]]
-                    src, periode = f"File manual {p.name}", datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d")
-                    status[f"pvmbg_{lid}"] = {"ok": True, "pesan": f"file manual {p.name}"}
+                    src, periode = f"File manual {pm.name}", datetime.fromtimestamp(pm.stat().st_mtime).strftime("%Y-%m-%d")
+                    status[f"pvmbg_{lid}"] = {"ok": True, "pesan": f"file manual {pm.name}"}
                     break
         if zones is None:
             if meta and not meta.get("demo"):

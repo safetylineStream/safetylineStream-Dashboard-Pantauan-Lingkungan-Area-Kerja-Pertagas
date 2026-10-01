@@ -142,11 +142,24 @@ def main():
         points = [r for r in raw if r[0] == "point" and match(r[2], spec.get("points"))]
 
         generic = {"", "viewuser", "untitled path", "path", "line"}
+        named = []
         for i, (_, name, fp, g) in enumerate(lines, 1):
             if (name or "").strip().lower() in generic:
                 name = f"Jalur Pipa {area} #{i}"
             elif re.fullmatch(r"[\d.,\s]+", name or "") and fp:
                 name = fp[-2] if len(fp) >= 2 and fp[-2].lower().startswith("seg") else fp[-1]
+            named.append((name, fp, g))
+        # Sambungkan potongan pendek bernama sama menjadi ruas utuh (file GIS sering memecah pipa jadi ratusan potongan)
+        if len(named) > 300:
+            grp = {}
+            for name, fp, g in named:
+                grp.setdefault((name, fp[-1] if fp else ""), []).append(g)
+            named = []
+            for (name, fp_last), gs in grp.items():
+                m = linemerge(gs)
+                for part in getattr(m, "geoms", [m]):
+                    named.append((name, [fp_last], part))
+        for name, fp, g in named:
             s = g.simplify(TOL, preserve_topology=False)
             if s.is_empty or s.length == 0:
                 continue
