@@ -372,6 +372,7 @@ function renderStatus(){
   for(const [k,v] of Object.entries(s)){
     if(k==='firms'&&!v.ok&&/belum diisi/.test(v.pesan||''))continue;
     if(k==='magma_gertan'&&!v.ok&&/belum diisi/.test(v.pesan||'')){h+=`<span class="chip" title="${esc(v.pesan)}"><span class="dot" style="background:${css('--axis')}"></span>MAGMA: belum aktif</span>`;continue;}
+    if(v.sebagian){h+=`<span class="chip" title="${esc(v.pesan||'')}"><span class="dot" style="background:${css('--warning')}"></span>${names[k]||k}: proses ${esc(v.progres)}</span>`;continue;}
     h+=`<span class="chip" title="${esc(v.pesan||'')}"><span class="dot" style="background:${css(v.ok?'--good':'--critical')}"></span>${names[k]||k}: ${v.ok?'OK':'gagal'}</span>`;
   }
   $('#status').innerHTML=h;
@@ -637,7 +638,8 @@ function renderGT(){
   const sources=`Sumber: PVMBG – Badan Geologi. Prakiraan: ${esc(P.periode||'–')}${P.diambil?` (diambil ${when(P.diambil)})`:''} · Zona kerentanan: ${esc(Zk.sumber||'–')} · analisis dalam koridor ${fmt(gt.koridor_km||2)} km dari aset`;
   $('#gtNote').innerHTML=sources;
   const none=!P.tersedia&&!Zk.tersedia;
-  const setup=`<div class="info"><b>Data zona & prakiraan belum masuk.</b> Layanan GIS ESDM One Map belum bisa diakses otomatis. Isi secret <code>ONEMAP_USERNAME</code>/<code>ONEMAP_PASSWORD</code>, atau unggah peta ke folder <code>gerakan_tanah_raw/</code> (lihat README bagian B7). Status: ${esc((DATA.status_sumber?.pvmbg_prakiraan||{}).pesan||'-')}</div>`;
+  const prog=['pvmbg_prakiraan','pvmbg_zkgt'].map(k=>DATA.status_sumber?.[k]).filter(v=>v&&v.sebagian);
+  const setup=prog.length?`<div class="info"><b>Data PVMBG sedang diunduh bertahap</b> karena server ESDM lambat: ${['pvmbg_prakiraan','pvmbg_zkgt'].filter(k=>DATA.status_sumber?.[k]?.sebagian).map(k=>`${k==='pvmbg_prakiraan'?'Prakiraan':'Zona kerentanan'} ${esc(DATA.status_sumber[k].progres)} bagian`).join(' · ')}. Progres tersimpan dan dilanjutkan otomatis setiap pukul 04:30 WIB (atau jalankan workflow <i>Update Gerakan Tanah (PVMBG)</i> secara manual).</div>`:`<div class="info"><b>Data zona & prakiraan belum masuk.</b> Layanan GIS ESDM One Map belum bisa diakses otomatis. Isi secret <code>ONEMAP_USERNAME</code>/<code>ONEMAP_PASSWORD</code>, atau unggah peta ke folder <code>gerakan_tanah_raw/</code> (lihat README bagian B7). Status: ${esc((DATA.status_sumber?.pvmbg_prakiraan||{}).pesan||'-')}</div>`;
   const evInfo=K.tersedia?'':`<div class="info"><b>Laporan kejadian (MAGMA) belum aktif.</b> ${/belum diisi/.test(K.pesan||'')?'Ajukan APP_ID stakeholder ke PVMBG, lalu isi secret <code>MAGMA_APP_ID</code> dan <code>MAGMA_SECRET_KEY</code>.':'Pengambilan terakhir gagal: '+esc(K.pesan||'')} Sementara itu, pantau manual di <a href="https://magma.esdm.go.id/v1/gerakan-tanah/tanggapan" target="_blank" rel="noopener">MAGMA – Tanggapan Gerakan Tanah</a>.</div>`;
   if(isOV()){
     $('#gtTitle').textContent='Gerakan tanah & pergeseran tanah (PVMBG) — perbandingan antarwilayah';
