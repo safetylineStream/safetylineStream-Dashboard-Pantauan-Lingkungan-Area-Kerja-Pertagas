@@ -67,7 +67,7 @@ class ArcGIS:
             p["token"] = self.token
         if self.sisa and self.sisa() < 40:
             raise TimeoutError("anggaran waktu habis — data gerakan tanah dilewati untuk run ini")
-        js = self.get(url, params=p, timeout=60).json()
+        js = self.get(url, params=p, timeout=120).json()
         if isinstance(js, dict) and js.get("error"):
             raise RuntimeError(f"ArcGIS error {js['error'].get('code')}: {js['error'].get('message')}")
         return js
@@ -251,6 +251,13 @@ def to_fc(zones, periode=None):
 
 
 # ------------------------------------------------------------------ unduhan bertahap (bisa dilanjutkan)
+class Sebagian(RuntimeError):
+    """Unduhan belum lengkap; bagian yang sudah selesai tetap tersimpan."""
+    def __init__(self, selesai, total, alasan):
+        super().__init__(f"proses {selesai}/{total} bagian — dilanjutkan pada run berikutnya ({alasan})")
+        self.selesai, self.total = selesai, total
+
+
 def _tile_key(env):
     return f"{env[0]:.1f}_{env[1]:.1f}"
 
@@ -291,7 +298,7 @@ def ambil_bertahap(arc, lay, assets_ll, corridor, outdir, NOW, log):
         raise last_err or RuntimeError("layanan tidak tersedia")
     rfield, rlabels = renderer_labels(lyr)
     envs = area_envelopes(assets_ll)
-    total, selesai, baru = len(envs), 0, 0
+    total, selesai, baru, gagal, alasan = len(envs), 0, 0, 0, ""
     try:
         for env in envs:
             key, hsh = _tile_key(env), _tile_hash(assets_ll, env)
@@ -307,7 +314,16 @@ def ambil_bertahap(arc, lay, assets_ll, corridor, outdir, NOW, log):
                     pass
             koridor_tile = corridor.intersection(box(*env))
             feats = []
-            for ft in arc.query_envelope(url, lyr, env):
+            try:
+                hasil = arc.query_envelope(url, lyr, env)
+            except TimeoutError:
+                raise
+            except Exception as e:  # noqa — server lambat untuk tile ini: lewati, coba lagi di run berikutnya
+                gagal += 1
+                alasan = str(e)[:120]
+                log(f"   tile {key} dilewati: {alasan}")
+                continue
+            for ft in hasil:
                 g = esri_to_shape(ft.get("geometry") or {})
                 lv = pick_level(ft["attributes"], rfield, rlabels)
                 if g is None or not lv:
@@ -326,7 +342,9 @@ def ambil_bertahap(arc, lay, assets_ll, corridor, outdir, NOW, log):
             baru += 1
             log(f"   tile {selesai}/{total} ({key}) tersimpan: {len(feats)} poligon")
     except TimeoutError as e:
-        raise TimeoutError(f"unduhan bertahap {selesai}/{total} bagian selesai — dilanjutkan pada run berikutnya ({e})")
+        raise Sebagian(selesai, total, "waktu run habis")
+    if gagal:
+        raise Sebagian(selesai, total, f"{gagal} bagian belum dijawab server")
     # semua tile lengkap → gabungkan
     zones, seen = [], set()
     for env in envs:
@@ -430,6 +448,8 @@ def run(ctx):
             # unduhan bertahap belum lengkap / layanan gagal
             raise_msg = str(e)[:200]
             status[f"pvmbg_{lid}"] = {"ok": False, "pesan": raise_msg}
+            if isinstance(e, Sebagian):
+                status[f"pvmbg_{lid}"].update({"sebagian": True, "progres": f"{e.selesai}/{e.total}"})
             zones = None
             for ext in (".geojson", ".json", ".zip"):
                 pm = manual / f"{lid}{ext}"

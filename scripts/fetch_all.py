@@ -102,7 +102,7 @@ def get(url, params=None, headers=None, timeout=45, tries=2):
             # sangat pelan tidak memicu read-timeout biasa, jadi dipakai alarm sistem.
             with batas_waktu(batas):
                 r = requests.get(url, params=params, headers={**UA, **(headers or {})},
-                                 timeout=(CONNECT_TIMEOUT, min(30, batas)))
+                                 timeout=(CONNECT_TIMEOUT, batas))
             r.raise_for_status()
             return r
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError,
