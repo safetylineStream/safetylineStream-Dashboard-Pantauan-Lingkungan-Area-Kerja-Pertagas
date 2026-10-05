@@ -27,7 +27,13 @@
       "waspada": 3,
       "pantau": 5
     },
-    "simpan_hotspot_sampai_km": 25
+    "simpan_hotspot_sampai_km": 25,
+    "persisten": {
+      "_petunjuk": "Hotspot ditandai 'berulang' bila ada deteksi dalam radius_km pada >= min_hari tanggal berbeda selama jendela_hari terakhir. Biasanya sumber panas industri/flare atau kebakaran yang berlangsung lama (mis. gambut). Tetap ditampilkan — hanya diberi tanda untuk verifikasi.",
+      "jendela_hari": 7,
+      "radius_km": 1.0,
+      "min_hari": 3
+    }
   },
   "gempa": {
     "radius_km": {
@@ -40,10 +46,10 @@
   "gerakan_tanah": {
     "_petunjuk": "Data PVMBG. Layanan dicoba berurutan; bila semua gagal dipakai file manual di gerakan_tanah_raw/ (zkgt.* / prakiraan.*).",
     "layanan": [
-      {"id": "prakiraan", "nama": "Prakiraan Potensi Gerakan Tanah Bulanan", "refresh_hari": 3,
+      {"id": "prakiraan", "nama": "Prakiraan Potensi Gerakan Tanah Bulanan", "refresh_hari": 1, "tile_maks_hari": 35,
        "urls": ["https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Prakiraan_Gerakan_Tanah_Bulanan/MapServer",
                 "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Prakiraan_Gerakan_Tanah_Bulanan/MapServer"]},
-      {"id": "zkgt", "nama": "Zona Kerentanan Gerakan Tanah", "refresh_hari": 30,
+      {"id": "zkgt", "nama": "Zona Kerentanan Gerakan Tanah", "refresh_hari": 30, "tile_maks_hari": 90,
        "urls": ["https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Zona_Kerentanan_Gerakan_Tanah/MapServer",
                 "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Zona_Kerentanan_Gerakan_Tanah/MapServer"]}
     ],

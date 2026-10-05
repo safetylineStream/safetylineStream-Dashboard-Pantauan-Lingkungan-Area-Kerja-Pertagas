@@ -24,6 +24,7 @@ import io
 import json
 import math
 import os
+import re
 import signal
 import sys
 import threading
@@ -38,12 +39,16 @@ from shapely.geometry import Point, shape
 from shapely.ops import nearest_points, transform, unary_union
 from shapely.strtree import STRtree
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from geo import BBOX_INDONESIA, IndeksTitik, classify, hari_berulang, haversine, perbaiki_latlon, valid_ll  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 HIST = DATA / "history"
 CFG = json.loads((ROOT / "config" / "monitoring.json").read_text(encoding="utf-8"))
 WIB = timezone(timedelta(hours=7))
 NOW = datetime.now(WIB)
+KUALITAS = {}  # catatan validasi data run ini (koordinat invalid/tertukar, duplikat) → latest.json
 UA = {"User-Agent": "Pertagas-QMHSE-EnvDashboard/1.0 (+github actions; monitoring aset pipa)",
       "Accept": "application/json,text/plain,*/*"}
 
@@ -117,14 +122,6 @@ def get(url, params=None, headers=None, timeout=45, tries=2):
     raise last
 
 
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0088
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp, dl = p2 - p1, math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * R * math.asin(math.sqrt(a))
-
-
 def fnum(v):
     try:
         return float(str(v).replace(",", ".").split()[0])
@@ -178,16 +175,6 @@ class Assets:
         return x0 - pad_deg <= lon <= x1 + pad_deg and y0 - pad_deg <= lat <= y1 + pad_deg
 
 
-def classify(d, radii):
-    if d <= radii["kritis"]:
-        return "kritis"
-    if d <= radii["waspada"]:
-        return "waspada"
-    if d <= radii["pantau"]:
-        return "pantau"
-    return "luar"
-
-
 # ---------------------------------------------------------------- hotspot
 def fetch_sipongi():
     h = CFG["hotspot"]
@@ -200,13 +187,21 @@ def fetch_sipongi():
     feats = js.get("features") if isinstance(js, dict) else js
     if feats is None and isinstance(js, dict):
         feats = js.get("data") or []
+    if not isinstance(feats, list):
+        raise ValueError(f"format respons SiPongi tidak dikenal: {str(js)[:120]}")
     out = []
-    for f in feats or []:
+    for f in feats:
+        if not isinstance(f, dict):
+            continue
         p = f.get("properties", f)
         geom = f.get("geometry") or {}
         coords = geom.get("coordinates") or [p.get("long") or p.get("lon"), p.get("lat")]
-        lon, lat = fnum(coords[0]), fnum(coords[1])
-        if lat is None or lon is None:
+        if not isinstance(coords, (list, tuple)) or len(coords) < 2:
+            continue
+        lat, lon, cek = perbaiki_latlon(fnum(coords[1]), fnum(coords[0]))
+        if cek != "ok":
+            KUALITAS["hotspot_" + cek] = KUALITAS.get("hotspot_" + cek, 0) + 1
+        if lat is None:
             continue
         conf = str(p.get("confidence_level") or "").lower() or "unknown"
         out.append({
@@ -237,9 +232,46 @@ def fetch_firms(bbox):
                 v = fnum(c) or 0
                 conf = "low" if v < 30 else ("medium" if v < 80 else "high")
             t = f"{row.get('acq_date')}T{str(row.get('acq_time','0')).zfill(4)[:2]}:{str(row.get('acq_time','0')).zfill(4)[2:]}:00Z"
-            out.append({"lat": round(float(row["latitude"]), 5), "lon": round(float(row["longitude"]), 5),
+            lat, lon, cek = perbaiki_latlon(fnum(row.get("latitude")), fnum(row.get("longitude")))
+            if lat is None:
+                KUALITAS["hotspot_invalid"] = KUALITAS.get("hotspot_invalid", 0) + 1
+                continue
+            out.append({"lat": round(lat, 5), "lon": round(lon, 5),
                         "conf": conf, "sumber": "FIRMS-" + src, "waktu_utc": t, "waktu": t,
                         "prov": "", "kab": "", "kec": "", "desa": ""})
+    return out
+
+
+def dedupe_hotspots(raw):
+    """Buang rekaman identik (lokasi, waktu akuisisi & satelit sama) — mis. bila SiPongi & FIRMS digabung."""
+    seen, out = set(), []
+    for hs in raw:
+        k = (round(hs["lat"], 4), round(hs["lon"], 4), str(hs.get("waktu_utc"))[:16], str(hs.get("sumber")).split("-")[-1].upper())
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append(hs)
+    if len(out) < len(raw):
+        KUALITAS["hotspot_duplikat_dibuang"] = len(raw) - len(out)
+    return out
+
+
+def arsip_hotspot(hari):
+    """Deteksi hotspot dekat aset dari arsip harian `hari` hari terakhir (tanpa duplikat)."""
+    batas = (NOW - timedelta(days=hari)).strftime("%Y-%m-%d")
+    seen, out = set(), []
+    for f in sorted(HIST.glob("hotspot_*.json")):
+        tgl = f.stem.replace("hotspot_", "")
+        if tgl < batas:
+            continue
+        try:
+            for t in json.loads(f.read_text(encoding="utf-8")):
+                k = (t.get("lat"), t.get("lon"), t.get("waktu_utc"))
+                if valid_ll(t.get("lat"), t.get("lon")) and k not in seen:
+                    seen.add(k)
+                    out.append(t)
+        except Exception as e:  # noqa — arsip rusak tidak boleh menggagalkan run
+            log(f"  arsip {f.name} dilewati: {e}")
     return out
 
 
@@ -247,8 +279,11 @@ def analyse_hotspots(raw, assets):
     h = CFG["hotspot"]
     radii = h["radius_km"]
     keep = h.get("simpan_hotspot_sampai_km", 25)
+    pc = h.get("persisten", {})
+    p_hari, p_r, p_min = pc.get("jendela_hari", 7), pc.get("radius_km", 1.0), pc.get("min_hari", 3)
     pad = keep / 100.0 + 0.1
     near, per_prov = [], {}
+    raw = dedupe_hotspots(raw)
     for hs in raw:
         if hs["prov"]:
             per_prov[hs["prov"]] = per_prov.get(hs["prov"], 0) + 1
@@ -262,6 +297,13 @@ def analyse_hotspots(raw, assets):
                      "aset": props["name"], "jenis_aset": props["kind"],
                      "fasilitas": fp["name"] if fp else "", "jarak_fasilitas_km": round(fd, 1) if fp else None,
                      "status": classify(d, radii)})
+    # Titik panas berulang: deteksi di lokasi yang sama (≤ p_r km) pada ≥ p_min tanggal berbeda dalam
+    # p_hari hari terakhir. Bisa sumber panas industri/flare, atau kebakaran yang berlangsung lama
+    # (mis. gambut) — TIDAK disembunyikan, hanya diberi tanda supaya diverifikasi.
+    idx = IndeksTitik(arsip_hotspot(p_hari) + near)
+    for x in near:
+        x["berulang_hari"] = hari_berulang(x, idx, p_r)
+        x["persisten"] = x["berulang_hari"] >= p_min
     near.sort(key=lambda x: x["jarak_km"])
     return near, dict(sorted(per_prov.items(), key=lambda kv: -kv[1]))
 
@@ -270,16 +312,33 @@ def analyse_hotspots(raw, assets):
 BMKG_TEWS = "https://data.bmkg.go.id/DataMKG/TEWS/"
 
 
+def tsunami_dari_potensi(teks):
+    """True hanya bila teks BMKG menyatakan berpotensi tsunami (bukan 'Tidak berpotensi tsunami')."""
+    t = re.sub(r"\s+", " ", str(teks or "")).strip().lower()
+    return bool(re.search(r"(?<!tidak )berpotensi tsunami", t))
+
+
 def parse_gempa(g, assets):
-    lat, lon = [fnum(x) for x in g["Coordinates"].split(",")]
+    try:
+        lat, lon = [fnum(x) for x in str(g["Coordinates"]).split(",")[:2]]
+    except (KeyError, ValueError):
+        lat = lon = None
+    if not valid_ll(lat, lon):
+        # BMKG: Coordinates = "lat,lon". Bila kosong/rusak pakai Lintang/Bujur teks (mis. "3.14 LS").
+        def dari_teks(v, neg):
+            x = fnum(v)
+            return None if x is None else (-x if neg in str(v).upper() else x)
+        lat, lon = dari_teks(g.get("Lintang"), "LS"), dari_teks(g.get("Bujur"), "BB")
+    if not valid_ll(lat, lon):
+        raise ValueError(f"koordinat gempa tidak valid: {g.get('Coordinates')}")
     d, props = assets.nearest(lat, lon)
     fd, fp = assets.nearest_facility(lat, lon)
-    mag = fnum(g.get("Magnitude")) or 0
+    mag = fnum(g.get("Magnitude"))
     radii = CFG["gempa"]["radius_km"]
 
     def status_of(dist):
         s_ = classify(dist, radii)
-        if s_ == "kritis" and mag < CFG["gempa"].get("magnitudo_min_kritis", 5):
+        if s_ == "kritis" and (mag is None or mag < CFG["gempa"].get("magnitudo_min_kritis", 5)):
             s_ = "waspada"
         return s_
 
@@ -291,7 +350,7 @@ def parse_gempa(g, assets):
         per_area[code] = {"jarak_km": round(da, 1), "aset": pa["name"],
                           "fasilitas": fpa["name"] if fpa else "", "status": status_of(da)}
     potensi = g.get("Potensi", "") or ""
-    tsunami = ("berpotensi tsunami" in potensi.lower() and "tidak" not in potensi.lower())
+    tsunami = tsunami_dari_potensi(potensi)
     return {
         "waktu": f"{g.get('Tanggal','')} {g.get('Jam','')}", "datetime": g.get("DateTime"),
         "lat": lat, "lon": lon, "mag": mag, "kedalaman": g.get("Kedalaman"),
@@ -304,13 +363,31 @@ def parse_gempa(g, assets):
     }
 
 
-def fetch_gempa(assets):
-    out = {}
+def fetch_gempa(assets, prev):
+    """Tiga daftar BMKG diambil terpisah: bila satu gagal, daftar lain tetap dipakai dan daftar
+    yang gagal memakai data sebelumnya (ditandai di `gagal`)."""
+    out, gagal = {}, {}
     for key, fn in [("terbaru", "autogempa.json"), ("terkini", "gempaterkini.json"), ("dirasakan", "gempadirasakan.json")]:
-        js = get(BMKG_TEWS + fn).json()["Infogempa"]["gempa"]
-        lst = js if isinstance(js, list) else [js]
-        out[key] = [parse_gempa(g, assets) for g in lst]
-    out["terbaru"] = out["terbaru"][0] if out["terbaru"] else None
+        try:
+            js = get(BMKG_TEWS + fn).json()["Infogempa"]["gempa"]
+            lst = js if isinstance(js, list) else [js]
+            hasil = []
+            for g in lst:
+                try:
+                    hasil.append(parse_gempa(g, assets))
+                except Exception as e:  # noqa — satu rekaman rusak tidak menggagalkan daftar
+                    KUALITAS["gempa_dilewati"] = KUALITAS.get("gempa_dilewati", 0) + 1
+                    log(f"  rekaman gempa dilewati: {e}")
+            out[key] = hasil[0] if key == "terbaru" else hasil
+            if key == "terbaru" and not hasil:
+                out[key] = None
+        except Exception as e:  # noqa
+            gagal[key] = str(e)[:160]
+            log(f"  BMKG {fn} gagal: {e}")
+            out[key] = prev.get(key) if key == "terbaru" else (prev.get(key) or [])
+    if len(gagal) == 3:
+        raise RuntimeError("semua data gempa BMKG gagal: " + "; ".join(gagal.values()))
+    out["gagal"] = gagal
     return out
 
 
@@ -334,10 +411,14 @@ def fetch_openmeteo(points):
         "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code,wind_speed_10m_max",
     }).json()
     w = w if isinstance(w, list) else [w]
+    if len(w) != len(points) or any(not isinstance(x, dict) or "current" not in x for x in w):
+        raise ValueError("respons Open-Meteo tidak lengkap/tidak sesuai jumlah titik")
     try:
         aq = get("https://air-quality-api.open-meteo.com/v1/air-quality", params={
             "latitude": lat, "longitude": lon, "timezone": "Asia/Jakarta", "current": "pm2_5,pm10,us_aqi"}).json()
         aq = aq if isinstance(aq, list) else [aq]
+        if len(aq) != len(points):
+            raise ValueError("jumlah titik kualitas udara tidak sesuai")
     except Exception as e:  # noqa
         log("  kualitas udara gagal:", e)
         aq = [{}] * len(points)
@@ -348,7 +429,10 @@ def fetch_openmeteo(points):
         a = (ai or {}).get("current", {})
         res.append({
             **{k: p[k] for k in ("area", "nama", "lat", "lon")},
-            "sumber": "Open-Meteo", "waktu": c.get("time"),
+            # Open-Meteo = keluaran MODEL cuaca (bukan stasiun pengamatan). `waktu` = jam data (WIB),
+            # nilai "current" adalah data 15-menitan; hujan = akumulasi 15 menit sebelumnya.
+            "sumber": "Open-Meteo", "jenis": "model", "waktu": c.get("time"),
+            "pm_sumber": "CAMS global (~45 km) via Open-Meteo" if a else None, "pm_waktu": a.get("time"),
             "suhu": c.get("temperature_2m"), "terasa": c.get("apparent_temperature"),
             "rh": c.get("relative_humidity_2m"), "hujan_mm": c.get("precipitation"),
             "cuaca": WMO.get(c.get("weather_code"), f"Kode {c.get('weather_code')}"),
@@ -367,8 +451,16 @@ def bmkg_now(adm4):
     """Ambil prakiraan BMKG terdekat dengan jam sekarang untuk satu kode adm4."""
     js = get("https://api.bmkg.go.id/publik/prakiraan-cuaca", params={"adm4": adm4}, timeout=30).json()
     rows = [x for day in js["data"][0]["cuaca"] for x in day]
-    best = min(rows, key=lambda x: abs(datetime.fromisoformat(x["local_datetime"]).replace(tzinfo=WIB) - NOW))
-    return {"sumber": "BMKG", "waktu": best["local_datetime"], "suhu": best.get("t"), "rh": best.get("hu"),
+
+    def t_utc(x):
+        # local_datetime mengikuti zona lokasi (WIB/WITA/WIT) → bandingkan memakai utc_datetime
+        if x.get("utc_datetime"):
+            return datetime.fromisoformat(x["utc_datetime"]).replace(tzinfo=timezone.utc)
+        return datetime.fromisoformat(x["local_datetime"]).replace(tzinfo=WIB)
+    best = min(rows, key=lambda x: abs(t_utc(x) - NOW))
+    # BMKG = PRAKIRAAN per 3 jam (jam terdekat), bukan pengamatan. ws dalam km/jam.
+    return {"sumber": "BMKG", "jenis": "prakiraan", "waktu": t_utc(best).astimezone(WIB).strftime("%Y-%m-%dT%H:%M"),
+            "suhu": best.get("t"), "rh": best.get("hu"),
             "cuaca": best.get("weather_desc"), "angin_kmh": best.get("ws"), "angin_arah": best.get("wd"),
             "jarak_pandang": best.get("vs_text"), "lokasi_bmkg": js.get("lokasi", {}).get("desa")}
 
@@ -396,10 +488,13 @@ def update_history(areas, hotspots, total_nasional):
         rows = [r for r in csv.DictReader(path.open(encoding="utf-8")) if r["tanggal"] != today]
     for code in areas:
         c = {s: sum(1 for h in hotspots if h["area"] == code and h["status"] == s) for s in ("kritis", "waspada", "pantau")}
+        # jumlah hotspot ≤ radius pantau yang berulang di lokasi sama (lihat analyse_hotspots)
+        c["persisten"] = sum(1 for h in hotspots if h["area"] == code and h["status"] != "luar" and h.get("persisten"))
         rows.append({"tanggal": today, "area": code, **c, "total_nasional": total_nasional})
     rows.sort(key=lambda r: (r["tanggal"], r["area"]))
     with path.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["tanggal", "area", "kritis", "waspada", "pantau", "total_nasional"])
+        w = csv.DictWriter(f, fieldnames=["tanggal", "area", "kritis", "waspada", "pantau", "persisten", "total_nasional"],
+                           restval="")
         w.writeheader()
         w.writerows(rows)
     cutoff = (NOW - timedelta(days=120)).strftime("%Y-%m-%d")
@@ -421,20 +516,35 @@ def main():
     assets = Assets()
     prev = {}
     if (DATA / "latest.json").exists():
-        prev = json.loads((DATA / "latest.json").read_text(encoding="utf-8"))
+        try:
+            prev = json.loads((DATA / "latest.json").read_text(encoding="utf-8"))
+        except Exception as e:  # noqa — berkas lama rusak: mulai dari kosong, jangan gagal
+            log("  latest.json lama tidak terbaca:", e)
     prev_status = prev.get("status_sumber", {})
     # status bagian yang tidak dijalankan kali ini dibawa dari run sebelumnya
     status = {k: v for k, v in prev_status.items() if (k in GT_KEYS) != gt} if bagian != "semua" else {}
     durasi = dict(prev.get("durasi_detik", {})) if bagian != "semua" else {}
-    out = {"generated_at": NOW.isoformat(timespec="minutes") if utama else prev.get("generated_at", NOW.isoformat(timespec="minutes")),
+    sekarang = NOW.isoformat(timespec="minutes")
+
+    def catat_status(nama, ok, **kw):
+        """Status per sumber: waktu percobaan terakhir + waktu terakhir BERHASIL (tidak pernah
+        diganti dengan waktu sekarang bila gagal)."""
+        lama = prev_status.get(nama, {})
+        status[nama] = {"ok": ok, "waktu": sekarang,
+                        "terakhir_ok": sekarang if ok else lama.get("terakhir_ok") or (lama.get("waktu") if lama.get("ok") else None),
+                        **kw}
+
+    out = {"generated_at": sekarang if utama else prev.get("generated_at", sekarang),
            "areas": assets.areas,
-           "radius": {"hotspot": CFG["hotspot"]["radius_km"], "gempa": CFG["gempa"]["radius_km"]},
+           "radius": {"hotspot": CFG["hotspot"]["radius_km"], "gempa": CFG["gempa"]["radius_km"],
+                      "gempa_magnitudo_min_kritis": CFG["gempa"].get("magnitudo_min_kritis", 5.0)},
            "hotspot": {**prev.get("hotspot", {}), **({"stale": True} if utama else {})},
            "gempa": {**prev.get("gempa", {}), **({"stale": True} if utama else {})},
            "cuaca": prev.get("cuaca", []),
+           "cuaca_diperbarui": prev.get("cuaca_diperbarui"),
            "gerakan_tanah": {**prev.get("gerakan_tanah", {}), **({"stale": True} if gt else {})}}
     if gt:
-        out["gerakan_tanah_diperbarui"] = NOW.isoformat(timespec="minutes")
+        out["gerakan_tanah_diperbarui"] = sekarang
     elif prev.get("gerakan_tanah_diperbarui"):
         out["gerakan_tanah_diperbarui"] = prev["gerakan_tanah_diperbarui"]
     if prev.get("demo"):
@@ -444,7 +554,10 @@ def main():
         """Tulis latest.json setelah tiap sumber — hasil parsial tetap tersimpan."""
         out["status_sumber"] = status
         out["durasi_detik"] = durasi
-        (DATA / "latest.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        out["kualitas_data"] = KUALITAS
+        tmp = DATA / "latest.json.tmp"
+        tmp.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        tmp.replace(DATA / "latest.json")  # tulis atomik: dashboard tidak pernah membaca berkas setengah jadi
 
     def catat(nama, t0):
         durasi[nama] = round(time.time() - t0)
@@ -458,8 +571,9 @@ def main():
             log("Hotspot: SiPongi ...")
             raw, src = fetch_sipongi(), "SiPongi+ (Kemenhut)"
             log(f"  {len(raw)} titik nasional")
+            catat_status("sipongi", True, jumlah=len(raw))
         except Exception as e:  # noqa
-            status["sipongi"] = {"ok": False, "pesan": str(e)[:200]}
+            catat_status("sipongi", False, pesan=str(e)[:200])
             log("  SiPongi gagal:", e)
         if raw is None or os.environ.get("FIRMS_ALWAYS") == "1":
             try:
@@ -467,15 +581,16 @@ def main():
                 f = fetch_firms(assets.bbox)
                 raw = (raw or []) + f
                 src = (src + " + " if src else "") + "NASA FIRMS"
-                status["firms"] = {"ok": True, "jumlah": len(f)}
+                catat_status("firms", True, jumlah=len(f))
             except Exception as e:  # noqa
-                status["firms"] = {"ok": False, "pesan": str(e)[:200]}
+                catat_status("firms", False, pesan=str(e)[:200])
                 log("  FIRMS:", e)
         if raw is not None:
             near, per_prov = analyse_hotspots(raw, assets)
-            status.setdefault("sipongi", {"ok": True, "jumlah": len(raw)})
             pantau = set(CFG["provinsi_pantauan"])
-            out["hotspot"] = {"sumber": src, "periode_jam": CFG["hotspot"]["periode_jam"], "diperbarui": NOW.isoformat(timespec="minutes"),
+            out["hotspot"] = {"sumber": src, "periode_jam": CFG["hotspot"]["periode_jam"], "diperbarui": sekarang,
+                              "jenis": "Deteksi titik panas satelit (bukan konfirmasi kebakaran)",
+                              "persisten_aturan": CFG["hotspot"].get("persisten", {"jendela_hari": 7, "radius_km": 1.0, "min_hari": 3}),
                               "total_nasional": len(raw), "per_provinsi": per_prov,
                               "provinsi_pantauan": {p: per_prov.get(p, 0) for p in CFG["provinsi_pantauan"]},
                               "provinsi_area": {a: {p: per_prov.get(p, 0) for p in ps} for a, ps in CFG.get("provinsi_area", {}).items()},
@@ -489,11 +604,13 @@ def main():
         t = time.time()
         try:
             log("Gempa: BMKG ...")
-            out["gempa"] = {**fetch_gempa(assets), "sumber": "BMKG InaTEWS", "stale": False}
-            status["bmkg_gempa"] = {"ok": True}
+            g = fetch_gempa(assets, prev.get("gempa", {}))
+            out["gempa"] = {**g, "sumber": "BMKG InaTEWS", "stale": bool(g["gagal"]),
+                            "diperbarui": sekarang}
+            catat_status("bmkg_gempa", True, **({"pesan": "sebagian gagal: " + ", ".join(g["gagal"])} if g["gagal"] else {}))
         except Exception as e:  # noqa
             traceback.print_exc()
-            status["bmkg_gempa"] = {"ok": False, "pesan": str(e)[:200]}
+            catat_status("bmkg_gempa", False, pesan=str(e)[:200])
         catat("gempa", t)
         simpan()
 
@@ -502,10 +619,11 @@ def main():
         try:
             log("Cuaca & kualitas udara ...")
             out["cuaca"] = fetch_cuaca()
-            status["cuaca"] = {"ok": True, "jumlah_titik": len(out["cuaca"])}
+            out["cuaca_diperbarui"] = sekarang
+            catat_status("cuaca", True, jumlah_titik=len(out["cuaca"]))
         except Exception as e:  # noqa
             traceback.print_exc()
-            status["cuaca"] = {"ok": False, "pesan": str(e)[:200]}
+            catat_status("cuaca", False, pesan=str(e)[:200])
         catat("cuaca", t)
         simpan()
 
@@ -520,10 +638,11 @@ def main():
             out["gerakan_tanah"], st = gerakan_tanah.run({"get": get, "log": log, "CFG": CFG, "ROOT": ROOT, "DATA": DATA,
                                                           "NOW": NOW, "assets": assets, "prev": prev,
                                                           "sisa_waktu": sisa_waktu})
-            status.update(st)
+            for k, v in st.items():
+                catat_status(k, v.pop("ok"), **v)
         except Exception as e:  # noqa
             traceback.print_exc()
-            status["pvmbg"] = {"ok": False, "pesan": str(e)[:200]}
+            catat_status("pvmbg", False, pesan=str(e)[:200])
         catat("gerakan_tanah", t)
 
     # Selama masih ada bagian yang berasal dari data contoh, tetap tandai sebagai demo

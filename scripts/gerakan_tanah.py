@@ -32,6 +32,16 @@ LEVELS = ["tinggi", "menengah", "rendah", "sangat_rendah"]
 LABEL = {"tinggi": "Tinggi", "menengah": "Menengah", "rendah": "Rendah", "sangat_rendah": "Sangat rendah"}
 
 
+BULAN = {"januari": 1, "februari": 2, "maret": 3, "april": 4, "mei": 5, "juni": 6, "juli": 7, "agustus": 8,
+         "september": 9, "oktober": 10, "november": 11, "desember": 12}
+
+
+def periode_bulan(teks):
+    """'Prakiraan Gerakan Tanah Bulan September 2026' → '2026-09' (None bila tidak terbaca)."""
+    m = re.search(r"(" + "|".join(BULAN) + r")\s+(\d{4})", str(teks or ""), re.I)
+    return f"{m.group(2)}-{BULAN[m.group(1).lower()]:02d}" if m else None
+
+
 def norm_level(v):
     s = str(v or "").lower()
     if "sangat rendah" in s or "sangat_rendah" in s:
@@ -298,20 +308,31 @@ def ambil_bertahap(arc, lay, assets_ll, corridor, outdir, NOW, log):
         raise last_err or RuntimeError("layanan tidak tersedia")
     rfield, rlabels = renderer_labels(lyr)
     envs = area_envelopes(assets_ll)
+    # Tile tetap berlaku selama layer (mis. "Prakiraan ... Bulan September 2026") dan aset di dalamnya
+    # tidak berubah. Sebelumnya tile kedaluwarsa setelah `refresh_hari` (3 hari) sehingga run berikutnya
+    # mengunduh ulang tile lama dan tidak pernah sampai ke tile yang belum ada (macet di 11–12/25).
+    maks_hari = lay.get("tile_maks_hari", 35)
+
+    def tile_valid(env):
+        f = cdir / f"{_tile_key(env)}.json"
+        if not f.exists():
+            return False
+        try:
+            c = json.loads(f.read_text(encoding="utf-8"))
+            umur = (NOW - datetime.fromisoformat(c["diambil"])).days
+            return c.get("hash") == _tile_hash(assets_ll, env) and c.get("layer") == lyr.get("name") and umur < maks_hari
+        except Exception:  # noqa
+            return False
+    valid = {env: tile_valid(env) for env in envs}
+    urutan = sorted(envs, key=lambda e: valid[e])  # tile yang belum ada/kedaluwarsa diunduh lebih dulu
     total, selesai, baru, gagal, alasan = len(envs), 0, 0, 0, ""
     try:
-        for env in envs:
+        for env in urutan:
             key, hsh = _tile_key(env), _tile_hash(assets_ll, env)
             f = cdir / f"{key}.json"
-            if f.exists():
-                try:
-                    c = json.loads(f.read_text(encoding="utf-8"))
-                    umur = (NOW - datetime.fromisoformat(c["diambil"])).days
-                    if c.get("hash") == hsh and c.get("layer") == lyr.get("name") and umur < lay.get("refresh_hari", 1):
-                        selesai += 1
-                        continue
-                except Exception:  # noqa
-                    pass
+            if valid[env]:
+                selesai += 1
+                continue
             koridor_tile = corridor.intersection(box(*env))
             feats = []
             try:
@@ -472,6 +493,7 @@ def run(ctx):
         cache.write_text(json.dumps(to_fc(clipped, periode), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         per_area = analyse([(g, lv) for g, lv, _ in clipped], assets_ll, areas)
         out[lid] = {"tersedia": True, "nama": lay["nama"], "sumber": src, "periode": periode,
+                    "periode_bulan": periode_bulan(periode) if lid == "prakiraan" else None,
                     "diambil": NOW.isoformat(timespec="minutes"), "jumlah_poligon": len(clipped), "per_area": per_area,
                     "wilayah": sorted(areas)}
         status.setdefault(f"pvmbg_{lid}", {"ok": True, "jumlah": len(clipped)})

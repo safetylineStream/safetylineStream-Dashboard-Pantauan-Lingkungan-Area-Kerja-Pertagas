@@ -110,6 +110,8 @@ Jika belum ada kredensial, dashboard tetap berjalan: panel gerakan tanah menampi
 | ▲ **Kritis** (≤ 1 km dari pipa/fasilitas) | Titik panas sangat dekat aset | Informasikan ke area terkait untuk *ground check* segera; siagakan APAR/regu, koordinasi Manggala Agni/BPBD |
 | ◆ **Waspada** (1–3 km) | Berpotensi merambat ke ROW | Patroli ROW, pantau arah angin di panel cuaca |
 | ● **Pantau** (3–5 km) | Perlu diperhatikan | Monitor tren; koordinasi dengan pemda/BPBD |
+| ↻ **Berulang N hari** | Hotspot terdeteksi di lokasi yang sama (≤ 1 km) pada ≥ 3 tanggal berbeda dalam 7 hari. Sering berupa sumber panas tetap (flare/industri), tetapi bisa juga kebakaran yang berlangsung lama (mis. gambut) | Verifikasi sekali di lapangan apakah sumber panas tetap; bila ya, catat agar tim tidak terus dipanggil. Titik tetap ditampilkan — tidak pernah disembunyikan |
+| **Status saat ini** (kartu paling atas) | Kondisi terburuk dari: hotspot dekat aset, gempa ≤ 24 jam dekat aset, potensi tsunami BMKG, indikasi longsor model, prakiraan PVMBG zona tinggi, cuaca ekstrem (kriteria BMKG: hujan ≥ 50 mm/hari, angin ≥ 25 knot) dan kualitas udara | Klik baris untuk membuka tab wilayahnya |
 | Gempa: status per jarak ke aset | Kritis ≤ 50 km dan M ≥ 5, waspada ≤ 150 km, pantau ≤ 300 km | Inspeksi pasca-gempa pada fasilitas terdekat sesuai prosedur |
 | ⚠ **Berpotensi tsunami** | Dari rilis BMKG | Ikuti ERP dan instruksi resmi BMKG/BPBD |
 | Gerakan tanah — **prakiraan Tinggi/Menengah** | Ruas pipa atau fasilitas berada di zona potensi gerakan tanah bulan ini (PVMBG, dipengaruhi curah hujan) | Patroli ROW lebih sering saat hujan lebat; cek retakan tanah, amblesan, tiang/patok miring, dan kondisi *crossing* sungai/lereng |
@@ -129,7 +131,8 @@ Jika belum ada kredensial, dashboard tetap berjalan: panel gerakan tanah menampi
 **Actions → Update Data Harian → Run workflow.**
 
 ### B3. Mengecek apakah update berjalan
-- Chip di kanan atas dashboard menunjukkan waktu update dan status tiap sumber (hijau = OK, merah = gagal).
+- Chip di kanan atas dashboard menunjukkan **kesegaran tiap sumber berdasarkan umur data**, bukan sekadar hasil run terakhir: 🟢 segar · 🟡 terlambat (satu jadwal terlewat atau pengambilan terakhir gagal) · 🔴 kedaluwarsa · ○ belum tersedia. Ambang berbeda per sumber — lihat tabel **Sumber & status data** di bagian bawah dashboard.
+- Bila pengambilan gagal, dashboard tetap menampilkan **data terakhir yang berhasil** beserta waktunya ("Pengambilan terakhir berhasil"); waktunya tidak pernah diganti dengan waktu sekarang.
 - **Actions**: ✅ berarti sukses, ❌ berarti gagal. Klik run yang gagal untuk melihat log.
 - Riwayat harian tersimpan di `data/history/ringkasan.csv` (bisa dibuka di Excel). Arsip hotspot dekat aset tersimpan di `data/history/hotspot_YYYY-MM-DD.json` sebagai bukti audit.
 
@@ -188,6 +191,12 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 
 ---
 
+### B9. Waktu, cek langsung & uji otomatis
+- Semua waktu di dashboard ditampilkan dalam **WIB**, juga bila komputer pengguna memakai WITA/WIT.
+- Browser pengguna mengecek langsung **gempa terbaru BMKG** tiap 10 menit dan **cuaca/kualitas udara** titik pantau saat tab wilayah dibuka. Bila cek langsung gagal (mis. jaringan kantor memblokir), dashboard otomatis memakai data terjadwal dan menuliskannya.
+- Data dimuat ulang otomatis tiap 15 menit tanpa mereset tab dan posisi peta.
+- Uji otomatis pipeline (jarak geodesik, validasi koordinat, kegagalan API, respons kosong/rusak): `pip install -r requirements.txt pytest` lalu `python -m pytest tests -q`. Uji ini juga dijalankan workflow **Uji Otomatis** setiap ada perubahan skrip.
+
 ## Bagian C — Pemecahan masalah
 
 | Gejala | Penyebab & solusi |
@@ -203,7 +212,7 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 ## Catatan sumber data
 - **SiPongi+** (Kemenhut): hotspot 24 jam dari satelit NASA MODIS, SNPP, NOAA-20 dan NOAA-21. Endpoint `opsroom.sipongidata.my.id` adalah layanan data di balik peta SiPongi dan tidak didokumentasikan resmi, jadi bisa berubah sewaktu-waktu. Karena itu disediakan cadangan FIRMS.
 - **BMKG InaTEWS** (`data.bmkg.go.id/DataMKG/TEWS/`): data terbuka gempa terbaru, M 5.0+ terkini, dan gempa dirasakan, termasuk keterangan potensi tsunami. Cantumkan BMKG sebagai sumber.
-- **Cuaca**: BMKG (`api.bmkg.go.id`, bila `adm4` diisi) dan Open-Meteo. Kualitas udara dari Open-Meteo Air Quality (model CAMS).
+- **Cuaca**: BMKG (`api.bmkg.go.id`, prakiraan per 3 jam, bila `adm4` diisi) dan Open-Meteo. Keduanya **model/prakiraan**, bukan pengamatan stasiun. Kualitas udara dari Open-Meteo Air Quality (model CAMS global ±45 km); PM2.5/PM10 dalam µg/m³ dan US AQI (EPA, rata-rata 24 jam) — **bukan ISPU** stasiun KLHK. Catatan lisensi: API gratis Open-Meteo ditujukan untuk penggunaan non-komersial; untuk penggunaan korporat pertimbangkan langganan API Open-Meteo atau sumber BMKG.
 - **PVMBG – Badan Geologi**: *Zona Kerentanan Gerakan Tanah* dan *Prakiraan Potensi Gerakan Tanah Bulanan* dari layanan GIS ESDM One Map (`geoportal.esdm.go.id/gis4/rest/services/...`), serta laporan tanggapan kejadian gerakan tanah dari API stakeholder MAGMA Indonesia. Struktur kolom layanan GIS dideteksi otomatis. Jika PVMBG mengubah nama layanan, perbarui `urls` di `config/monitoring.json`.
 - **Potensi longsor**: algoritma NASA LHASA 1.1 (github.com/nasa/LHASA, tag v1.1.1) dihitung internal; ambang ARI95 NASA, hujan Open-Meteo, kerentanan dari peta global NASA atau Copernicus DEM GLO-90 (© DLR/Airbus, ESA). Bersifat indikatif, bukan pengganti informasi resmi PVMBG.
-- Jarak dihitung dari titik hotspot/episentrum ke **jalur pipa atau fasilitas terdekat** pada `data/assets.geojson`. Geometri pipa telah disederhanakan (±30 m) supaya halaman ringan.
+- Jarak dihitung dari titik hotspot/episentrum ke **jalur pipa atau fasilitas terdekat** pada `data/assets.geojson` secara geodesik (Haversine; diuji terhadap perhitungan WGS84 independen, selisih < 20 m). Geometri pipa telah disederhanakan (±30 m) supaya halaman ringan. Lokasi hotspot sendiri punya ketidakpastian sebesar pikselnya (VIIRS ±375 m, MODIS ±1 km).

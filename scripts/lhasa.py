@@ -42,6 +42,9 @@ from pathlib import Path
 import numpy as np
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from geo import haversine  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 OUT = DATA / "lhasa"
@@ -70,14 +73,6 @@ CELL = 0.1  # grid ARI95 NASA
 
 def log(*a):
     print(f"[{datetime.now(WIB):%H:%M:%S}]", *a, flush=True)
-
-
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0088
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp, dl = p2 - p1, math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * R * math.asin(math.sqrt(a))
 
 
 # ------------------------------------------------------------------ aset → titik sampel
@@ -292,6 +287,11 @@ def hujan_sel(xs, ys):
             data[k] = [x if x is not None else np.nan for x in d["precipitation_sum"]]
         time.sleep(1)
     P = np.array([data[k] for k in zip(cx.tolist(), cy.tolist())], dtype="float64")  # (titik, 8 hari)
+    # Hujan kosong dihitung 0 di ari(); bila terlalu banyak yang kosong hasilnya akan meremehkan
+    # potensi longsor tanpa terlihat — lebih baik gagal dan memakai hasil sebelumnya (ditandai stale).
+    kosong = float(np.mean(~np.isfinite(P[:, :7])))
+    if kosong > 0.10:
+        raise RuntimeError(f"{kosong:.0%} nilai curah hujan kosong dari Open-Meteo — hasil tidak dapat diandalkan")
     return P, tanggal, len(keys)
 
 
@@ -407,6 +407,11 @@ def main():
     xs, ys = all_points(lines, facs)
     log(f"Aset: {len(lines)} ruas pipa · {len(xs)} titik sampel (tiap {CFG['interval_m']} m) · {len(facs)} fasilitas")
     out = {"model": "LHASA 1.1 (NASA) dihitung internal", "sumber": "Internal Pertagas — algoritma NASA LHASA 1.1",
+           "jenis": "Indikasi model — bukan observasi dan bukan produk resmi NASA",
+           "catatan": ("Ambang ARI95 NASA diturunkan dari hujan satelit IMERG, sedangkan hujan harian di sini dari model "
+                       "Open-Meteo; perbedaan sumber hujan dapat menggeser hasil. Produk 'hari ini' memakai hujan 6 hari "
+                       "terakhir + total hujan hari ini (sebagian masih prakiraan); 'besok' memakai prakiraan hujan besok. "
+                       "Hasil menunjukkan potensi bahaya, bukan kepastian kejadian longsor."),
            "diambil": NOW.isoformat(timespec="minutes"), "interval_m": CFG["interval_m"],
            "koridor_piksel": CFG["koridor_piksel"], "rasio_waspada": CFG["rasio_waspada"], "produk": {}, "status": {}}
     try:

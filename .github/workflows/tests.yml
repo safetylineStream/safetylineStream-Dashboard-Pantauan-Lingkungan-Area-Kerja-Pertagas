@@ -1,0 +1,28 @@
+name: Uji Otomatis
+
+# Menjalankan uji pipeline (jarak geodesik, validasi koordinat, kegagalan/kekosongan API) setiap ada
+# perubahan skrip atau konfigurasi. Tidak memanggil API asli dan tidak mengubah data.
+on:
+  push:
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - "config/**"
+      - "requirements.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  uji:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - run: python -m pytest tests -q
