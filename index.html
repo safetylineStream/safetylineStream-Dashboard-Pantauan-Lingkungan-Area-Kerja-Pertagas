@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pemantauan Lingkungan Pertagas</title>
+<title>PERTAGAS WASPADA</title>
 <link rel="icon" type="image/png" href="img/favicon.png">
-<meta name="description" content="Dashboard pemantauan hotspot karhutla, gempa bumi & tsunami, potensi longsor harian (model LHASA), cuaca dan kualitas udara per wilayah kerja PT Pertamina Gas">
+<meta name="description" content="PERTAGAS WASPADA — Watch &amp; Analytics for Spatial Pipeline Anomaly &amp; Disaster Awareness. Dashboard pemantauan hotspot karhutla, gempa bumi & tsunami, potensi longsor harian (model LHASA), cuaca dan kualitas udara per wilayah kerja PT Pertamina Gas">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -45,7 +45,10 @@ html,body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system
 a{color:var(--brand)}
 .wrap{max-width:1440px;margin:0 auto;padding:16px}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
-h1{font-size:20px;margin:0;letter-spacing:-.01em}
+h1{font-size:24px;margin:0;letter-spacing:.02em;font-weight:800}
+.brand-accent{color:var(--critical)}
+.expand{font-size:13px;color:var(--ink-2);margin:1px 0 4px;letter-spacing:.01em}
+.expand b{color:var(--ink);font-weight:700}
 .brand{display:flex;align-items:center;gap:16px;min-width:0}
 .brand-logo{height:44px;width:auto;flex:none;background:#fff;border-radius:10px;padding:6px 10px;box-shadow:0 0 0 1px var(--border)}
 .byline{font-size:12px;color:var(--muted);margin-top:2px}
@@ -219,7 +222,8 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
     <div class="brand">
       <img class="brand-logo" src="img/logo-pertamina-gas.png" alt="Pertamina Gas" width="168" height="32">
       <div>
-      <h1>Pemantauan Lingkungan Aset PT Pertamina Gas</h1>
+      <h1>PERTAGAS <span class="brand-accent">WASPADA</span></h1>
+      <div class="expand"><b>W</b>atch &amp; <b>A</b>nalytics for <b>S</b>patial <b>P</b>ipeline <b>A</b>nomaly &amp; <b>D</b>isaster <b>A</b>wareness</div>
       <div class="sub">Hotspot karhutla (deteksi satelit) · Gempa bumi &amp; tsunami (BMKG) · Gerakan tanah (PVMBG) · Indikasi potensi longsor harian (model LHASA) · Cuaca, kelembapan &amp; kualitas udara (model) per wilayah kerja</div>
       <div class="byline">Dashboard by <b>Fungsi HSSE Pertamina Gas</b></div>
       </div>
@@ -988,7 +992,7 @@ function renderFoot(){
   $('#foot').innerHTML=`Sumber data: <a href="https://sipongi.gakkum.kehutanan.go.id/sebaran-titik-panas" target="_blank" rel="noopener">SiPongi+ Kemenhut</a> (satelit NASA MODIS/VIIRS) ·
    <a href="https://inatews.bmkg.go.id/" target="_blank" rel="noopener">BMKG InaTEWS</a> (data.bmkg.go.id) ·
    Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (ESDM One Map) · Indikasi longsor: model internal berdasarkan algoritma <a href="https://github.com/nasa/LHASA" target="_blank" rel="noopener">NASA LHASA 1.1</a> (ambang ARI95 NASA, hujan model Open-Meteo, kerentanan lereng NASA/Copernicus DEM) · Cuaca: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (model) · Kualitas udara: CAMS via Open-Meteo (model) · Aset: KMZ wilayah kerja Pertagas.<br>
-   Dashboard by Fungsi HSSE PT Pertamina Gas. Semua waktu ditampilkan dalam WIB (UTC+7). Jarak = jarak geodesik (Haversine) ke jalur pipa/fasilitas terdekat. Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran. Untuk peringatan dini tsunami resmi, selalu rujuk BMKG.`;
+   PERTAGAS WASPADA — dashboard by Fungsi HSSE PT Pertamina Gas. Semua waktu ditampilkan dalam WIB (UTC+7). Jarak = jarak geodesik (Haversine) ke jalur pipa/fasilitas terdekat. Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran. Untuk peringatan dini tsunami resmi, selalu rujuk BMKG.`;
 }
 
 /* ---------- cek langsung dari browser (opsional; bila gagal, data terjadwal tetap dipakai) ---------- */

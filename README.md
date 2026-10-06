@@ -1,4 +1,5 @@
-# Dashboard Pemantauan Lingkungan — PT Pertamina Gas
+# PERTAGAS WASPADA
+**Watch & Analytics for Spatial Pipeline Anomaly & Disaster Awareness** — dashboard pemantauan geohazard & lingkungan jalur pipa PT Pertamina Gas, by Fungsi HSSE Pertamina Gas.
 
 Dashboard ini memantau **hotspot karhutla**, **gempa bumi & tsunami**, **gerakan tanah (PVMBG)**, serta **cuaca, kelembapan dan kualitas udara** di sekitar jalur pipa dan fasilitas Pertagas per wilayah kerja. Datanya diperbarui otomatis oleh GitHub Actions dan ditampilkan lewat GitHub Pages.
 
