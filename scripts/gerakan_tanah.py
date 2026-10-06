@@ -325,13 +325,13 @@ def ambil_bertahap(arc, lay, assets_ll, corridor, outdir, NOW, log):
             return False
     valid = {env: tile_valid(env) for env in envs}
     urutan = sorted(envs, key=lambda e: valid[e])  # tile yang belum ada/kedaluwarsa diunduh lebih dulu
-    total, selesai, baru, gagal, alasan = len(envs), 0, 0, 0, ""
+    # progres = tile yang sudah valid (tersimpan) + yang diunduh di run ini
+    total, selesai, baru, gagal, alasan = len(envs), sum(valid.values()), 0, 0, ""
     try:
         for env in urutan:
             key, hsh = _tile_key(env), _tile_hash(assets_ll, env)
             f = cdir / f"{key}.json"
             if valid[env]:
-                selesai += 1
                 continue
             koridor_tile = corridor.intersection(box(*env))
             feats = []
