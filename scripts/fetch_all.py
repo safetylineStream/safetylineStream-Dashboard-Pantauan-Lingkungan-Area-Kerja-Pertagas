@@ -6,7 +6,7 @@ Sumber:
   * Gempa    : BMKG InaTEWS open data (autogempa, gempaterkini M5+, gempadirasakan)
   * Cuaca    : BMKG API prakiraan cuaca (jika kode adm4 diisi) — cadangan/pelengkap: Open-Meteo
   * Udara    : Open-Meteo Air Quality (PM2.5, PM10) — indikator asap karhutla
-  * Gerakan tanah : PVMBG — zona kerentanan & prakiraan bulanan (ESDM One Map), laporan kejadian (MAGMA) → scripts/gerakan_tanah.py
+  * Gerakan tanah : PVMBG — zona kerentanan & prakiraan bulanan (ESDM One Map) → scripts/gerakan_tanah.py
 
 Hasil:
   data/latest.json                  → dibaca dashboard
@@ -505,7 +505,7 @@ def update_history(areas, hotspots, total_nasional):
 
 
 # ---------------------------------------------------------------- main
-GT_KEYS = ("pvmbg", "pvmbg_prakiraan", "pvmbg_zkgt", "magma_gertan")
+GT_KEYS = ("pvmbg", "pvmbg_prakiraan", "pvmbg_zkgt", "magma_gertan")  # magma_gertan: modul dihapus, kunci lama dibersihkan
 
 
 def main():
@@ -523,6 +523,7 @@ def main():
     prev_status = prev.get("status_sumber", {})
     # status bagian yang tidak dijalankan kali ini dibawa dari run sebelumnya
     status = {k: v for k, v in prev_status.items() if (k in GT_KEYS) != gt} if bagian != "semua" else {}
+    status.pop("magma_gertan", None)  # modul MAGMA sudah dihapus
     durasi = dict(prev.get("durasi_detik", {})) if bagian != "semua" else {}
     sekarang = NOW.isoformat(timespec="minutes")
 
@@ -542,7 +543,8 @@ def main():
            "gempa": {**prev.get("gempa", {}), **({"stale": True} if utama else {})},
            "cuaca": prev.get("cuaca", []),
            "cuaca_diperbarui": prev.get("cuaca_diperbarui"),
-           "gerakan_tanah": {**prev.get("gerakan_tanah", {}), **({"stale": True} if gt else {})}}
+           "gerakan_tanah": {**{k: v for k, v in prev.get("gerakan_tanah", {}).items() if k != "kejadian"},
+                             **({"stale": True} if gt else {})}}
     if gt:
         out["gerakan_tanah_diperbarui"] = sekarang
     elif prev.get("gerakan_tanah_diperbarui"):

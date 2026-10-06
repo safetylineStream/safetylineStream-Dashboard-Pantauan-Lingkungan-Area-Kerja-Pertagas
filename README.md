@@ -91,14 +91,13 @@ Jika server SiPongi sedang tidak bisa diakses, sistem bisa memakai NASA FIRMS, y
 2. **Settings → Secrets and variables → Actions → New repository secret**. Isi *Name* `FIRMS_MAP_KEY` dan *Secret* dengan kunci Anda.
 
 ### A7. (Disarankan) Akses data gerakan tanah PVMBG
-Ada dua bagian data gerakan tanah. Masing-masing bisa diaktifkan terpisah:
+Data gerakan tanah diambil dari peta PVMBG di ESDM One Map:
 
 | Data | Cara mengaktifkan | Secret GitHub |
 |---|---|---|
 | **Zona kerentanan** dan **prakiraan potensi gerakan tanah bulanan** (peta ESDM One Map) | Sistem mencoba mengambilnya otomatis. Jika layanan meminta login, daftar akun gratis di ESDM One Map (geoportal.esdm.go.id) | `ONEMAP_USERNAME`, `ONEMAP_PASSWORD` |
-| **Laporan kejadian gerakan tanah** (MAGMA Indonesia) | Ajukan **APP_ID stakeholder** ke PVMBG (Badan Geologi). API MAGMA hanya bisa diakses dengan kredensial ini | `MAGMA_APP_ID`, `MAGMA_SECRET_KEY` |
 
-Jika belum ada kredensial, dashboard tetap berjalan: panel gerakan tanah menampilkan petunjuk dan tautan ke MAGMA untuk pemantauan manual. Cadangan lainnya ada di bagian B7.
+Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagian B7.
 
 ---
 
@@ -116,7 +115,6 @@ Jika belum ada kredensial, dashboard tetap berjalan: panel gerakan tanah menampi
 | ⚠ **Berpotensi tsunami** | Dari rilis BMKG | Ikuti ERP dan instruksi resmi BMKG/BPBD |
 | Gerakan tanah — **prakiraan Tinggi/Menengah** | Ruas pipa atau fasilitas berada di zona potensi gerakan tanah bulan ini (PVMBG, dipengaruhi curah hujan) | Patroli ROW lebih sering saat hujan lebat; cek retakan tanah, amblesan, tiang/patok miring, dan kondisi *crossing* sungai/lereng |
 | Gerakan tanah — **zona kerentanan Tinggi** | Kondisi geologi dasar yang rentan (tidak berubah bulanan) | Masukkan ke penilaian risiko geohazard/integritas pipa; prioritaskan inspeksi dan monitoring pergerakan tanah |
-| **Kejadian gerakan tanah** (MAGMA) | Laporan tanggapan PVMBG atas longsor/pergeseran yang sudah terjadi, dengan jarak ke aset | Kritis ≤ 2 km: cek lapangan segera; waspada ≤ 10 km: verifikasi kondisi ROW |
 | RH, suhu, angin, PM2.5 | RH rendah + angin kencang = risiko rambatan api naik; PM2.5 tinggi = indikasi asap | Pertimbangkan pembatasan *hot work* / pekerjaan lapangan |
 
 - **Tab wilayah** di bagian atas: **Ringkasan semua** menampilkan kartu tiap wilayah (klik kartu untuk membuka tabnya), lalu satu tab untuk tiap wilayah kerja (ONSA, OCSA, ODA, OSSA, OWJA). Angka kecil di tab menunjukkan jumlah hotspot dengan status terburuk di wilayah itu. Tanda ✓ berarti tidak ada hotspot dalam radius.
@@ -173,7 +171,7 @@ Jika BMKG gagal diakses, sistem otomatis kembali memakai Open-Meteo. PM2.5 tetap
 - **Analisis:** peta zona dari PVMBG dipotong dengan jalur pipa dan fasilitas. Hasilnya panjang pipa (km) di tiap tingkat (Tinggi, Menengah, Rendah, Sangat rendah), daftar fasilitas di zona menengah–tinggi, dan segmen pipa yang terdampak. Poligon yang ditampilkan di peta hanya yang berada dalam koridor `koridor_km` (bawaan 5 km) di sekitar aset.
 - **Jadwal pengambilan:** prakiraan diambil setiap run. Zona kerentanan cukup diambil ulang setiap 30 hari (`refresh_hari`) karena datanya jarang berubah.
 - **Cadangan manual:** jika layanan online tidak bisa diakses, unduh peta dari ESDM One Map atau Portal MBG PVMBG, lalu unggah ke `gerakan_tanah_raw/` dengan nama `prakiraan.geojson`/`prakiraan.zip` (SHP) dan `zkgt.geojson`/`zkgt.zip`. Kolom atributnya harus memuat teks *Tinggi / Menengah / Rendah / Sangat Rendah*. Setelah diunggah, jalankan **Update Data Harian**.
-- **Pengaturan** ada di `config/monitoring.json` → `gerakan_tanah` (alamat layanan, koridor, radius kejadian, rentang hari).
+- **Pengaturan** ada di `config/monitoring.json` → `gerakan_tanah` (alamat layanan, koridor analisis).
 
 ### B8. Potensi longsor harian (model LHASA internal)
 Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya tidak diperbarui sejak akhir 2025. Karena itu dashboard menghitung sendiri dengan **algoritma terbuka NASA LHASA 1.1** (Kirschbaum & Stanley 2018):
@@ -206,13 +204,12 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 | Chip **SiPongi+: gagal** | Server SiPongi sedang gangguan atau berubah alamat. Data lama tetap tampil. Isi `FIRMS_MAP_KEY` sebagai cadangan |
 | Jadwal tidak jalan | Jadwal GitHub bisa terlambat 5–30 menit. Pada repo **public**, jadwal dinonaktifkan GitHub setelah 60 hari tanpa aktivitas; aktifkan lagi di tab Actions |
 | Chip **PVMBG Prakiraan GT / Zona GT: gagal** | Layanan ESDM One Map meminta login atau sedang gangguan. Isi `ONEMAP_USERNAME`/`ONEMAP_PASSWORD`, atau pakai file manual (B7). Arahkan kursor ke chip untuk melihat pesan errornya |
-| Chip **MAGMA: belum aktif** | APP_ID stakeholder belum diisi (A7) |
 | Peta kosong saat file dibuka dari komputer | Browser memblokir `fetch` dari file lokal. Buka lewat GitHub Pages, atau jalankan `python -m http.server` lalu buka `http://localhost:8000` |
 
 ## Catatan sumber data
 - **SiPongi+** (Kemenhut): hotspot 24 jam dari satelit NASA MODIS, SNPP, NOAA-20 dan NOAA-21. Endpoint `opsroom.sipongidata.my.id` adalah layanan data di balik peta SiPongi dan tidak didokumentasikan resmi, jadi bisa berubah sewaktu-waktu. Karena itu disediakan cadangan FIRMS.
 - **BMKG InaTEWS** (`data.bmkg.go.id/DataMKG/TEWS/`): data terbuka gempa terbaru, M 5.0+ terkini, dan gempa dirasakan, termasuk keterangan potensi tsunami. Cantumkan BMKG sebagai sumber.
 - **Cuaca**: BMKG (`api.bmkg.go.id`, prakiraan per 3 jam, bila `adm4` diisi) dan Open-Meteo. Keduanya **model/prakiraan**, bukan pengamatan stasiun. Kualitas udara dari Open-Meteo Air Quality (model CAMS global ±45 km); PM2.5/PM10 dalam µg/m³ dan US AQI (EPA, rata-rata 24 jam) — **bukan ISPU** stasiun KLHK. Catatan lisensi: API gratis Open-Meteo ditujukan untuk penggunaan non-komersial; untuk penggunaan korporat pertimbangkan langganan API Open-Meteo atau sumber BMKG.
-- **PVMBG – Badan Geologi**: *Zona Kerentanan Gerakan Tanah* dan *Prakiraan Potensi Gerakan Tanah Bulanan* dari layanan GIS ESDM One Map (`geoportal.esdm.go.id/gis4/rest/services/...`), serta laporan tanggapan kejadian gerakan tanah dari API stakeholder MAGMA Indonesia. Struktur kolom layanan GIS dideteksi otomatis. Jika PVMBG mengubah nama layanan, perbarui `urls` di `config/monitoring.json`.
+- **PVMBG – Badan Geologi**: *Zona Kerentanan Gerakan Tanah* dan *Prakiraan Potensi Gerakan Tanah Bulanan* dari layanan GIS ESDM One Map (`geoportal.esdm.go.id/gis4/rest/services/...`). Struktur kolom layanan GIS dideteksi otomatis. Jika PVMBG mengubah nama layanan, perbarui `urls` di `config/monitoring.json`.
 - **Potensi longsor**: algoritma NASA LHASA 1.1 (github.com/nasa/LHASA, tag v1.1.1) dihitung internal; ambang ARI95 NASA, hujan Open-Meteo, kerentanan dari peta global NASA atau Copernicus DEM GLO-90 (© DLR/Airbus, ESA). Bersifat indikatif, bukan pengganti informasi resmi PVMBG.
 - Jarak dihitung dari titik hotspot/episentrum ke **jalur pipa atau fasilitas terdekat** pada `data/assets.geojson` secara geodesik (Haversine; diuji terhadap perhitungan WGS84 independen, selisih < 20 m). Geometri pipa telah disederhanakan (±30 m) supaya halaman ringan. Lokasi hotspot sendiri punya ketidakpastian sebesar pikselnya (VIIRS ±375 m, MODIS ±1 km).

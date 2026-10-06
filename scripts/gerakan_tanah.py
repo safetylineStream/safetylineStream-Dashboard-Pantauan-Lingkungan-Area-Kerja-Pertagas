@@ -1,10 +1,9 @@
 """
 gerakan_tanah.py — Data gerakan tanah PVMBG (Badan Geologi, Kementerian ESDM) dibandingkan dengan aset Pertagas.
 
-Tiga sumber, masing-masing opsional & berdiri sendiri:
+Dua sumber, masing-masing opsional & berdiri sendiri:
   1. Zona Kerentanan Gerakan Tanah (ZKGT)     — layanan GIS ESDM One Map (statis, diperbarui tiap `refresh_hari`)
   2. Prakiraan Potensi Gerakan Tanah Bulanan  — layanan GIS ESDM One Map (berganti tiap bulan)
-  3. Laporan kejadian (tanggapan) gerakan tanah — API MAGMA Indonesia, butuh APP_ID stakeholder dari PVMBG
 
 Cadangan manual: taruh file GeoJSON / SHP(.zip) di folder gerakan_tanah_raw/ dengan nama
   zkgt.geojson | zkgt.zip          → dipakai bila layanan ZKGT gagal
@@ -20,7 +19,7 @@ import json
 import os
 import re
 import zipfile
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from pyproj import Geod
@@ -377,41 +376,6 @@ def ambil_bertahap(arc, lay, assets_ll, corridor, outdir, NOW, log):
     return zones, f"ESDM One Map · {lyr.get('name')}", lyr.get("name")
 
 
-# ------------------------------------------------------------------ kejadian MAGMA
-def fetch_magma(get, cfg, log, now):
-    app_id, secret = os.environ.get("MAGMA_APP_ID", ""), os.environ.get("MAGMA_SECRET_KEY", "")
-    if not (app_id and secret):
-        raise RuntimeError("MAGMA_APP_ID/MAGMA_SECRET_KEY belum diisi (ajukan APP_ID stakeholder ke PVMBG)")
-    import requests
-    base = cfg["magma_api"].rstrip("/")
-    tok = requests.post(f"{base}/login/stakeholder", data={"app_id": app_id, "secret_key": secret}, timeout=60).json()
-    if not tok.get("token"):
-        raise RuntimeError(f"login MAGMA gagal: {str(tok)[:150]}")
-    h = {"Authorization": f"Bearer {tok['token']}"}
-    start = (now - timedelta(days=cfg.get("kejadian_hari", 60))).strftime("%Y-%m-%d")
-    end = (now - timedelta(days=1)).strftime("%Y-%m-%d")
-    out = []
-    for page in range(1, 11):
-        js = get(f"{base}/v1/home/gerakan-tanah/filter", params={"start_date": start, "end_date": end, "page": page},
-                 headers=h, timeout=60).json()
-        data = js.get("data") or []
-        for d in data:
-            try:
-                out.append({"id": d.get("id"), "judul": d.get("judul"), "waktu": d.get("local_datetime"),
-                            "zona": d.get("time_zone"), "lat": float(d["latitude"]), "lon": float(d["longitude"]),
-                            "provinsi": d.get("provinsi"), "kab": d.get("kabupaten_kota"), "kec": d.get("kecamatan"),
-                            "desa": d.get("kelurahan"), "kerentanan": d.get("kerentanan"),
-                            "rekomendasi": re.sub(r"<[^>]+>", " ", d.get("rekomendasi") or "")[:600],
-                            "url": (d.get("share") or {}).get("url")})
-            except (KeyError, TypeError, ValueError):
-                continue
-        last = (js.get("meta") or {}).get("last_page") or (1 if len(data) < 15 else page + 1)
-        if page >= last or not data:
-            break
-    log(f"  MAGMA: {len(out)} laporan kejadian gerakan tanah")
-    return out
-
-
 # ------------------------------------------------------------------ utama
 def run(ctx):
     """ctx: dict dengan get, log, CFG, ROOT, DATA, NOW, assets (Assets dari fetch_all), prev (latest.json lama)."""
@@ -436,7 +400,7 @@ def run(ctx):
     corridor = transform(to_ll, unary_union([transform(to_m, g).buffer(buf_m, 8) for g, _ in assets_ll]))
 
     arc = None
-    out = {"sumber": "PVMBG – Badan Geologi (ESDM One Map / MAGMA Indonesia)", "koridor_km": gcfg.get("koridor_km", 2)}
+    out = {"sumber": "PVMBG – Badan Geologi (ESDM One Map)", "koridor_km": gcfg.get("koridor_km", 2)}
 
     # Layer yang belum punya data diambil lebih dulu, supaya tidak selalu kalah oleh layer lain
     def prioritas(lay):
@@ -497,27 +461,5 @@ def run(ctx):
                     "diambil": NOW.isoformat(timespec="minutes"), "jumlah_poligon": len(clipped), "per_area": per_area,
                     "wilayah": sorted(areas)}
         status.setdefault(f"pvmbg_{lid}", {"ok": True, "jumlah": len(clipped)})
-
-    # Laporan kejadian (MAGMA)
-    try:
-        ev = fetch_magma(get, gcfg, log, NOW)
-        rad = gcfg["kejadian_radius_km"]
-        for e in ev:
-            d, p = A.nearest(e["lat"], e["lon"])
-            e["jarak_km"], e["area"], e["aset"] = round(d, 1), p["area"], p["name"]
-            e["status"] = "kritis" if d <= rad["kritis"] else "waspada" if d <= rad["waspada"] else "pantau" if d <= rad["pantau"] else "luar"
-            e["per_area"] = {}
-            for code in A.by_area:
-                da, pa = A.nearest(e["lat"], e["lon"], code)
-                e["per_area"][code] = {"jarak_km": round(da, 1), "aset": pa["name"]}
-        ev.sort(key=lambda e: e["jarak_km"])
-        out["kejadian"] = {"tersedia": True, "hari": gcfg.get("kejadian_hari", 60), "radius_km": rad, "data": ev}
-        status["magma_gertan"] = {"ok": True, "jumlah": len(ev)}
-    except Exception as e:  # noqa
-        msg = str(e)[:200]
-        out["kejadian"] = {"tersedia": False, "pesan": msg, "radius_km": gcfg["kejadian_radius_km"],
-                           "hari": gcfg.get("kejadian_hari", 60),
-                           "data": [] if (pv.get("kejadian") or {}).get("demo") else (pv.get("kejadian") or {}).get("data", [])}
-        status["magma_gertan"] = {"ok": False, "pesan": msg}
 
     return out, status

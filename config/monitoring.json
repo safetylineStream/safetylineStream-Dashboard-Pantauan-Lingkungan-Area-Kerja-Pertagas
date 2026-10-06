@@ -54,10 +54,7 @@
                 "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Zona_Kerentanan_Gerakan_Tanah/MapServer"]}
     ],
     "token_url": "https://geoportal.esdm.go.id/gis4/tokens/generateToken",
-    "koridor_km": 5,
-    "magma_api": "https://magma.esdm.go.id/api",
-    "kejadian_hari": 60,
-    "kejadian_radius_km": {"kritis": 2, "waspada": 10, "pantau": 25}
+    "koridor_km": 5
   },
   "lhasa": {
     "_petunjuk": "Model potensi longsor internal mengikuti algoritma NASA LHASA 1.1. Hujan 7 hari (Open-Meteo) dibandingkan ambang ARI95 NASA (lhasa_statis/ARI95_indonesia.tif) lalu dikombinasikan dengan kerentanan lereng kelas 1–5. rasio_waspada = batas tingkat 'Rendah' (mendekati ambang). kerentanan_sumber dicoba berurutan: manual (lhasa_statis/kerentanan.tif), nasa (peta kerentanan global NASA), dem (kemiringan lereng Copernicus DEM). kelas_lereng_derajat = batas kemiringan untuk kelas 2/3/4/5 bila memakai DEM. Hapus data/lhasa/kerentanan_cache.json untuk menghitung ulang kerentanan.",

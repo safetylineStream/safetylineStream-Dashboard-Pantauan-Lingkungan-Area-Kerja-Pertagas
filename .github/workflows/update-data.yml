@@ -37,8 +37,6 @@ jobs:
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
           ONEMAP_USERNAME: ${{ secrets.ONEMAP_USERNAME }}
           ONEMAP_PASSWORD: ${{ secrets.ONEMAP_PASSWORD }}
-          MAGMA_APP_ID: ${{ secrets.MAGMA_APP_ID }}
-          MAGMA_SECRET_KEY: ${{ secrets.MAGMA_SECRET_KEY }}
         run: python scripts/fetch_all.py
         timeout-minutes: 16
         continue-on-error: true
