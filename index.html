@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pemantauan Lingkungan Pertagas</title>
+<link rel="icon" type="image/png" href="img/favicon.png">
 <meta name="description" content="Dashboard pemantauan hotspot karhutla, gempa bumi & tsunami, potensi longsor harian (model LHASA), cuaca dan kualitas udara per wilayah kerja PT Pertamina Gas">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -45,6 +46,11 @@ a{color:var(--brand)}
 .wrap{max-width:1440px;margin:0 auto;padding:16px}
 header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
 h1{font-size:20px;margin:0;letter-spacing:-.01em}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.brand-logo{height:44px;width:auto;flex:none;background:#fff;border-radius:10px;padding:6px 10px;box-shadow:0 0 0 1px var(--border)}
+.byline{font-size:12px;color:var(--muted);margin-top:2px}
+.byline b{color:var(--ink-2);font-weight:600}
+@media (max-width:560px){.brand{flex-direction:column;align-items:flex-start;gap:10px}.brand-logo{height:38px}}
 .sub{color:var(--ink-2);font-size:13px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface);font-size:12px;color:var(--ink-2);white-space:nowrap}
@@ -187,17 +193,6 @@ footer{font-size:12px;color:var(--muted);padding:8px 0 24px}
 .info{padding:10px 12px;border-radius:8px;background:var(--surface-2);font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
 tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 /* Status saat ini, kesegaran data, sumber data */
-.now-card{padding:12px 14px;margin-bottom:12px;display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:14px;align-items:start}
-.now-lvl{display:flex;gap:12px;align-items:center}
-.now-lvl .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-size:22px;font-weight:700;color:#fff;flex:none}
-.now-lvl .t{font-size:12px;color:var(--ink-2)}
-.now-lvl .v{font-size:20px;font-weight:700;line-height:1.15}
-.now-lvl .s{font-size:12px;color:var(--muted)}
-.alerts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;min-width:0}
-.alerts li{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:5px 8px;border-radius:8px;background:var(--surface-2);cursor:default}
-.alerts li[data-id]{cursor:pointer}
-.alerts li .ai{flex:none;width:18px;text-align:center;font-weight:700}
-.alerts li .am{color:var(--ink-2);font-size:12px}
 .fr{display:inline-flex;align-items:center;gap:5px;font-size:12px;white-space:nowrap}
 .fr i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
 .fr.fresh i{background:var(--good)} .fr.delayed i{background:var(--warning)} .fr.stale i{background:var(--critical)} .fr.none i{background:transparent;border:1.5px solid var(--muted)}
@@ -214,7 +209,6 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 .pop dl{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;margin:6px 0 0}
 .pop dt{color:var(--muted);font-size:12px} .pop dd{margin:0;font-size:12.5px}
 .pop .warn{margin-top:6px;font-size:12px;padding:5px 7px;border-radius:6px;background:var(--surface-2);color:var(--ink-2)}
-@media (max-width:1100px){.now-card{grid-template-columns:1fr}}
 @media (max-width:1100px){.gt-cols,.ls-cols{grid-template-columns:1fr}.gt-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-main{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
 @media (max-width:560px){.wrap{padding:12px 16px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#map{height:400px}.kpi .val{font-size:24px}.tab{padding:9px 10px 10px}}
 </style>
@@ -222,14 +216,17 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 <body>
 <div class="wrap">
   <header>
-    <div>
+    <div class="brand">
+      <img class="brand-logo" src="img/logo-pertamina-gas.png" alt="Pertamina Gas" width="168" height="32">
+      <div>
       <h1>Pemantauan Lingkungan Aset PT Pertamina Gas</h1>
       <div class="sub">Hotspot karhutla (deteksi satelit) · Gempa bumi &amp; tsunami (BMKG) · Gerakan tanah (PVMBG) · Indikasi potensi longsor harian (model LHASA) · Cuaca, kelembapan &amp; kualitas udara (model) per wilayah kerja</div>
+      <div class="byline">Dashboard by <b>Fungsi HSSE Pertamina Gas</b></div>
+      </div>
     </div>
     <div class="chips" id="status"></div>
   </header>
   <div id="banner"></div>
-  <section class="card now-card" id="nowCard" aria-live="polite"><div class="empty">Memuat status…</div></section>
 
   <nav class="tabbar" aria-label="Wilayah kerja">
     <div class="tabs-row" id="tabs" role="tablist"></div>
@@ -543,60 +540,7 @@ function renderTitle(){
 }
 
 /* ---------- Status saat ini + daftar yang perlu perhatian ---------- */
-const LV_RANK={kritis:3,waspada:2,pantau:1,info:0};
-const LV_INFO={kritis:{label:'Kritis',icon:'▲',v:'--critical'},waspada:{label:'Waspada',icon:'◆',v:'--serious'},pantau:{label:'Pantau',icon:'●',v:'--warning'},info:{label:'Info',icon:'i',v:'--axis'},normal:{label:'Normal',icon:'✓',v:'--good'}};
-// Kriteria cuaca ekstrem mengikuti BMKG: hujan lebat ≥ 50 mm/hari, angin kencang ≥ 25 knot (≈ 46 km/jam).
-const HUJAN_LEBAT=50,ANGIN_KENCANG=46;
 const AQI_KAT=v=>v==null?null:v<=50?'Baik':v<=100?'Sedang':v<=150?'Tidak sehat bagi kelompok sensitif':v<=200?'Tidak sehat':v<=300?'Sangat tidak sehat':'Berbahaya';
-function attentionItems(){
-  const items=[],scope=isOV()?AREAS:[state.tab],hs=allHotspots(),r=DATA.radius.hotspot;
-  for(const k of scope){
-    const inA=hs.filter(h=>h.area===k&&h.status!=='luar');
-    const kr=inA.filter(h=>h.status==='kritis'),ws=inA.filter(h=>h.status==='waspada'),pt=inA.filter(h=>h.status==='pantau');
-    const pre=isOV()?k+': ':'';
-    if(inA.length){
-      const rep=inA.filter(h=>h.persisten).length,krRep=kr.filter(h=>h.persisten).length;
-      // tingkat = radius terdekat; bila SEMUA hotspot kritis berulang di lokasi sama → turun satu tingkat (perlu verifikasi, bukan diabaikan)
-      const lv=kr.length?(krRep===kr.length?'waspada':'kritis'):ws.length?'waspada':'pantau';
-      const parts=[[kr.length,`≤ ${r.kritis} km`],[ws.length,`${r.kritis}–${r.waspada} km`],[pt.length,`${r.waspada}–${r.pantau} km`]].filter(x=>x[0]).map(x=>`${x[0]} pada ${x[1]}`);
-      items.push({lv,id:k,t:`${pre}Hotspot dekat aset: ${parts.join(' · ')}`,
-        m:(kr.length&&krRep<kr.length?'Deteksi satelit — segera verifikasi lapangan. ':'')+(rep?`${rep} berulang di lokasi sama (≥ 3 hari) — periksa apakah sumber panas industri/flare atau kebakaran berkelanjutan.`:'')});
-    }
-    for(const prod of ['hari_ini','besok']){const a=lsArea(k,prod);if(!a)continue;
-      const tg=a.pipa_km?.tinggi||0,sd=a.pipa_km?.sedang||0,fs=(a.fasilitas||[]).filter(f=>f.level!=='rendah').length;
-      if(tg>0||sd>0||fs)items.push({lv:tg>0?'waspada':'pantau',id:k,t:`${pre}Indikasi potensi longsor ${LS_PROD[prod]}: ${fmt(tg,1)} km pipa tinggi · ${fmt(sd,1)} km sedang${fs?` · ${fs} fasilitas`:''}`,m:'Keluaran model (bukan kepastian) — cek kondisi lereng/ROW'});}
-    const P=(DATA.gerakan_tanah||{}).prakiraan||{},p=(P.per_area||{})[k];
-    if(p&&periodeBulan(P)===bulanIni()&&(p.pipa_km?.tinggi||0)>0)items.push({lv:'pantau',id:k,t:`${pre}${fmt(p.pipa_km.tinggi,1)} km pipa di zona prakiraan gerakan tanah TINGGI (PVMBG)`,m:namaBulan(periodeBulan(P))});
-    for(const w of (DATA.cuaca||[]).filter(w=>w.area===k)){const L_=LIVE.wx[w.nama]||w,d0=(w.prakiraan||[])[0]||{};
-      if((d0.hujan_mm||0)>=HUJAN_LEBAT)items.push({lv:'pantau',id:k,t:`${pre}Prakiraan hujan lebat ${fmt(d0.hujan_mm)} mm hari ini — ${esc(w.nama)}`,m:'Model Open-Meteo; kriteria BMKG ≥ 50 mm/hari'});
-      if(Math.max(d0.angin_max||0,L_.hembusan_kmh||0)>=ANGIN_KENCANG)items.push({lv:'pantau',id:k,t:`${pre}Angin kencang hingga ${fmt(Math.max(d0.angin_max||0,L_.hembusan_kmh||0))} km/jam — ${esc(w.nama)}`,m:'Model; kriteria BMKG ≥ 25 knot'});
-      if((L_.aqi_us||0)>150)items.push({lv:'pantau',id:k,t:`${pre}Kualitas udara ${AQI_KAT(L_.aqi_us)} (US AQI ${fmt(L_.aqi_us)}) — ${esc(w.nama)}`,m:'Estimasi model CAMS, bukan ISPU stasiun'});}
-  }
-  // Gempa ≤ 24 jam terakhir dalam radius pantau aset, dan setiap potensi tsunami ≤ 7 hari
-  quakes('all').forEach(g=>{const age=eqAge(g);if(age==null)return;
-    if(g.tsunami&&age<=GEMPA_BARU_JAM)items.push({lv:'kritis',top:true,t:`⚠ Gempa M ${fmt(g.mag,1)} BERPOTENSI TSUNAMI (BMKG) — ${esc(g.wilayah)}`,m:`${when(g.datetime)} · ikuti peringatan resmi BMKG`});
-    if(age>24)return;
-    const views=isOV()?AREAS.map(k=>({k,v:g.per_area?.[k]})).filter(x=>x.v):[{k:state.tab,v:eqView(g)}];
-    const mk=DATA.radius.gempa_magnitudo_min_kritis??5;
-    // gempa di bawah magnitudo ambang (bawaan M 5) cukup tingkat Pantau di daftar ini
-    views.forEach(({k,v})=>{if(v&&['kritis','waspada'].includes(v.status))items.push({lv:(+g.mag>=mk)?v.status:'pantau',id:k,t:`${isOV()?k+': ':''}Gempa M ${fmt(g.mag,1)} ${fmt(v.jarak_km)} km dari ${esc(v.aset)}`,m:`${when(g.datetime)} (${lalu(g.datetime)})${g.potensi?' · '+esc(g.potensi):''}`});});
-  });
-  sources().filter(x=>x.st==='stale'&&['hotspot','gempa','lhasa'].includes(x.id)).forEach(x=>items.push({lv:'info',t:`Data ${x.nama} tidak segar`,m:`Terakhir berhasil ${x.ok?when(x.ok):'–'}`}));
-  return items.sort((a,b)=>(b.top?1:0)-(a.top?1:0)||LV_RANK[b.lv]-LV_RANK[a.lv]);
-}
-function renderNow(){
-  const items=attentionItems(),top=items.find(i=>i.lv!=='info');
-  const lv=top?top.lv:'normal',I=LV_INFO[lv];
-  const scope=isOV()?'semua wilayah kerja':state.tab;
-  const max=window.innerWidth<600?4:8;
-  $('#nowCard').innerHTML=`<div class="now-lvl"><div class="ic" style="background:${css(I.v)}" aria-hidden="true">${I.icon}</div>
-      <div><div class="t">Status saat ini · ${esc(scope)}</div><div class="v">${I.label}</div>
-      <div class="s">Kondisi terburuk dari daftar di samping. Hotspot yang seluruhnya berulang di lokasi sama diturunkan satu tingkat.</div></div></div>
-    <div>${items.length?`<ul class="alerts">${items.slice(0,max).map(i=>`<li ${i.id&&isOV()?`data-id="${i.id}" title="Buka tab ${i.id}"`:''}><span class="ai" style="color:${css(LV_INFO[i.lv].v)}">${LV_INFO[i.lv].icon}</span><div><div>${i.t}</div><div class="am">${i.m||''}</div></div></li>`).join('')}</ul>${items.length>max?`<div class="note" style="padding:4px 0 0">+${items.length-max} item lain — buka tab wilayah untuk detail.</div>`:''}`
-      :`<div class="empty" style="padding:6px 0">✓ Tidak ada hotspot dalam radius ${DATA.radius.hotspot.pantau} km, gempa signifikan dekat aset (24 jam), indikasi longsor, atau cuaca ekstrem pada data terakhir.</div>`}</div>`;
-  document.querySelectorAll('#nowCard li[data-id]').forEach(li=>li.onclick=()=>selectTab(li.dataset.id));
-}
-
 /* ---------- KPI ---------- */
 function kpi(lbl,val,hint,color,icon){return `<div class="card kpi"><div class="lbl">${color?`<span style="color:${css(color)}">${icon}</span>`:''}${lbl}</div><div class="val">${val}</div><div class="hint">${hint}</div></div>`}
 function renderKPIs(){
@@ -1044,7 +988,7 @@ function renderFoot(){
   $('#foot').innerHTML=`Sumber data: <a href="https://sipongi.gakkum.kehutanan.go.id/sebaran-titik-panas" target="_blank" rel="noopener">SiPongi+ Kemenhut</a> (satelit NASA MODIS/VIIRS) ·
    <a href="https://inatews.bmkg.go.id/" target="_blank" rel="noopener">BMKG InaTEWS</a> (data.bmkg.go.id) ·
    Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (ESDM One Map) · Indikasi longsor: model internal berdasarkan algoritma <a href="https://github.com/nasa/LHASA" target="_blank" rel="noopener">NASA LHASA 1.1</a> (ambang ARI95 NASA, hujan model Open-Meteo, kerentanan lereng NASA/Copernicus DEM) · Cuaca: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (model) · Kualitas udara: CAMS via Open-Meteo (model) · Aset: KMZ wilayah kerja Pertagas.<br>
-   Semua waktu ditampilkan dalam WIB (UTC+7). Jarak = jarak geodesik (Haversine) ke jalur pipa/fasilitas terdekat. Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran. Untuk peringatan dini tsunami resmi, selalu rujuk BMKG.`;
+   Dashboard by Fungsi HSSE PT Pertamina Gas. Semua waktu ditampilkan dalam WIB (UTC+7). Jarak = jarak geodesik (Haversine) ke jalur pipa/fasilitas terdekat. Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran. Untuk peringatan dini tsunami resmi, selalu rujuk BMKG.`;
 }
 
 /* ---------- cek langsung dari browser (opsional; bila gagal, data terjadwal tetap dipakai) ---------- */
@@ -1091,7 +1035,7 @@ async function liveWx(area){
   }catch(e){LIVE.wxErr=e.name==='AbortError'?'waktu habis':(e.message||String(e));return true;}
 }
 function renderLive(redrawMap){
-  safe('status',renderStatus);safe('ringkasan',renderNow,'#nowCard');safe('kpi',renderKPIs,'#kpis');safe('daftar',renderLists,'#eqList');
+  safe('status',renderStatus);safe('kpi',renderKPIs,'#kpis');safe('daftar',renderLists,'#eqList');
   safe('cuaca',renderWeather,'#wxGrid');safe('sumber',renderSources,'#srcTable');if(redrawMap)safe('peta',()=>drawMap(false));
 }
 async function liveChecks(){
@@ -1100,7 +1044,7 @@ async function liveChecks(){
 }
 
 function render(fit){
-  [['status',renderStatus],['tab',renderTabs],['judul',renderTitle,'#viewTitle'],['ringkasan',renderNow,'#nowCard'],['kpi',renderKPIs,'#kpis'],['kartu wilayah',renderOverviewAreas,'#ovAreas'],
+  [['status',renderStatus],['tab',renderTabs],['judul',renderTitle,'#viewTitle'],['kpi',renderKPIs,'#kpis'],['kartu wilayah',renderOverviewAreas,'#ovAreas'],
    ['peta',()=>drawMap(fit)],['daftar',renderLists,'#hsList'],['cuaca',renderWeather,'#wxGrid'],['gerakan tanah',renderGT,'#gtBody'],['longsor',renderLS,'#lsBody'],
    ['grafik',renderCharts],['tabel hotspot',renderHsTable,'#hsTable'],['sumber data',renderSources,'#srcTable'],['footer',renderFoot]].forEach(([n,f,el])=>safe(n,f,el));
 }
