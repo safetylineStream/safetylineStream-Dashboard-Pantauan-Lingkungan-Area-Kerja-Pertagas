@@ -1722,6 +1722,27 @@
 "persisten": false
 },
 {
+"lat": -2.07026,
+"lon": 103.70174,
+"conf": "medium",
+"sumber": "NASA-SNPP",
+"waktu_utc": "2026-10-06T19:32:00.000000Z",
+"waktu": "Rabu, 07 Oktober 2026 02:32:00",
+"prov": "Sumatera Selatan",
+"kab": "Musi Banyuasin",
+"kec": "Bayung Lencir",
+"desa": "Bayung Lencir Indah",
+"jarak_km": 2.44,
+"area": "OCSA",
+"aset": "Segment 3 KP 222-195",
+"jenis_aset": "pipa",
+"fasilitas": "Manifold 222+750",
+"jarak_fasilitas_km": 2.8,
+"status": "waspada",
+"berulang_hari": 6,
+"persisten": true
+},
+{
 "lat": -2.7456,
 "lon": 104.09176,
 "conf": "medium",
@@ -2392,26 +2413,5 @@
 "status": "pantau",
 "berulang_hari": 3,
 "persisten": true
-},
-{
-"lat": -7.10155,
-"lon": 111.83618,
-"conf": "medium",
-"sumber": "NASA-MODIS",
-"waktu_utc": "2026-10-06T01:09:00.000000Z",
-"waktu": "Selasa, 06 Oktober 2026 08:09:00",
-"prov": "Jawa Timur",
-"kab": "Tuban",
-"kec": "Parengan",
-"desa": "Brangkal",
-"jarak_km": 4.72,
-"area": "OEJA",
-"aset": "Pipa OEJA 28\"",
-"jenis_aset": "pipa",
-"fasilitas": "ADK Pig Receiver",
-"jarak_fasilitas_km": 36.5,
-"status": "pantau",
-"berulang_hari": 1,
-"persisten": false
 }
 ]
