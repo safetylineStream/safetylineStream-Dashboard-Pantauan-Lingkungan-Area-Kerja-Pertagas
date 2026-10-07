@@ -44,7 +44,15 @@
     "magnitudo_min_kritis": 5.0
   },
   "gerakan_tanah": {
-    "_petunjuk": "Data PVMBG. Layanan dicoba berurutan; bila semua gagal dipakai file manual di gerakan_tanah_raw/ (zkgt.* / prakiraan.*).",
+    "_petunjuk": "Data PVMBG. Sumber utama: Portal MBG (unduhan vektor prakiraan bulanan per provinsi, sekaligus zona kerentanan dari atribut Unsur). Bila gagal, dicoba ESDM One Map (layanan), lalu file manual di gerakan_tanah_raw/.",
+    "portalmbg": {
+      "aktif": true,
+      "_petunjuk": "Kode provinsi BPS untuk wilayah yang dilalui pipa. {bulan} tanpa nol di depan. Bulan belum terbit → otomatis memakai bulan sebelumnya.",
+      "url": "https://vsi.esdm.go.id/portalmbg/api/download-asset-forecast/gertan/forecast/vector/{tahun}/{bulan}/{provinsi}",
+      "provinsi": ["11", "12", "14", "15", "16", "31", "32", "33", "35", "36", "64"],
+      "simplify": 0.0002,
+      "cadangan_onemap": true
+    },
     "layanan": [
       {"id": "prakiraan", "nama": "Prakiraan Potensi Gerakan Tanah Bulanan", "refresh_hari": 1, "tile_maks_hari": 35,
        "urls": ["https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Prakiraan_Gerakan_Tanah_Bulanan/MapServer",
