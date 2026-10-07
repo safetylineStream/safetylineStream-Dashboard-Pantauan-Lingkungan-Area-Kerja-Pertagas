@@ -29,3 +29,4 @@ for id in 1 11 16 32; do curl "${H[@]}" -b $O/cj -H "X-XSRF-TOKEN: $TOK" -H "Con
 for f in $O/*.body; do file "$f" >> $O/types.txt; done
 # keep files small for git
 find $O -name '*.body' -size +5M -exec sh -c 'head -c 2000000 "$1" > "$1.head"; rm "$1"' _ {} \;
+# rerun 1791356148
