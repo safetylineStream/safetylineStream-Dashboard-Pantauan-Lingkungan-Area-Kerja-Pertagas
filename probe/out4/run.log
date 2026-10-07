@@ -1,44 +1,43 @@
-[14:09:39] Mode: gerakan_tanah · anggaran waktu 40 menit
-[14:09:39] Gerakan tanah (PVMBG) ...
-[14:09:39] PVMBG Portal MBG: prakiraan gerakan tanah bulanan per provinsi ...
-[14:09:55]    provinsi 11 2026-10: 629 poligon, 14 di koridor aset (5.7 MB, 14 dtk)
-[14:10:24]    provinsi 12 2026-10: 2218 poligon, 17 di koridor aset (14.3 MB, 28 dtk)
-[14:10:38]    provinsi 14 2026-10: 1005 poligon, 12 di koridor aset (7.4 MB, 12 dtk)
-[14:10:49]    provinsi 15 2026-10: 437 poligon, 6 di koridor aset (4.7 MB, 9 dtk)
-[14:11:02]    provinsi 16 2026-10: 469 poligon, 6 di koridor aset (7.0 MB, 11 dtk)
-[14:11:04]    provinsi 31 2026-10: 13 poligon, 13 di koridor aset (0.3 MB, 1 dtk)
-[14:13:35]    provinsi 32 2026-10: 62916 poligon, 470 di koridor aset (65.0 MB, 149 dtk)
-[14:15:32]    provinsi 33 2026-10: 70201 poligon, 1692 di koridor aset (37.4 MB, 115 dtk)
-[14:16:36]    provinsi 35 2026-10: 18990 poligon, 69 di koridor aset (23.4 MB, 63 dtk)
-[14:17:01]    provinsi 36 2026-10: 6020 poligon, 133 di koridor aset (11.9 MB, 23 dtk)
-[14:17:24]    provinsi 64 2026-10: 2189 poligon, 36 di koridor aset (11.3 MB, 21 dtk)
-[14:17:29]   Portal MBG selesai: 11/11 provinsi, periode 2026-10, prakiraan 2468 poligon
-[14:17:29]   ⏱ gerakan_tanah: 471 detik
-[14:17:29] Durasi total: 471 detik
-[14:17:29] Selesai → /home/runner/work/safetylineStream-Dashboard-Pantauan-Lingkungan-Area-Kerja-Pertagas/safetylineStream-Dashboard-Pantauan-Lingkungan-Area-Kerja-Pertagas/data/latest.json
-[14:17:29] {"sipongi": {"ok": true, "waktu": "2026-10-07T08:16+07:00", "terakhir_ok": "2026-10-07T08:16+07:00", "jumlah": 26501}, "bmkg_gempa": {"ok": true, "waktu": "2026-10-07T08:16+07:00", "terakhir_ok": "2026-10-07T08:16+07:00"}, "cuaca": {"ok": true, "waktu": "2026-10-07T08:16+07:00", "terakhir_ok": "2026-10-07T08:16+07:00", "jumlah_titik": 28}, "pvmbg_prakiraan": {"ok": true, "waktu": "2026-10-07T14:09+07:00", "terakhir_ok": "2026-10-07T14:09+07:00", "jumlah": 2468, "sumber": "portalmbg", "progres": "11/11"}, "pvmbg_zkgt": {"ok": true, "waktu": "2026-10-07T14:09+07:00", "terakhir_ok": "2026-10-07T14:09+07:00", "jumlah": 2468, "sumber": "portalmbg", "progres": "11/11"}}
+[14:18:51] Mode: gerakan_tanah · anggaran waktu 40 menit
+[14:18:51] Gerakan tanah (PVMBG) ...
+[14:18:51] PVMBG Portal MBG: prakiraan gerakan tanah bulanan per provinsi ...
+[14:19:06]    provinsi 11 2026-10: 629 poligon, 14 di koridor aset (5.7 MB, 13 dtk)
+[14:19:34]    provinsi 12 2026-10: 2218 poligon, 17 di koridor aset (14.3 MB, 26 dtk)
+[14:19:50]    provinsi 14 2026-10: 1005 poligon, 12 di koridor aset (7.4 MB, 15 dtk)
+[14:20:02]    provinsi 15 2026-10: 437 poligon, 6 di koridor aset (4.7 MB, 10 dtk)
+[14:20:14]    provinsi 16 2026-10: 469 poligon, 6 di koridor aset (7.0 MB, 12 dtk)
+[14:20:17]    provinsi 31 2026-10: 13 poligon, 13 di koridor aset (0.3 MB, 1 dtk)
+[14:23:05]    provinsi 32 2026-10: 62916 poligon, 456 di koridor aset (65.0 MB, 163 dtk)
+[14:25:08]    provinsi 33 2026-10: 70201 poligon, 1639 di koridor aset (37.4 MB, 122 dtk)
+[14:26:04]    provinsi 35 2026-10: 18990 poligon, 67 di koridor aset (23.4 MB, 54 dtk)
+[14:26:34]    provinsi 36 2026-10: 6020 poligon, 126 di koridor aset (11.9 MB, 25 dtk)
+[14:27:12]    provinsi 64 2026-10: 2189 poligon, 34 di koridor aset (11.3 MB, 36 dtk)
+[14:27:16]   Portal MBG selesai: 11/11 provinsi, periode 2026-10, prakiraan 2390 poligon
+[14:27:17]   ⏱ gerakan_tanah: 505 detik
+[14:27:17] Durasi total: 505 detik
+[14:27:17] Selesai → /home/runner/work/safetylineStream-Dashboard-Pantauan-Lingkungan-Area-Kerja-Pertagas/safetylineStream-Dashboard-Pantauan-Lingkungan-Area-Kerja-Pertagas/data/latest.json
+[14:27:17] {"sipongi": {"ok": true, "waktu": "2026-10-07T08:16+07:00", "terakhir_ok": "2026-10-07T08:16+07:00", "jumlah": 26501}, "bmkg_gempa": {"ok": true, "waktu": "2026-10-07T08:16+07:00", "terakhir_ok": "2026-10-07T08:16+07:00"}, "cuaca": {"ok": true, "waktu": "2026-10-07T08:16+07:00", "terakhir_ok": "2026-10-07T08:16+07:00", "jumlah_titik": 28}, "pvmbg_prakiraan": {"ok": true, "waktu": "2026-10-07T14:18+07:00", "terakhir_ok": "2026-10-07T14:18+07:00", "jumlah": 2390, "sumber": "portalmbg", "progres": "11/11"}, "pvmbg_zkgt": {"ok": true, "waktu": "2026-10-07T14:18+07:00", "terakhir_ok": "2026-10-07T14:18+07:00", "jumlah": 2390, "sumber": "portalmbg", "progres": "11/11"}}
 data/gerakan_tanah:
-total 9020
-drwxr-xr-x 5 runner runner    4096 Oct  7 07:17 .
-drwxr-xr-x 5 runner runner    4096 Oct  7 07:17 ..
-drwxr-xr-x 2 runner runner    4096 Oct  7 07:17 cache_portal
-drwxr-xr-x 2 runner runner    4096 Oct  7 07:09 cache_prakiraan
-drwxr-xr-x 2 runner runner    4096 Oct  7 07:09 cache_zkgt
--rw-r--r-- 1 runner runner 4601206 Oct  7 07:17 prakiraan.geojson
--rw-r--r-- 1 runner runner 4610765 Oct  7 07:17 zkgt.geojson
+total 2788
+drwxr-xr-x 5 runner runner    4096 Oct  7 07:27 .
+drwxr-xr-x 5 runner runner    4096 Oct  7 07:27 ..
+drwxr-xr-x 2 runner runner    4096 Oct  7 07:18 cache_portal
+drwxr-xr-x 2 runner runner    4096 Oct  7 07:18 cache_prakiraan
+drwxr-xr-x 2 runner runner    4096 Oct  7 07:18 cache_zkgt
+-rw-r--r-- 1 runner runner 2831539 Oct  7 07:27 prakiraan.geojson
 
 data/gerakan_tanah/cache_portal:
-total 8760
-drwxr-xr-x 2 runner runner    4096 Oct  7 07:17 .
-drwxr-xr-x 5 runner runner    4096 Oct  7 07:17 ..
--rw-r--r-- 1 runner runner  201986 Oct  7 07:09 11.json
--rw-r--r-- 1 runner runner  317179 Oct  7 07:10 12.json
--rw-r--r-- 1 runner runner  279037 Oct  7 07:10 14.json
--rw-r--r-- 1 runner runner   17545 Oct  7 07:10 15.json
--rw-r--r-- 1 runner runner  144047 Oct  7 07:11 16.json
--rw-r--r-- 1 runner runner  221603 Oct  7 07:11 31.json
--rw-r--r-- 1 runner runner 1588879 Oct  7 07:13 32.json
--rw-r--r-- 1 runner runner 4316517 Oct  7 07:15 33.json
--rw-r--r-- 1 runner runner  344453 Oct  7 07:16 35.json
--rw-r--r-- 1 runner runner  475956 Oct  7 07:17 36.json
--rw-r--r-- 1 runner runner 1027694 Oct  7 07:17 64.json
+total 2720
+drwxr-xr-x 2 runner runner    4096 Oct  7 07:18 .
+drwxr-xr-x 5 runner runner    4096 Oct  7 07:27 ..
+-rw-r--r-- 1 runner runner   53397 Oct  7 07:19 11.json
+-rw-r--r-- 1 runner runner   81696 Oct  7 07:19 12.json
+-rw-r--r-- 1 runner runner   72534 Oct  7 07:19 14.json
+-rw-r--r-- 1 runner runner    5961 Oct  7 07:20 15.json
+-rw-r--r-- 1 runner runner   38688 Oct  7 07:20 16.json
+-rw-r--r-- 1 runner runner   60039 Oct  7 07:20 31.json
+-rw-r--r-- 1 runner runner  505079 Oct  7 07:23 32.json
+-rw-r--r-- 1 runner runner 1422496 Oct  7 07:25 33.json
+-rw-r--r-- 1 runner runner  102747 Oct  7 07:26 35.json
+-rw-r--r-- 1 runner runner  147847 Oct  7 07:26 36.json
+-rw-r--r-- 1 runner runner  258201 Oct  7 07:27 64.json
