@@ -1,0 +1,22 @@
+probe/out2/caps.body: JSON text data
+probe/out2/describe.body: JSON text data
+probe/out2/dl_ras_ind.body: HTML document, ASCII text, with very long lines (5391)
+probe/out2/dl_vec_11.body: Zip archive data, at least v2.0 to extract, compression method=deflate
+probe/out2/dl_vec_12.body: Zip archive data, at least v2.0 to extract, compression method=deflate
+probe/out2/dl_vec_16.body: Zip archive data, at least v2.0 to extract, compression method=deflate
+probe/out2/dl_vec_32.body: Zip archive data, at least v2.0 to extract, compression method=deflate
+probe/out2/dl_vec_35.body: Zip archive data, at least v2.0 to extract, compression method=deflate
+probe/out2/dl_vec_64.body: Zip archive data, at least v2.0 to extract, compression method=deflate
+probe/out2/dl_vec_ind.body: HTML document, ASCII text, with very long lines (5391)
+probe/out2/gfi_aceh.body: JSON text data
+probe/out2/gfi_bogor.body: JSON text data
+probe/out2/map_png.body: JSON text data
+probe/out2/map_png_sep.body: JSON text data
+probe/out2/prov_1.body: JSON text data
+probe/out2/prov_11.body: JSON text data
+probe/out2/prov_16.body: JSON text data
+probe/out2/prov_32.body: JSON text data
+probe/out2/wfs_caps.body: JSON text data
+probe/out2/wfs_on_wms.body: JSON text data
+probe/out2/wfs_ows.body: JSON text data
+probe/out2/wfs_path.body: JSON text data

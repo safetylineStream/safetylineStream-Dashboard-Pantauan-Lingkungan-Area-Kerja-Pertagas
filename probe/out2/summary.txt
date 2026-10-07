@@ -1,0 +1,22 @@
+caps HTTP/1.1 403  Content-Type: application/json 54
+wfs_caps HTTP/1.1 404  Content-Type: application/json 77
+wfs_on_wms HTTP/1.1 403  Content-Type: application/json 49
+wfs_path HTTP/1.1 404  Content-Type: application/json 77
+wfs_ows HTTP/1.1 404  Content-Type: application/json 77
+describe HTTP/1.1 403  Content-Type: application/json 52
+gfi_bogor HTTP/1.1 200  Content-Type: application/json 21860
+gfi_aceh HTTP/1.1 200  Content-Type: application/json 4287
+map_png HTTP/1.1 404  Content-Type: application/json 48
+map_png_sep HTTP/1.1 404  Content-Type: application/json 48
+dl_vec_ind HTTP/1.1 404 Not Found Content-Type: text/html; charset=UTF-8 6603
+dl_ras_ind HTTP/1.1 404 Not Found Content-Type: text/html; charset=UTF-8 6603
+dl_vec_11 HTTP/1.1 200 OK Content-Type: application/zip 5658142
+dl_vec_12 HTTP/1.1 200 OK Content-Type: application/zip 14302240
+dl_vec_16 HTTP/1.1 200 OK Content-Type: application/zip 7044164
+dl_vec_32 HTTP/1.1 200 OK Content-Type: application/zip 65039784
+dl_vec_35 HTTP/1.1 200 OK Content-Type: application/zip 23442829
+dl_vec_64 HTTP/1.1 200 OK Content-Type: application/zip 11302208
+prov 1 HTTP/1.1 200 OK []
+prov 11 HTTP/1.1 200 OK {"provinceName":"ACEH","provinceId":"11"}
+prov 16 HTTP/1.1 200 OK {"provinceName":"SUMATERA SELATAN","provinceId":"16"}
+prov 32 HTTP/1.1 200 OK {"provinceName":"JAWA BARAT","provinceId":"32"}
