@@ -301,7 +301,7 @@ def test_portalmbg_level_dan_potong_koridor():
     prak, ker, n_all, n_in = portalmbg.proses_zip(data, STRtree(koridor), koridor, simplify=0)
     assert n_all == 4 and n_in == 2  # di luar koridor & danau dibuang
     assert sorted(f["level"] for f in prak) == ["bandang", "tinggi"]
-    assert sorted(f["level"] for f in ker) == ["bandang", "tinggi"]
+    assert sorted(f["level_kerentanan"] for f in ker) == ["bandang", "tinggi"]
     from shapely.geometry import shape
     assert all(shape(f["geometry"]).within(box(0.25, 0.25, 0.75, 0.75).buffer(1e-9)) for f in prak)
 
