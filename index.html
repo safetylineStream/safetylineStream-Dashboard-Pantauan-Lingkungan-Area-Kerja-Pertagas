@@ -360,7 +360,7 @@ const LOADERR={};          // berkas data yang gagal dimuat → ditampilkan, tid
 const LIVE={gempa:null,gempaErr:null,wx:{},wxErr:null};  // hasil cek langsung dari browser (opsional)
 const GT_LV=['tinggi','bandang','menengah','rendah','sangat_rendah'];
 const GT_INFO={tinggi:{label:'Tinggi',v:'--critical'},bandang:{label:'Berpotensi banjir bandang',v:'--quake'},menengah:{label:'Menengah',v:'--serious'},rendah:{label:'Rendah',v:'--warning'},sangat_rendah:{label:'Sangat rendah',v:'--axis'}};
-const state={tab:OV,conf:'all',eqTab:'terkini',ls:'hari_ini'};
+const state={tab:OV,conf:'all',eqTab:'terkini',ls:'hari_ini',gtSeg:'prakiraan'};
 const LS_LV=['tinggi','sedang','rendah'];
 const LS_INFO={tinggi:{label:'Tinggi',icon:'▲',v:'--critical'},sedang:{label:'Sedang',icon:'◆',v:'--serious'},rendah:{label:'Rendah',icon:'●',v:'--warning'}};
 const LS_PROD={hari_ini:'hari ini',besok:'besok'};
@@ -658,6 +658,7 @@ function locateAsset(name){
 function drawMap(fit){
   if(!map){$('#legend').innerHTML='';return;}
   Object.values(layers).forEach(l=>l.clearLayers());
+  if(segHi){map.removeLayer(segHi);segHi=null;}
   const inTab=f=>isOV()||f.properties.area===state.tab;
   const feats=ASSETS.features.filter(inTab);
   const gtStyle=f=>{const c=css((GT_INFO[f.properties.level]||GT_INFO.sangat_rendah).v);return {pane:'gt',color:c,weight:1,opacity:.7,fillColor:c,fillOpacity:f.properties.level==='sangat_rendah'?.12:.28}};
@@ -846,6 +847,24 @@ function renderCharts(){
 }
 
 /* ---------- Gerakan tanah (PVMBG) ---------- */
+let segHi=null;
+function focusSeg(sg,judul){
+  if(!sg)return;
+  if(!map||sg.lat==null){return;}
+  window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
+  if(segHi){map.removeLayer(segHi);segHi=null;}
+  const c=css((GT_INFO[sg.level]||GT_INFO.menengah).v);
+  const pop=`<div class="pop"><b>${esc(judul)}</b> ${gtBadge(sg.level)}`+popRows([['Ruas pipa',esc(sg.aset)],['Panjang dalam zona',`<b>${fmt(sg.km,2)} km</b>`],
+    ['Titik tengah',`${sg.lat}, ${sg.lon} · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+sg.lat},${+sg.lon}">Google Maps</a>`],['Sumber','PVMBG – Portal MBG']])+
+    `<div class="warn">Zona gerakan tanah PVMBG yang berpotongan dengan jalur pipa (koridor analisis). Verifikasi kondisi lereng/ROW di lapangan.</div></div>`;
+  if(Array.isArray(sg.garis)&&sg.garis.length>1){
+    segHi=L.layerGroup([L.polyline(sg.garis.map(([x,y])=>[y,x]),{color:css('--surface'),weight:11,opacity:.9}),
+                        L.polyline(sg.garis.map(([x,y])=>[y,x]),{color:c,weight:6,opacity:1})]).addTo(map);
+    const b=L.latLngBounds(sg.garis.map(([x,y])=>[y,x]));
+    map.fitBounds(b,{padding:[50,50],maxZoom:15});
+  }else map.setView([sg.lat,sg.lon],14);
+  L.popup().setLatLng([sg.lat,sg.lon]).setContent(pop).openOn(map);
+}
 const gtBadge=lv=>lv?`<span class="badge b-${lv}">${GT_INFO[lv].label}</span>`:'<span class="badge b-aman">Di luar zona</span>';
 function segbar(title,sub,km,total){
   const sum=GT_LV.reduce((a,k)=>a+(km[k]||0),0), out=Math.max(0,total-sum);
@@ -885,7 +904,7 @@ function renderGT(){
   (z?.fasilitas||[]).forEach(f=>{fmap[f.aset]={...fmap[f.aset],aset:f.aset,zona:f.level,lat:f.lat,lon:f.lon}});
   const rank=lv=>lv?GT_LV.indexOf(lv):9;
   const fas=Object.values(fmap).filter(f=>rank(f.prak)<=2||rank(f.zona)<=2).sort((a,b)=>Math.min(rank(a.prak),rank(a.zona))-Math.min(rank(b.prak),rank(b.zona)));
-  const segs=(p?.segmen||[]);
+  const segSrc=state.gtSeg==='kerentanan'?z:p, segs=(segSrc?.segmen||[]), segTot=segSrc?.jumlah_segmen||segs.length;
   const total=p?.total_pipa_km??z?.total_pipa_km??0;
   if(none){$('#gtBody').innerHTML=setup;return;}
   const belum=P.tersedia&&!p&&!z?`<div class="info"><b>Wilayah ${k} belum dianalisis</b> terhadap data PVMBG terakhir (wilayah/aset ditambahkan setelah unduhan). Angka di bawah belum mewakili wilayah ini.</div>`:'';
@@ -901,11 +920,16 @@ function renderGT(){
     <div class="gt-cols">
       <div><h4>Fasilitas di zona menengah–tinggi</h4><div class="tbl"><table><thead><tr><th>Fasilitas</th><th>Prakiraan</th><th>Kerentanan</th></tr></thead><tbody>
         ${fas.length?fas.map((f,i)=>`<tr class="link" data-lat="${f.lat}" data-lon="${f.lon}"><td>${esc(f.aset)}</td><td>${gtBadge(f.prak)}</td><td>${gtBadge(f.zona)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Tidak ada fasilitas di zona menengah–tinggi.</td></tr>'}</tbody></table></div></div>
-      <div><h4>Segmen pipa di zona prakiraan menengah–tinggi</h4><div class="tbl"><table><thead><tr><th>Segmen / ruas</th><th>Tingkat</th><th class="num">Panjang (km)</th></tr></thead><tbody>
-        ${segs.length?segs.map(s=>`<tr><td>${esc(s.aset)}</td><td>${gtBadge(s.level)}</td><td class="num">${fmt(s.km,2)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Tidak ada segmen di zona menengah–tinggi.</td></tr>'}</tbody></table></div></div>
+      <div><h4>Segmen pipa di zona ${state.gtSeg==='kerentanan'?'kerentanan':'prakiraan'} menengah–tinggi${segTot>segs.length?` (${segs.length} terpanjang dari ${segTot})`:''}</h4>
+        <div class="sub-tabs" id="gtSegTabs" style="padding:0 0 6px"><button type="button" data-k="prakiraan" class="${state.gtSeg==='prakiraan'?'on':''}">Prakiraan ${esc(namaBulan(ym))}</button><button type="button" data-k="kerentanan" class="${state.gtSeg==='kerentanan'?'on':''}">Zona kerentanan</button></div>
+        <div class="tbl"><table><thead><tr><th>Segmen / ruas</th><th>Tingkat</th><th class="num">Panjang (km)</th><th>Lokasi</th></tr></thead><tbody>
+        ${segs.length?segs.map((s,i)=>`<tr class="link" data-seg="${i}" title="Klik untuk menuju ruas ini di peta"><td>${esc(s.aset)}</td><td>${gtBadge(s.level)}</td><td class="num">${fmt(s.km,2)}</td><td style="white-space:nowrap;color:var(--brand)">${s.lat!=null?`${(+s.lat).toFixed(4)}, ${(+s.lon).toFixed(4)} ↗`:'<span style="color:var(--muted)">–</span>'}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Tidak ada segmen di zona menengah–tinggi.</td></tr>'}</tbody></table></div>
+        <div class="note" style="padding:4px 0 0">Klik baris untuk menuju ruas di peta; ruas disorot sesuai warna zonanya.</div></div>
     </div>`;
   const toMap=(lat,lon,z,html)=>{window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);};
   document.querySelectorAll('#gtBody tr[data-lat]').forEach(r=>r.onclick=()=>toMap(+r.dataset.lat,+r.dataset.lon,14));
+  document.querySelectorAll('#gtBody tr[data-seg]').forEach(r=>r.onclick=()=>focusSeg(segs[+r.dataset.seg],state.gtSeg==='kerentanan'?'Zona kerentanan gerakan tanah':`Prakiraan gerakan tanah ${namaBulan(ym)}`));
+  document.querySelectorAll('#gtSegTabs button').forEach(b=>b.onclick=()=>{state.gtSeg=b.dataset.k;safe('gerakan tanah',renderGT,'#gtBody');});
 }
 
 /* ---------- Potensi longsor harian (model LHASA internal) ---------- */

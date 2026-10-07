@@ -338,3 +338,18 @@ def test_portalmbg_run_fallback_bulan_dan_cache(tmp_path, monkeypatch):
     n_get = sum(1 for c in calls if c[0] == "GET")
     h2 = portalmbg.run(ctx, box(0.2, 0.2, 0.8, 0.8), "sig1")  # run kedua: terbit sama → tanpa unduh ulang
     assert sum(1 for c in calls if c[0] == "GET") == n_get and h2["selesai"] == 1
+
+
+def test_segmen_gerakan_tanah_punya_lokasi():
+    import gerakan_tanah as gt
+    from shapely.geometry import LineString, box
+    pipa = LineString([(100.0, 0.0), (100.1, 0.0)])
+    zona = [(box(100.01, -0.01, 100.03, 0.01), "tinggi"), (box(100.06, -0.01, 100.08, 0.01), "tinggi"),
+            (box(100.04, -0.01, 100.05, 0.01), "menengah")]
+    r = gt.analyse(zona, [(pipa, {"area": "X", "kind": "pipa", "name": "Pipa uji"})], ["X"])["X"]
+    seg = r["segmen"]
+    assert [s["level"] for s in seg] == ["tinggi", "tinggi", "menengah"]  # dua potongan tinggi terpisah
+    assert r["jumlah_segmen"] == 3
+    s0 = seg[0]
+    assert abs(s0["km"] - 2.22) < 0.05 and len(s0["garis"]) >= 2
+    assert 100.01 <= s0["lon"] <= 100.08 and abs(s0["lat"]) < 1e-6

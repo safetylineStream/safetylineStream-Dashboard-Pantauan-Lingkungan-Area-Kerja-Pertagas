@@ -190,6 +190,28 @@ def km_len(geom):
     return GEOD.geometry_length(geom) / 1000.0 if geom and not geom.is_empty else 0.0
 
 
+def _garis(geom):
+    """Pecah hasil potongan (LineString/Multi/GeometryCollection) menjadi daftar LineString."""
+    if geom is None or geom.is_empty:
+        return []
+    if geom.geom_type == "LineString":
+        return [geom]
+    if hasattr(geom, "geoms"):
+        return [x for g in geom.geoms for x in _garis(g)]
+    return []
+
+
+def _ruas(part, aset, lv):
+    """Satu potongan ruas pipa yang masuk zona: panjang, titik tengah (untuk navigasi) & garis ringkas."""
+    mid = part.interpolate(0.5, normalized=True)
+    simp = part.simplify(0.0003, preserve_topology=False)
+    return {"aset": aset, "level": lv, "km": round(km_len(part), 2), "lat": round(mid.y, 5), "lon": round(mid.x, 5),
+            "garis": [[round(x, 5), round(y, 5)] for x, y, *_ in simp.coords]}
+
+
+MAKS_SEGMEN = 60
+
+
 def analyse(zones, assets_ll, areas):
     """zones: list of (geom_ll, level). Kembalikan ringkasan per wilayah."""
     by_level = {}
@@ -211,7 +233,8 @@ def analyse(zones, assets_ll, areas):
                     if L > 0.01:
                         km[lv] += L
                         if lv in ("tinggi", "bandang", "menengah"):
-                            segs.append({"aset": p["name"], "level": lv, "km": round(L, 2)})
+                            # tiap potongan yang terpisah dicatat sendiri supaya bisa dituju di peta
+                            segs += [_ruas(part, p["name"], lv) for part in _garis(inter) if km_len(part) >= 0.01]
         fas = []
         for g, p in pts:
             for lv in LEVELS:
@@ -222,7 +245,7 @@ def analyse(zones, assets_ll, areas):
         segs.sort(key=lambda s: (LEVELS.index(s["level"]), -s["km"]))
         fas.sort(key=lambda f: LEVELS.index(f["level"]))
         res[code] = {"total_pipa_km": round(total, 1), "pipa_km": {k: round(v, 2) for k, v in km.items()},
-                     "fasilitas": fas, "segmen": segs[:30], "terburuk": worst}
+                     "fasilitas": fas, "segmen": segs[:MAKS_SEGMEN], "jumlah_segmen": len(segs), "terburuk": worst}
     return res
 
 
