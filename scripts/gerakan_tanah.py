@@ -421,7 +421,15 @@ def run(ctx):
                 if hp["selesai"] == 0:
                     break
                 periode = portalmbg.nama_periode(ym) if lid == "prakiraan" else "Zona kerentanan gerakan tanah (atribut Unsur, peta PVMBG)"
-                (outdir / f"{lid}.geojson").write_text(json.dumps(to_fc(zones, periode), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+                if lid == "prakiraan":
+                    # SATU berkas peta untuk dua lapisan: properti level (prakiraan) & level_kerentanan (zona kerentanan)
+                    feats = [{"type": "Feature", "geometry": mapping(g),
+                              "properties": {"level": lv, "label": LABEL.get(lv, ""), "level_kerentanan": lvk,
+                                             **{k: v for k, v in pr.items() if k in ("zona_prakiraan", "zona_kerentanan", "keterangan", "wilayah", "provinsi")}}}
+                             for g, lv, lvk, pr in hp["gabungan"]]
+                    (outdir / "prakiraan.geojson").write_text(json.dumps({"type": "FeatureCollection", "periode": periode, "features": feats},
+                                                                         ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+                    (outdir / "zkgt.geojson").unlink(missing_ok=True)  # zona kerentanan dibaca dari berkas yang sama
                 per_area = analyse([(g, lv) for g, lv, _ in zones], assets_ll, areas)
                 lengkap = hp["selesai"] == hp["total"]
                 out[lid] = {"tersedia": True, "nama": nama, "sumber": src + (f" · {periode}" if lid == "prakiraan" else ""),
@@ -429,6 +437,7 @@ def run(ctx):
                             "periode_campuran": hp["periode_campuran"] if lid == "prakiraan" else None,
                             "diambil": NOW.isoformat(timespec="minutes"), "jumlah_poligon": len(zones), "per_area": per_area,
                             "wilayah": sorted(areas), "provinsi": hp["provinsi"], "stale": not lengkap,
+                            "berkas_peta": "prakiraan.geojson", "properti_level": "level" if lid == "prakiraan" else "level_kerentanan",
                             "terbit": max((v.get("terbit") or "" for v in hp["provinsi"].values()), default="") or None}
                 status[f"pvmbg_{lid}"] = {"ok": True, "jumlah": len(zones), "sumber": "portalmbg", "progres": prog,
                                           **({"pesan": "sebagian provinsi: " + hp["pesan"]} if hp["pesan"] else {})}

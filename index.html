@@ -377,7 +377,12 @@ async function loadData(){
     getJSON('data/lhasa/lhasa.json','model longsor (lhasa.json)',true),getJSON('data/lhasa/ruas.geojson')]);
   if(d)DATA=d;if(a)ASSETS=a;HIST=Array.isArray(h)?h:[];GT.prakiraan=p;LS=ls;LSR=lsr;
   // zona kerentanan hanya diunduh bila pipeline menandainya tersedia (hindari 404 yang tidak perlu)
-  GT.zkgt=DATA.gerakan_tanah?.zkgt?.tersedia?await getJSON('data/gerakan_tanah/zkgt.geojson'):null;
+  const Zm=DATA.gerakan_tanah?.zkgt||{};
+  if(Zm.tersedia&&Zm.berkas_peta==='prakiraan.geojson'&&GT.prakiraan){
+    // Portal MBG: zona kerentanan ada di berkas yang sama (properti level_kerentanan)
+    GT.zkgt={type:'FeatureCollection',features:(GT.prakiraan.features||[]).filter(f=>f.properties.level_kerentanan).map(f=>({...f,properties:{...f.properties,level:f.properties.level_kerentanan}}))};
+    GT.prakiraan={...GT.prakiraan,features:(GT.prakiraan.features||[]).filter(f=>f.properties.level)};
+  }else GT.zkgt=Zm.tersedia?await getJSON('data/gerakan_tanah/zkgt.geojson'):null;
   DATA.radius=DATA.radius||{hotspot:{kritis:1,waspada:3,pantau:5},gempa:{kritis:50,waspada:150,pantau:300}};
   AREAS=Object.keys(DATA.areas||ASSETS.areas||{});
   if(!DATA.areas)DATA.areas=ASSETS.areas||{};
@@ -656,7 +661,7 @@ function drawMap(fit){
   const inTab=f=>isOV()||f.properties.area===state.tab;
   const feats=ASSETS.features.filter(inTab);
   const gtStyle=f=>{const c=css((GT_INFO[f.properties.level]||GT_INFO.sangat_rendah).v);return {pane:'gt',color:c,weight:1,opacity:.7,fillColor:c,fillOpacity:f.properties.level==='sangat_rendah'?.12:.28}};
-  const gtPop=(title)=>(f,l)=>l.bindPopup(`<b>${title}</b><br>Tingkat: ${gtBadge(f.properties.level)}<br>${Object.entries(f.properties).filter(([k])=>!['level','label'].includes(k)).slice(0,6).map(([k,v])=>`<span style="color:var(--muted)">${esc(k)}:</span> ${esc(v)}`).join('<br>')}`);
+  const gtPop=(title)=>(f,l)=>l.bindPopup(`<b>${title}</b><br>Tingkat: ${gtBadge(f.properties.level)}<br>${Object.entries(f.properties).filter(([k])=>!['level','label','level_kerentanan'].includes(k)).slice(0,6).map(([k,v])=>`<span style="color:var(--muted)">${esc(k)}:</span> ${esc(v)}`).join('<br>')}`);
   if(GT.prakiraan)L.geoJSON(GT.prakiraan,{style:gtStyle,onEachFeature:gtPop('Prakiraan potensi gerakan tanah'+(GT.prakiraan.periode?` — ${esc(GT.prakiraan.periode)}`:''))}).addTo(layers.gtPrak);
   if(GT.zkgt)L.geoJSON(GT.zkgt,{style:gtStyle,onEachFeature:gtPop('Zona kerentanan gerakan tanah')}).addTo(layers.gtZona);
   const pipa=L.geoJSON({type:'FeatureCollection',features:feats.filter(f=>f.properties.kind==='pipa')},{

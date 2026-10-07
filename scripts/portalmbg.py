@@ -22,7 +22,7 @@ import re
 import zipfile
 from datetime import datetime
 
-from shapely import force_2d, make_valid
+from shapely import force_2d, make_valid, set_precision
 from shapely.geometry import box, mapping, shape
 from shapely.prepared import prep
 from shapely.strtree import STRtree
@@ -92,6 +92,10 @@ def proses_zip(data, koridor_tree, koridor_parts, simplify=0.0002):
         if clip is None or clip.is_empty:
             continue
         clip = clip.simplify(simplify, preserve_topology=True)
+        try:
+            clip = set_precision(clip, 1e-5)  # ±1 m — memperkecil berkas tanpa mengubah analisis berarti
+        except Exception:  # noqa
+            pass
         if clip.is_empty:
             continue
         n_in += 1
@@ -99,11 +103,10 @@ def proses_zip(data, koridor_tree, koridor_parts, simplify=0.0002):
                  "keterangan": (str(rec[iK])[:200] if iK is not None else ""),
                  "wilayah": str(rec[iW]) if iW is not None else "", "tahun_peta": str(rec[iT]) if iT is not None else ""}
         gm = mapping(clip)
-        if lvP:
-            prak.append({"level": lvP, "props": props, "geometry": gm})
-        if lvU:
-            ker.append({"level": lvU, "props": props, "geometry": gm})
-    return prak, ker, len(r), n_in
+        # satu fitur menyimpan dua tingkat: prakiraan (level) & kerentanan (level_kerentanan)
+        prak.append({"level": lvP, "level_kerentanan": lvU, "props": props, "geometry": gm})
+    ker = [f for f in prak if f["level_kerentanan"]]
+    return [f for f in prak if f["level"]], ker, len(r), n_in
 
 
 def run(ctx, corridor, assets_sig):
@@ -122,7 +125,7 @@ def run(ctx, corridor, assets_sig):
 
     y, m = NOW.year, NOW.month
     kandidat = [(y, m), bulan_sebelumnya(y, m)]
-    hasil = {"provinsi": {}, "prakiraan": [], "zkgt": [], "selesai": 0, "total": len(pcfg["provinsi"]), "pesan": ""}
+    hasil = {"provinsi": {}, "prakiraan": [], "zkgt": [], "gabungan": [], "selesai": 0, "total": len(pcfg["provinsi"]), "pesan": ""}
     gagal = []
     for kode in pcfg["provinsi"]:
         cf = cdir / f"{kode}.json"
@@ -145,7 +148,8 @@ def run(ctx, corridor, assets_sig):
                 lm = h.headers.get("Last-Modified")
             except Exception as e:  # noqa — HEAD gagal: lanjut GET
                 log(f"   HEAD {kode} {ym} gagal: {str(e)[:80]}")
-            if cache and cache.get("periode_bulan") == ym and cache.get("sig") == assets_sig and lm and cache.get("terbit") == lm:
+            if (cache and cache.get("versi") == 2 and cache.get("periode_bulan") == ym and cache.get("sig") == assets_sig
+                    and lm and cache.get("terbit") == lm):
                 dipakai = cache
                 log(f"   provinsi {kode} {ym}: cache masih berlaku (terbit {lm})")
                 break
@@ -162,9 +166,10 @@ def run(ctx, corridor, assets_sig):
                 break
             prak, ker, n_all, n_in = proses_zip(r.content, tree, parts_prep, pcfg.get("simplify", 0.0002))
             lm = r.headers.get("Last-Modified") or lm
-            dipakai = {"kode": kode, "periode_bulan": ym, "terbit": lm, "sig": assets_sig,
+            gab = {id(f): f for f in prak + ker}.values()
+            dipakai = {"kode": kode, "periode_bulan": ym, "terbit": lm, "sig": assets_sig, "versi": 2,
                        "diambil": NOW.isoformat(timespec="minutes"), "poligon_provinsi": n_all, "poligon_koridor": n_in,
-                       "ukuran_mb": round(len(r.content) / 1e6, 1), "prakiraan": prak, "zkgt": ker}
+                       "ukuran_mb": round(len(r.content) / 1e6, 1), "fitur": list(gab)}
             cf.write_text(json.dumps(dipakai, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
             log(f"   provinsi {kode} {ym}: {n_all} poligon, {n_in} di koridor aset "
                 f"({len(r.content)/1e6:.1f} MB, {(datetime.now()-t0).seconds} dtk)")
@@ -178,9 +183,13 @@ def run(ctx, corridor, assets_sig):
                 continue
         hasil["selesai"] += 1
         hasil["provinsi"][kode] = {k: dipakai.get(k) for k in ("periode_bulan", "terbit", "diambil", "poligon_koridor", "stale")}
-        for key in ("prakiraan", "zkgt"):
-            for f in dipakai.get(key, []):
-                hasil[key].append((shape(f["geometry"]), f["level"], {**f["props"], "provinsi": kode}))
+        for f in dipakai.get("fitur", []):
+            g, pr = shape(f["geometry"]), {**f["props"], "provinsi": kode}
+            if f.get("level"):
+                hasil["prakiraan"].append((g, f["level"], pr))
+            if f.get("level_kerentanan"):
+                hasil["zkgt"].append((g, f["level_kerentanan"], pr))
+            hasil["gabungan"].append((g, f.get("level"), f.get("level_kerentanan"), pr))
     per = sorted({v["periode_bulan"] for v in hasil["provinsi"].values() if v.get("periode_bulan")})
     hasil["periode_bulan"] = per[0] if per else None  # bulan tertua bila campuran (jujur)
     hasil["periode_campuran"] = len(per) > 1
