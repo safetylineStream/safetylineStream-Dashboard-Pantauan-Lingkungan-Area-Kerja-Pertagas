@@ -1,0 +1,122 @@
+/home/runner/work/_temp/z/2026_09_16.zip NOT ZIP File is not a zip file
+
+## 2026_10_11.zip 7 ['PROVINSI ACEH.shp', 'PROVINSI ACEH.shx', 'PROVINSI ACEH.dbf', 'PROVINSI ACEH.prj', 'PROVINSI ACEH.cpg', 'PROVINSI ACEH.sbn', 'PROVINSI ACEH.sbx']
+ shp PROVINSI ACEH.shp n= 629 type POLYGONZ bbox [95.011, 1.977, 98.287, 5.907]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Rendah', 202), ('Sangat Rendah', 148), ('Danau/Situ', 103), ('Tinggi', 79), ('Menengah', 66), ('Danau Tapal Kuda', 31)]
+   Tahun [('2009', 548), ('0', 81)]
+   Wilayah [('', 629)]
+   Zona_Perki [('Rendah', 295), ('Danau', 134), ('Tinggi', 109), ('Menengah', 91)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '185653', 'Unsur': 'Rendah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan rendah untuk terken', 'Tahun': '2009', 'Wilayah': '', 'Zona': '002', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Rendah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_12.zip 7 ['PROVINSI SUMATERA UTARA.shp', 'PROVINSI SUMATERA UTARA.shx', 'PROVINSI SUMATERA UTARA.dbf', 'PROVINSI SUMATERA UTARA.prj', 'PROVINSI SUMATERA UTARA.cpg', 'PROVINSI SUMATERA UTARA.sbn', 'PROVINSI SUMATERA UTARA.sbx']
+ shp PROVINSI SUMATERA UTARA.shp n= 2218 type POLYGONZ bbox [97.059, -0.638, 100.434, 4.303]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Danau/Situ', 796), ('Rendah', 501), ('Menengah', 408), ('Tinggi', 392), ('Sangat Rendah', 94), ('Alur Aliran Bahan Rombakan', 25), ('Danau', 2)]
+   Tahun [('2009', 1752), ('0', 466)]
+   Wilayah [('', 2182), ('Sumatera Utara', 24), ('Riau', 11), ('Sumatera UtaraSumate', 1)]
+   Zona_Perki [('Danau', 798), ('Tinggi', 655), ('Rendah', 427), ('Menengah', 313), ('Berpotensi Banjir Bandang/Aliran Bahan Rombakan', 25)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '178384', 'Unsur': 'Rendah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan rendah untuk terken', 'Tahun': '2009', 'Wilayah': '', 'Zona': '002', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Rendah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_14.zip 7 ['PROVINSI RIAU.shp', 'PROVINSI RIAU.shx', 'PROVINSI RIAU.dbf', 'PROVINSI RIAU.prj', 'PROVINSI RIAU.cpg', 'PROVINSI RIAU.sbn', 'PROVINSI RIAU.sbx']
+ shp PROVINSI RIAU.shp n= 1005 type POLYGONZ bbox [100.05, -1.128, 103.814, 2.921]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Danau/Situ', 775), ('Rendah', 147), ('Sangat Rendah', 49), ('Menengah', 21), ('Waduk', 6), ('Tinggi', 5), ('Danau', 2)]
+   Tahun [('2009', 999), ('0', 6)]
+   Wilayah [('Riau', 968), ('', 33), ('Jambi', 4)]
+   Zona_Perki [('Danau', 783), ('Rendah', 192), ('Menengah', 25), ('Tinggi', 5)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '174405', 'Unsur': 'Menengah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan menengah untuk terk', 'Tahun': '2009', 'Wilayah': 'Riau', 'Zona': '003', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Menengah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_15.zip 7 ['PROVINSI JAMBI.shp', 'PROVINSI JAMBI.shx', 'PROVINSI JAMBI.dbf', 'PROVINSI JAMBI.prj', 'PROVINSI JAMBI.cpg', 'PROVINSI JAMBI.sbn', 'PROVINSI JAMBI.sbx']
+ shp PROVINSI JAMBI.shp n= 437 type POLYGONZ bbox [101.131, -2.77, 104.501, -0.73]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Danau/Situ', 309), ('Menengah', 46), ('Rendah', 35), ('Sangat Rendah', 23), ('Tinggi', 19), ('Alur Aliran Bahan Rombakan', 4), ('Waduk', 1)]
+   Tahun [('2009', 423), ('0', 14)]
+   Wilayah [('Jambi', 394), ('', 19), ('Riau', 11), ('Sumatra Selatan', 6), ('Bengkulu', 5), ('Sumatera Selatan', 2)]
+   Zona_Perki [('Danau', 310), ('Rendah', 58), ('Menengah', 46), ('Tinggi', 19), ('Berpotensi Banjir Bandang/Aliran Bahan Rombakan', 4)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '176995', 'Unsur': 'Menengah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan menengah untuk terk', 'Tahun': '2009', 'Wilayah': 'Jambi', 'Zona': '003', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Menengah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_16.zip 7 ['PROVINSI SUMATERA SELATAN.shp', 'PROVINSI SUMATERA SELATAN.shx', 'PROVINSI SUMATERA SELATAN.dbf', 'PROVINSI SUMATERA SELATAN.prj', 'PROVINSI SUMATERA SELATAN.cpg', 'PROVINSI SUMATERA SELATAN.sbn', 'PROVINSI SUMATERA SELATAN.sbx']
+ shp PROVINSI SUMATERA SELATAN.shp n= 469 type POLYGONZ bbox [102.064, -4.924, 106.096, -1.627]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Danau/Situ', 375), ('Rendah', 34), ('Menengah', 22), ('Tinggi', 18), ('Sangat Rendah', 16), ('Alur Aliran Bahan Rombakan', 3), ('Waduk', 1)]
+   Tahun [('2009', 454), ('0', 15)]
+   Wilayah [('Sumatra Selatan', 426), ('Bengkulu', 12), ('', 12), ('Jambi', 11), ('Lampung', 6), ('Sumatera Selatan', 2)]
+   Zona_Perki [('Danau', 376), ('Rendah', 50), ('Menengah', 22), ('Tinggi', 18), ('Berpotensi Banjir Bandang/Aliran Bahan Rombakan', 3)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '175487', 'Unsur': 'Rendah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan rendah untuk terken', 'Tahun': '2009', 'Wilayah': 'Sumatra Selatan', 'Zona': '002', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Rendah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_31.zip 7 ['PROVINSI DKI JAKARTA.shp', 'PROVINSI DKI JAKARTA.shx', 'PROVINSI DKI JAKARTA.dbf', 'PROVINSI DKI JAKARTA.prj', 'PROVINSI DKI JAKARTA.cpg', 'PROVINSI DKI JAKARTA.sbn', 'PROVINSI DKI JAKARTA.sbx']
+ shp PROVINSI DKI JAKARTA.shp n= 13 type POLYGONZ bbox [106.686, -6.373, 106.973, -6.09]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Sangat Rendah', 7), ('Menengah', 3), ('Rendah', 3)]
+   Tahun [('2016', 13)]
+   Wilayah [('Jakarta', 6), ('Jawa Barat', 6), ('Banten', 1)]
+   Zona_Perki [('Rendah', 10), ('Menengah', 3)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '2810', 'Unsur': 'Menengah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan menengah untuk  ter', 'Tahun': '2016', 'Wilayah': 'Jakarta', 'Zona': '003', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Menengah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_32.zip 7 ['PROVINSI JAWA BARAT.shp', 'PROVINSI JAWA BARAT.shx', 'PROVINSI JAWA BARAT.dbf', 'PROVINSI JAWA BARAT.prj', 'PROVINSI JAWA BARAT.cpg', 'PROVINSI JAWA BARAT.sbn', 'PROVINSI JAWA BARAT.sbx']
+ shp PROVINSI JAWA BARAT.shp n= 62916 type POLYGONZ bbox [106.37, -7.821, 108.834, -5.918]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Rendah', 23743), ('Tinggi', 19048), ('Menengah', 17552), ('Sangat Rendah', 1763), ('Alur Aliran Bahan Rombakan', 790), ('Danau', 20)]
+   Tahun [('2016', 62916)]
+   Wilayah [('Jawa Barat', 62804), ('Jawa Tengah', 59), ('Banten', 50), ('Jakarta', 3)]
+   Zona_Perki [('Rendah', 25506), ('Tinggi', 19048), ('Menengah', 17552), ('Berpotensi Banjir Bandang/Aliran Bahan Rombakan', 790), ('Danau', 20)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '8769', 'Unsur': 'Menengah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan menengah untuk terk', 'Tahun': '2016', 'Wilayah': 'Jawa Barat', 'Zona': '003', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Menengah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_33.zip 7 ['PROVINSI JAWA TENGAH.shp', 'PROVINSI JAWA TENGAH.shx', 'PROVINSI JAWA TENGAH.dbf', 'PROVINSI JAWA TENGAH.prj', 'PROVINSI JAWA TENGAH.cpg', 'PROVINSI JAWA TENGAH.sbn', 'PROVINSI JAWA TENGAH.sbx']
+ shp PROVINSI JAWA TENGAH.shp n= 70201 type POLYGONZ bbox [108.556, -8.212, 111.691, -6.403]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Menengah', 23163), ('Rendah', 19115), ('Tinggi', 17827), ('Sangat Rendah', 10016), ('Alur Aliran Bahan Rombakan', 50), ('Danau', 30)]
+   Tahun [('2016', 70201)]
+   Wilayah [('Jawa Tengah', 69813), ('Yogyakarta', 174), ('Jawa Barat', 135), ('Jawa Timur', 79)]
+   Zona_Perki [('Rendah', 29131), ('Menengah', 23163), ('Tinggi', 17827), ('Berpotensi Banjir Bandang/Aliran Bahan Rombakan', 50), ('Danau', 30)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '71549', 'Unsur': 'Menengah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan menengah untuk terk', 'Tahun': '2016', 'Wilayah': 'Yogyakarta', 'Zona': '003', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Menengah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_35.zip 7 ['PROVINSI JAWA TIMUR.shp', 'PROVINSI JAWA TIMUR.shx', 'PROVINSI JAWA TIMUR.dbf', 'PROVINSI JAWA TIMUR.prj', 'PROVINSI JAWA TIMUR.cpg', 'PROVINSI JAWA TIMUR.sbn', 'PROVINSI JAWA TIMUR.sbx']
+ shp PROVINSI JAWA TIMUR.shp n= 18990 type POLYGONZ bbox [110.895, -8.78, 116.262, -5.043]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Menengah', 6245), ('Rendah', 4979), ('Sangat Rendah', 4176), ('Tinggi', 3534), ('Alur Aliran Bahan Rombakan', 47), ('Danau', 9)]
+   Tahun [('2016', 18990)]
+   Wilayah [('Jawa Timur', 18507), ('Jawa Tengah', 482), ('Jawa Barat', 1)]
+   Zona_Perki [('Rendah', 9155), ('Menengah', 6245), ('Tinggi', 3534), ('Berpotensi Banjir Bandang/Aliran Bahan Rombakan', 47), ('Danau', 9)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '74919', 'Unsur': 'Rendah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan rendah untuk terken', 'Tahun': '2016', 'Wilayah': 'Jawa Timur', 'Zona': '002', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Rendah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_36.zip 7 ['PROVINSI BANTEN.shp', 'PROVINSI BANTEN.shx', 'PROVINSI BANTEN.dbf', 'PROVINSI BANTEN.prj', 'PROVINSI BANTEN.cpg', 'PROVINSI BANTEN.sbn', 'PROVINSI BANTEN.sbx']
+ shp PROVINSI BANTEN.shp n= 6020 type POLYGONZ bbox [105.1, -7.016, 106.78, -5.808]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Rendah', 2332), ('Tinggi', 1361), ('Menengah', 1329), ('Sangat Rendah', 998)]
+   Tahun [('2016', 6020)]
+   Wilayah [('Banten', 5941), ('Jawa Barat', 76), ('Jakarta', 3)]
+   Zona_Perki [('Rendah', 3330), ('Tinggi', 1361), ('Menengah', 1329)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '6207', 'Unsur': 'Rendah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan rendah untuk terken', 'Tahun': '2016', 'Wilayah': 'Banten', 'Zona': '002', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Rendah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+
+## 2026_10_64.zip 7 ['PROVINSI KALIMANTAN TIMUR.shp', 'PROVINSI KALIMANTAN TIMUR.shx', 'PROVINSI KALIMANTAN TIMUR.dbf', 'PROVINSI KALIMANTAN TIMUR.prj', 'PROVINSI KALIMANTAN TIMUR.cpg', 'PROVINSI KALIMANTAN TIMUR.sbn', 'PROVINSI KALIMANTAN TIMUR.sbx']
+ shp PROVINSI KALIMANTAN TIMUR.shp n= 2189 type POLYGONZ bbox [113.834, -2.41, 119.037, 2.569]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Danau', 1892), ('Rendah', 181), ('Sangat Rendah', 79), ('Menengah', 35), ('Danau/Situ', 1), ('Tinggi', 1)]
+   Tahun [('2009', 2181), ('0', 8)]
+   Wilayah [('Kalimantan Timur', 2152), ('Kalimantan Utara', 14), ('Kalimantan Barat', 9), ('', 8), ('Kalimantan Selatan', 6)]
+   Zona_Perki [('Danau', 1893), ('Rendah', 260), ('Menengah', 35), ('Tinggi', 1)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '165343', 'Unsur': 'Menengah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan menengah untuk terk', 'Tahun': '2009', 'Wilayah': 'Kalimantan Selatan', 'Zona': '003', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Menengah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}
+/home/runner/work/_temp/z/2026_11_16.zip NOT ZIP File is not a zip file
+
+## 2026_9_16.zip 7 ['PROVINSI SUMATERA SELATAN.shp', 'PROVINSI SUMATERA SELATAN.shx', 'PROVINSI SUMATERA SELATAN.dbf', 'PROVINSI SUMATERA SELATAN.prj', 'PROVINSI SUMATERA SELATAN.cpg', 'PROVINSI SUMATERA SELATAN.sbn', 'PROVINSI SUMATERA SELATAN.sbx']
+ shp PROVINSI SUMATERA SELATAN.shp n= 469 type POLYGONZ bbox [102.064, -4.924, 106.096, -1.627]
+ prj GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]
+ fields ['OBJECTID_1', 'OBJECTID_2', 'OBJECTID', 'Unsur', 'Keterangan', 'Tahun', 'Wilayah', 'Zona', 'LCODE', 'Shape_Leng', 'Shape_Le_1', 'Zona_Perki', 'Shape_Le_2', 'Shape_Area']
+   Unsur [('Danau/Situ', 375), ('Rendah', 34), ('Menengah', 22), ('Tinggi', 18), ('Sangat Rendah', 16), ('Alur Aliran Bahan Rombakan', 3), ('Waduk', 1)]
+   Tahun [('2009', 454), ('0', 15)]
+   Wilayah [('Sumatra Selatan', 426), ('Bengkulu', 12), ('', 12), ('Jambi', 11), ('Lampung', 6), ('Sumatera Selatan', 2)]
+   Zona_Perki [('Danau', 376), ('Rendah', 50), ('Menengah', 22), ('Tinggi', 18), ('Berpotensi Banjir Bandang/Aliran Bahan Rombakan', 3)]
+  sample {'OBJECTID_1': '0', 'OBJECTID_2': '0', 'OBJECTID': '175487', 'Unsur': 'Rendah', 'Keterangan': 'Daerah yang mempunyai tingkat kerentanan rendah untuk terken', 'Tahun': '2009', 'Wilayah': 'Sumatra Selatan', 'Zona': '002', 'LCODE': 'MB03050260', 'Shape_Leng': '0.0', 'Shape_Le_1': '0.0', 'Zona_Perki': 'Rendah', 'Shape_Le_2': '0.0', 'Shape_Area': '0.0'}

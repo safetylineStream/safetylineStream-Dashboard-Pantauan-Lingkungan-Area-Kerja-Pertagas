@@ -1,0 +1,15 @@
+2026/10/16 HTTP/1.1 200 OK Content-Length: 7044164  Content-Disposition: attachment; filename=pvmbg-gertan-forecast-vector-10202616.zip  Last-Modified: Tue, 29 Sep 2026 13:56:35 GMT   size=7044164 md5=a657fa07
+2026/9/16 HTTP/1.1 200 OK Content-Length: 7044169  Content-Disposition: attachment; filename=pvmbg-gertan-forecast-vector-9202616.zip  Last-Modified: Mon, 31 Aug 2026 01:47:02 GMT   size=7044169 md5=bd695a92
+2026/11/16 HTTP/1.1 404 Not Found  size=6603 md5=543ac819
+2026/09/16 HTTP/1.1 404 Not Found  size=6603 md5=543ac819
+prov 11 HTTP/1.1 200 OK size=5658142 dt=9s
+prov 12 HTTP/1.1 200 OK size=14302240 dt=22s
+prov 14 HTTP/1.1 200 OK size=7366715 dt=11s
+prov 15 HTTP/1.1 200 OK size=4681753 dt=9s
+prov 16 HTTP/1.1 200 OK size=7044164 dt=11s
+prov 31 HTTP/1.1 200 OK size=323877 dt=2s
+prov 32 HTTP/1.1 200 OK size=65039784 dt=96s
+prov 33 HTTP/1.1 200 OK size=37366697 dt=62s
+prov 35 HTTP/1.1 200 OK size=23442829 dt=34s
+prov 36 HTTP/1.1 200 OK size=11884872 dt=18s
+prov 64 HTTP/1.1 200 OK size=11302208 dt=17s
