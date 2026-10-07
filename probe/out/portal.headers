@@ -1,0 +1,19 @@
+HTTP/1.1 200 OK
+Date: Wed, 07 Oct 2026 06:41:36 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+Cache-Control: private, must-revalidate
+pragma: no-cache
+expires: -1
+Set-Cookie: XSRF-TOKEN=eyJpdiI6InNEbkJTekFzdjcxWnA2Wlpsa0tjQ2c9PSIsInZhbHVlIjoiNjhGelhuQmhHWE1tTmhOL0J1MlFvdVNYcEhrdVVaazk4RDI3MXpTbjB6YXNZTlgwaTl6RWpwUFNLVWJTeUpROFRIQnBRc2R3MitZQUp2RDA0VWNLNDVORE1zdHhMMlJ4SEMwYUhnR0tHQjFNbVFpRzgrd3RWdDhNTk1CUTFadS8iLCJtYWMiOiI1ZWZiZjQwNTBiYTQ1ZDBkYzkyNTljOTA2MTEyNzNkNjU3NjZlOWViZGJhMDFjNDRmZGE4ZGU5NjlkYjM4Njc3IiwidGFnIjoiIn0%3D; expires=Wed, 07 Oct 2026 08:49:19 GMT; Max-Age=7200; path=/; samesite=lax
+Set-Cookie: laravel_session=eyJpdiI6IllHaW5IM2ZtL01PWW0zTE1VZDVjOFE9PSIsInZhbHVlIjoiVHp5bCtnS1pUSVh6UTNvNS9LeFR1WVpyOG9yd1laSUJnUmNhejRBQlpTYXBqU0p2dllvYzlBZkt0YlAwTjdNRG9lRHlTaHp2MWYwVGFydTdBU29yQUZqQ080M0tLQ3ZKRy9EcWErNnp3eXBDR3MxTU9yOER5dzdSUU5yV2p4RmsiLCJtYWMiOiI0MmFlMDY5ODU5OGM3Zjg2ZDIzOWM5NGYwMTUwNjI5NjI1ZmQ5MDUyZmZiZmNlNWVmODQ2MWRkOTY3YTlmOTNiIiwidGFnIjoiIn0%3D; expires=Wed, 07 Oct 2026 08:49:19 GMT; Max-Age=7200; path=/; httponly; samesite=lax
+Referrer-Policy: strict-origin-when-cross-origin
+Set-Cookie: TS0178a382=01a59bdcde39cb1bc3c47729fa52b5639c1b270c1e82ed1c33e384ecacb53673e2d601c648aa933d25fe574507fc3df47d47def254870df8644b7880bff2a4074c0a8fe873f2e527292883279f165ad08a8c48f1d7; Path=/
+Set-Cookie: TSab544faa027=085ff7edfdab20004d77e867515f67674221005c0694d8a93276084065195d76c8e7782c38fdd82f08d7168a0e113000c708aec8bfd2e55b7ec26e7bf2ac3f3547b724929326aade5340523768c1a7c311f35db0dc87cd55da233af1b2d12f65; Path=/
+Vary: Accept-Encoding
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Content-Security-Policy: upgrade-insecure-requests
+Permissions-Policy: microphone=()
+X-Content-Type-Options: nosniff
+Transfer-Encoding: chunked
+
