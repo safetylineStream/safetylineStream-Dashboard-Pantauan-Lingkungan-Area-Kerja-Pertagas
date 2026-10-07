@@ -262,3 +262,79 @@ def test_periode_bulan_pvmbg():
     assert gt.periode_bulan("Prakiraan Gerakan Tanah Bulan September 2026") == "2026-09"
     assert gt.periode_bulan("prakiraan oktober 2026") == "2026-10"
     assert gt.periode_bulan("tanpa bulan") is None
+
+
+# ------------------------------------------------------------------ Portal MBG (prakiraan gerakan tanah)
+def _zip_shapefile(records):
+    """Buat shapefile ZIP tiruan seperti unduhan Portal MBG: records = [(coords, unsur, zona_perki)]."""
+    import io, zipfile, shapefile
+    shp, shx, dbf = io.BytesIO(), io.BytesIO(), io.BytesIO()
+    w = shapefile.Writer(shp=shp, shx=shx, dbf=dbf, shapeType=shapefile.POLYGONZ)
+    for f in ("OBJECTID", "Unsur", "Keterangan", "Tahun", "Wilayah", "Zona_Perki"):
+        w.field(f, "C", 120)
+    for i, (coords, unsur, perki) in enumerate(records):
+        w.polyz([[(x, y, 0) for x, y in coords]])
+        w.record(str(i), unsur, "uji", "2016", "Uji", perki)
+    w.close()
+    zb = io.BytesIO()
+    with zipfile.ZipFile(zb, "w") as z:
+        for ext, b in ((".shp", shp), (".shx", shx), (".dbf", dbf)):
+            z.writestr("PROVINSI UJI" + ext, b.getvalue())
+        z.writestr("PROVINSI UJI.prj", 'GEOGCS["GCS_WGS_1984"]')
+    return zb.getvalue()
+
+
+def test_portalmbg_level_dan_potong_koridor():
+    import portalmbg
+    from shapely.geometry import box
+    from shapely.strtree import STRtree
+    assert portalmbg.level_prakiraan("Berpotensi Banjir Bandang/Aliran Bahan Rombakan") == "bandang"
+    assert portalmbg.level_prakiraan("Sangat  Rendah") == "sangat_rendah"
+    assert portalmbg.level_prakiraan("Danau") is None and portalmbg.level_kerentanan("Danau/Situ") is None
+    assert portalmbg.nama_periode("2026-10") == "Prakiraan Gerakan Tanah Bulan Oktober 2026"
+    assert portalmbg.bulan_sebelumnya(2026, 1) == (2025, 12)
+    sq = lambda x, y: [(x, y), (x + 1, y), (x + 1, y + 1), (x, y + 1), (x, y)]
+    data = _zip_shapefile([(sq(0, 0), "Tinggi", "Tinggi"), (sq(5, 5), "Rendah", "Rendah"),
+                           (sq(0, 0), "Danau/Situ", "Danau"), (sq(0.5, 0), "Alur Aliran Bahan Rombakan",
+                                                               "Berpotensi Banjir Bandang/Aliran Bahan Rombakan")])
+    koridor = [box(0.25, 0.25, 0.75, 0.75)]
+    prak, ker, n_all, n_in = portalmbg.proses_zip(data, STRtree(koridor), koridor, simplify=0)
+    assert n_all == 4 and n_in == 2  # di luar koridor & danau dibuang
+    assert sorted(f["level"] for f in prak) == ["bandang", "tinggi"]
+    assert sorted(f["level"] for f in ker) == ["bandang", "tinggi"]
+    from shapely.geometry import shape
+    assert all(shape(f["geometry"]).within(box(0.25, 0.25, 0.75, 0.75).buffer(1e-9)) for f in prak)
+
+
+def test_portalmbg_run_fallback_bulan_dan_cache(tmp_path, monkeypatch):
+    import portalmbg
+    from datetime import datetime, timezone, timedelta
+    from shapely.geometry import box
+    sq = [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]
+    zipdata = _zip_shapefile([(sq, "Menengah", "Tinggi")])
+    calls = []
+
+    class R:
+        def __init__(self, code, content=b"", lm="Tue, 29 Sep 2026 13:56:35 GMT"):
+            self.status_code, self.content, self.headers = code, content, {"Last-Modified": lm}
+
+    def head(url, **kw):
+        calls.append(("HEAD", url))
+        return R(404) if "/2026/10/" in url else R(200)
+
+    def get(url, **kw):
+        calls.append(("GET", url))
+        if "/2026/10/" in url:
+            raise RuntimeError("404 Client Error")
+        return R(200, zipdata)
+    import requests
+    monkeypatch.setattr(requests, "head", head)
+    WIB = timezone(timedelta(hours=7))
+    ctx = {"log": lambda *a: None, "NOW": datetime(2026, 10, 2, 5, tzinfo=WIB), "DATA": tmp_path, "get": get,
+           "CFG": {"gerakan_tanah": {"portalmbg": {"url": "https://x/{tahun}/{bulan}/{provinsi}", "provinsi": ["16"]}}}}
+    h = portalmbg.run(ctx, box(0.2, 0.2, 0.8, 0.8), "sig1")
+    assert h["periode_bulan"] == "2026-09" and h["selesai"] == 1 and len(h["prakiraan"]) == 1 and h["prakiraan"][0][1] == "tinggi"
+    assert h["zkgt"][0][1] == "menengah"
+    n_get = sum(1 for c in calls if c[0] == "GET")
+    h2 = portalmbg.run(ctx, box(0.2, 0.2, 0.8, 0.8), "sig1")  # run kedua: terbit sama → tanpa unduh ulang
+    assert sum(1 for c in calls if c[0] == "GET") == n_get and h2["selesai"] == 1

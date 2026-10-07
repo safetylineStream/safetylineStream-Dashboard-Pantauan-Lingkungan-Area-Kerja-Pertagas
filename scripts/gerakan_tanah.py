@@ -27,8 +27,10 @@ from shapely.geometry import LineString, MultiPolygon, Point, Polygon, mapping, 
 from shapely.ops import transform, unary_union
 
 GEOD = Geod(ellps="WGS84")
-LEVELS = ["tinggi", "menengah", "rendah", "sangat_rendah"]
-LABEL = {"tinggi": "Tinggi", "menengah": "Menengah", "rendah": "Rendah", "sangat_rendah": "Sangat rendah"}
+# "bandang" = zona "Berpotensi Banjir Bandang/Aliran Bahan Rombakan" pada prakiraan PVMBG (Portal MBG)
+LEVELS = ["tinggi", "bandang", "menengah", "rendah", "sangat_rendah"]
+LABEL = {"tinggi": "Tinggi", "bandang": "Berpotensi banjir bandang", "menengah": "Menengah", "rendah": "Rendah",
+         "sangat_rendah": "Sangat rendah"}
 
 
 BULAN = {"januari": 1, "februari": 2, "maret": 3, "april": 4, "mei": 5, "juni": 6, "juli": 7, "agustus": 8,
@@ -208,7 +210,7 @@ def analyse(zones, assets_ll, areas):
                     L = km_len(inter)
                     if L > 0.01:
                         km[lv] += L
-                        if lv in ("tinggi", "menengah"):
+                        if lv in ("tinggi", "bandang", "menengah"):
                             segs.append({"aset": p["name"], "level": lv, "km": round(L, 2)})
         fas = []
         for g, p in pts:
@@ -400,15 +402,58 @@ def run(ctx):
     corridor = transform(to_ll, unary_union([transform(to_m, g).buffer(buf_m, 8) for g, _ in assets_ll]))
 
     arc = None
-    out = {"sumber": "PVMBG – Badan Geologi (ESDM One Map)", "koridor_km": gcfg.get("koridor_km", 2)}
+    out = {"sumber": "PVMBG – Badan Geologi", "koridor_km": gcfg.get("koridor_km", 2)}
+    selesai_portal = set()
+
+    # ---- Sumber utama: Portal MBG PVMBG (unduhan vektor prakiraan bulanan per provinsi) ----
+    pcfg = gcfg.get("portalmbg") or {}
+    if pcfg.get("aktif"):
+        import portalmbg
+        try:
+            log("PVMBG Portal MBG: prakiraan gerakan tanah bulanan per provinsi ...")
+            sig = portalmbg.assets_signature(DATA / "assets.geojson", gcfg.get("koridor_km", 2), pcfg.get("simplify", 0.0002))
+            hp = portalmbg.run(ctx, corridor, sig)
+            ym = hp["periode_bulan"]
+            src = "PVMBG – Portal MBG (vsi.esdm.go.id/portalmbg)"
+            prog = f"{hp['selesai']}/{hp['total']}"
+            for lid, nama, zones in (("prakiraan", "Prakiraan Potensi Gerakan Tanah Bulanan", hp["prakiraan"]),
+                                     ("zkgt", "Zona Kerentanan Gerakan Tanah", hp["zkgt"])):
+                if hp["selesai"] == 0:
+                    break
+                periode = portalmbg.nama_periode(ym) if lid == "prakiraan" else "Zona kerentanan gerakan tanah (atribut Unsur, peta PVMBG)"
+                (outdir / f"{lid}.geojson").write_text(json.dumps(to_fc(zones, periode), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+                per_area = analyse([(g, lv) for g, lv, _ in zones], assets_ll, areas)
+                lengkap = hp["selesai"] == hp["total"]
+                out[lid] = {"tersedia": True, "nama": nama, "sumber": src + (f" · {periode}" if lid == "prakiraan" else ""),
+                            "periode": periode, "periode_bulan": ym if lid == "prakiraan" else None,
+                            "periode_campuran": hp["periode_campuran"] if lid == "prakiraan" else None,
+                            "diambil": NOW.isoformat(timespec="minutes"), "jumlah_poligon": len(zones), "per_area": per_area,
+                            "wilayah": sorted(areas), "provinsi": hp["provinsi"], "stale": not lengkap,
+                            "terbit": max((v.get("terbit") or "" for v in hp["provinsi"].values()), default="") or None}
+                status[f"pvmbg_{lid}"] = {"ok": True, "jumlah": len(zones), "sumber": "portalmbg", "progres": prog,
+                                          **({"pesan": "sebagian provinsi: " + hp["pesan"]} if hp["pesan"] else {})}
+                selesai_portal.add(lid)
+            log(f"  Portal MBG selesai: {prog} provinsi, periode {ym}, prakiraan {len(hp['prakiraan'])} poligon")
+        except Exception as e:  # noqa — gagal: jatuh ke layanan ESDM One Map di bawah
+            import traceback
+            traceback.print_exc()
+            log("  Portal MBG gagal:", str(e)[:200])
+            for lid in ("prakiraan", "zkgt"):
+                status[f"pvmbg_{lid}"] = {"ok": False, "pesan": f"Portal MBG: {str(e)[:150]}"}
 
     # Layer yang belum punya data diambil lebih dulu, supaya tidak selalu kalah oleh layer lain
     def prioritas(lay):
         m = pv.get(lay["id"]) or {}
         ada = (outdir / f"{lay['id']}.geojson").exists() and m.get("tersedia") and not m.get("demo")
         return (1 if ada else 0, m.get("diambil") or "")
-    for lay in gcfg["layanan"]:  # urutan config: prakiraan (kecil, penting) dulu, lalu zona kerentanan
+    for lay in gcfg["layanan"]:  # cadangan: ESDM One Map (hanya untuk layer yang gagal dari Portal MBG)
         lid = lay["id"]
+        if lid in selesai_portal or not pcfg.get("cadangan_onemap", True):
+            if lid not in selesai_portal and lid not in out:
+                meta = pv.get(lid) or {}
+                out[lid] = {**meta, "stale": True} if meta.get("tersedia") else {"tersedia": False, "nama": lay["nama"]}
+            continue
+        portal_err = status.pop(f"pvmbg_{lid}", None)  # status Portal MBG yang gagal diganti hasil cadangan
         cache = outdir / f"{lid}.geojson"
         meta = pv.get(lid) or {}
         age_ok = False
@@ -432,7 +477,7 @@ def run(ctx):
         except Exception as e:  # noqa
             # unduhan bertahap belum lengkap / layanan gagal
             raise_msg = str(e)[:200]
-            status[f"pvmbg_{lid}"] = {"ok": False, "pesan": raise_msg}
+            status[f"pvmbg_{lid}"] = {"ok": False, "pesan": ((portal_err or {}).get("pesan", "") + " | One Map: " if portal_err else "") + raise_msg}
             if isinstance(e, Sebagian):
                 status[f"pvmbg_{lid}"].update({"sebagian": True, "progres": f"{e.selesai}/{e.total}"})
             zones = None
