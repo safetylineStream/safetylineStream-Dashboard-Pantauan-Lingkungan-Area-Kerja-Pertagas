@@ -130,7 +130,7 @@ Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagi
 **Actions → Update Data Harian → Run workflow.**
 
 ### B3. Mengecek apakah update berjalan
-- Chip di kanan atas dashboard menunjukkan **kesegaran tiap sumber berdasarkan umur data**, bukan sekadar hasil run terakhir: 🟢 segar · 🟡 terlambat (satu jadwal terlewat atau pengambilan terakhir gagal) · 🔴 kedaluwarsa · ○ belum tersedia. Ambang berbeda per sumber — lihat tabel **Sumber & status data** di bagian bawah dashboard.
+- Chip di kanan atas dashboard menunjukkan **kesegaran tiap sumber berdasarkan umur data**, bukan sekadar hasil run terakhir: 🟢 refresh · 🟡 terlambat (satu jadwal terlewat atau pengambilan terakhir gagal) · 🔴 kedaluwarsa · ○ belum tersedia. Ambang berbeda per sumber — lihat tabel **Sumber & status data** di bagian bawah dashboard.
 - Bila pengambilan gagal, dashboard tetap menampilkan **data terakhir yang berhasil** beserta waktunya ("Pengambilan terakhir berhasil"); waktunya tidak pernah diganti dengan waktu sekarang.
 - **Actions**: ✅ berarti sukses, ❌ berarti gagal. Klik run yang gagal untuk melihat log.
 - Riwayat harian tersimpan di `data/history/ringkasan.csv` (bisa dibuka di Excel). Arsip hotspot dekat aset tersimpan di `data/history/hotspot_YYYY-MM-DD.json` sebagai bukti audit.

@@ -477,7 +477,7 @@ const namaBulan=ym=>{if(!ym)return '–';const [y,m]=ym.split('-');return BULAN_
 // Jadwal GitHub Actions: data utama 06:00 & 17:00 WIB (selang maks. ±13 jam), LHASA 05:15 & 16:15, PVMBG 04:30.
 // GitHub dapat menunda jadwal hingga ±1 jam, jadi: segar ≤ 14 jam, terlambat ≤ 26 jam (1 jadwal terlewat), lebih = basi.
 const FRESH={terjadwal:{ok:14,delay:26},cuaca:{ok:3,delay:14},harian:{ok:26,delay:50}};
-const FR_LBL={fresh:'Segar',delayed:'Terlambat',stale:'Kedaluwarsa',none:'Tidak tersedia'};
+const FR_LBL={fresh:'Refresh',delayed:'Terlambat',stale:'Kedaluwarsa',none:'Tidak tersedia'};
 function freshOf(iso,th,failed){const h=umurJam(iso);if(h==null)return 'none';const st=h<=th.ok?'fresh':h<=th.delay?'delayed':'stale';return failed&&st==='fresh'?'delayed':st;}
 const frBadge=(st,txt)=>`<span class="fr ${st}" title="${FR_LBL[st]}"><i></i>${txt??FR_LBL[st]}</span>`;
 
@@ -540,7 +540,7 @@ function renderStatus(){
   for(const [k,v] of Object.entries(LOADERR))b+=`<div class="banner"><b>${esc(k)} gagal dimuat</b> (${esc(v)}). Bagian terkait ditampilkan kosong; bagian lain tetap berjalan. Muat ulang halaman beberapa saat lagi.</div>`;
   if(DATA.demo)b+=`<div class="banner"><b>DEMO / DATA CONTOH — BUKAN DATA NYATA.</b> Angka di halaman ini masih data simulasi untuk pratinjau tampilan. Data asli terisi otomatis setelah GitHub Actions menjalankan workflow <i>Update Data Harian</i>.</div>`;
   const bad=rows.filter(r=>r.st==='stale'&&r.id!=='pvmbg_zkgt');
-  if(bad.length)b+=`<div class="banner"><b>Data tidak segar:</b> ${bad.map(r=>`${esc(r.nama)} (terakhir berhasil ${r.ok?when(r.ok)+', '+lalu(r.ok):'tidak diketahui'})`).join(' · ')}. Yang ditampilkan adalah data terakhir yang berhasil diterima — lihat tabel <a href="#srcCard" onclick="document.getElementById('srcCard').scrollIntoView({behavior:'smooth'});return false">Sumber &amp; status data</a>.</div>`;
+  if(bad.length)b+=`<div class="banner"><b>Data tidak refresh:</b> ${bad.map(r=>`${esc(r.nama)} (terakhir berhasil ${r.ok?when(r.ok)+', '+lalu(r.ok):'tidak diketahui'})`).join(' · ')}. Yang ditampilkan adalah data terakhir yang berhasil diterima — lihat tabel <a href="#srcCard" onclick="document.getElementById('srcCard').scrollIntoView({behavior:'smooth'});return false">Sumber &amp; status data</a>.</div>`;
   $('#banner').innerHTML=b;
 }
 function renderTitle(){
@@ -1016,7 +1016,7 @@ function renderSources(){
     rows.map(r=>`<tr><td><b>${esc(r.nama)}</b></td><td>${r.src}</td><td>${esc(r.par)}</td><td>${esc(r.jenis)}</td><td>${esc(r.jadwal)}</td><td>${r.data}</td>
       <td style="white-space:nowrap">${r.ok?`${when(r.ok)}<br><span style="color:var(--muted)">${lalu(r.ok)}</span>`:'–'}</td>
       <td>${frBadge(r.st)}${r.extra?`<div class="m" style="font-size:11.5px;color:var(--muted)">${esc(r.extra)}</div>`:''}${r.pesan&&r.st!=='fresh'?`<div style="font-size:11.5px;color:var(--muted);max-width:260px">${esc(r.pesan)}</div>`:''}</td></tr>`).join('')+
-    `</tbody><tfoot><tr><td colspan="8" style="color:var(--muted);font-size:12px">${frBadge('fresh')} sesuai jadwal · ${frBadge('delayed')} satu jadwal terlewat atau pengambilan terakhir gagal · ${frBadge('stale')} melewati batas kesegaran sumber itu · ${frBadge('none','Belum tersedia')}. Ambang: hotspot, gempa & model longsor segar ≤ 14 jam / terlambat ≤ 26 jam (jadwal 2× sehari); cuaca segar ≤ 3 jam dari jam data / terlambat ≤ 14 jam; prakiraan PVMBG segar bila periodenya bulan berjalan.${DATA.kualitas_data&&Object.keys(DATA.kualitas_data).length?` · Validasi run terakhir: ${esc(Object.entries(DATA.kualitas_data).map(([k,v])=>k.replace(/_/g,' ')+' '+v).join(', '))}`:''}</td></tr></tfoot>`;
+    `</tbody><tfoot><tr><td colspan="8" style="color:var(--muted);font-size:12px">${frBadge('fresh')} sesuai jadwal · ${frBadge('delayed')} satu jadwal terlewat atau pengambilan terakhir gagal · ${frBadge('stale')} melewati batas kesegaran sumber itu · ${frBadge('none','Belum tersedia')}. Ambang: hotspot, gempa & model longsor refresh ≤ 14 jam / terlambat ≤ 26 jam (jadwal 2× sehari); cuaca refresh ≤ 3 jam dari jam data / terlambat ≤ 14 jam; prakiraan PVMBG refresh bila periodenya bulan berjalan.${DATA.kualitas_data&&Object.keys(DATA.kualitas_data).length?` · Validasi run terakhir: ${esc(Object.entries(DATA.kualitas_data).map(([k,v])=>k.replace(/_/g,' ')+' '+v).join(', '))}`:''}</td></tr></tfoot>`;
 }
 function renderFoot(){
   $('#foot').innerHTML=`Sumber data: <a href="https://sipongi.gakkum.kehutanan.go.id/sebaran-titik-panas" target="_blank" rel="noopener">SiPongi+ Kemenhut</a> (satelit NASA MODIS/VIIRS) ·
