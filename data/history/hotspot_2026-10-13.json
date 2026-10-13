@@ -399,27 +399,6 @@
 "persisten": false
 },
 {
-"lat": -6.87366,
-"lon": 108.78265,
-"conf": "medium",
-"sumber": "NASA-MODIS",
-"waktu_utc": "2026-10-12T01:47:00.000000Z",
-"waktu": "Senin, 12 Oktober 2026 08:47:00",
-"prov": "Jawa Barat",
-"kab": "Cirebon",
-"kec": "Pabedilan",
-"desa": "Kalibuntu",
-"jarak_km": 2.28,
-"area": "OEJA",
-"aset": "Pipa Cirebon-Semarang (Cisem)",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 15 Cisem",
-"jarak_fasilitas_km": 4.5,
-"status": "waspada",
-"berulang_hari": 1,
-"persisten": false
-},
-{
 "lat": -7.14568,
 "lon": 111.56795,
 "conf": "medium",
