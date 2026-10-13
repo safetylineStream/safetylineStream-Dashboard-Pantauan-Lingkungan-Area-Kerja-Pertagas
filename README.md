@@ -165,6 +165,7 @@ Jika BMKG gagal diakses, sistem otomatis kembali memakai Open-Meteo. PM2.5 tetap
      {"file": "OEJA_Pipeline.kmz", "area": "OEJA", "lines": ["*"], "points": ["Station"]}
      ```
      `lines` dan `points` diisi **nama folder** di Google Earth yang berisi jalur pipa dan fasilitas. `"*"` berarti semua.
+     Jika satu folder berisi campuran ruas baru dan ruas yang sudah ada di file lain, tambahkan `"line_names": ["NAMA RUAS 1", "NAMA RUAS 2"]` agar hanya ruas tersebut yang diambil (contoh: `OSSA_Peta_Pipa_Gas_Pendopo.kmz`).
 3. Commit. Workflow **Build Aset** akan berjalan otomatis dan memperbarui peta.
 4. Di `config/monitoring.json`, tambahkan titik cuaca area baru (`titik_cuaca`) dan provinsinya (`provinsi_area`). Tab wilayah baru akan muncul otomatis.
 

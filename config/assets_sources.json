@@ -1,5 +1,5 @@
 {
-  "_petunjuk": "Daftar file aset (KMZ/KML/SHP-zip) di folder assets_raw/. 'lines' = pola nama folder yang berisi jalur pipa, 'points' = pola nama folder fasilitas (stasiun, LBCV, kantor). Pola tidak peka huruf besar/kecil. Pola '*' = ambil semua. Setelah menambah file, jalankan workflow 'Build Aset' atau: python scripts/build_assets.py",
+  "_petunjuk": "Daftar file aset (KMZ/KML/SHP-zip) di folder assets_raw/. 'lines' = pola nama folder yang berisi jalur pipa, 'points' = pola nama folder fasilitas (stasiun, LBCV, kantor). Pola tidak peka huruf besar/kecil. Pola '*' = ambil semua. 'line_names' (opsional) = hanya ambil jalur pipa dengan nama placemark tersebut. Setelah menambah file, jalankan workflow 'Build Aset' atau: python scripts/build_assets.py",
   "areas": {
     "ONSA": {
       "nama": "Operation North Sumatera Area"
@@ -33,6 +33,8 @@
     {"file": "ODA_ROW_Pipeline.kmz", "area": "ODA", "lines": ["A. Pipeline PGDD", "B. Pipeline TGI"], "points": ["Metering Station", "2. Tagging"]},
     {"file": "OSSA_Distrik_Palembang.kmz", "area": "OSSA", "lines": ["JALUR PIPA", "JALUR PIPA GRPU"], "points": ["Kantor & SM", "ASET JALUR PIPA", "ASET GRPU"]},
     {"file": "OSSA_Aset_Jalur_Pipa.kmz", "area": "OSSA", "lines": [], "points": ["*"]},
+    {"file": "OSSA_Peta_Pipa_Gas_Pendopo.kmz", "area": "OSSA", "lines": ["Jalur Pipa Pendopo"], "points": []},
+    {"file": "OSSA_Peta_Pipa_Gas_Pendopo.kmz", "area": "OSSA", "lines": ["SSA"], "points": [], "line_names": ["PRABUMULIH - CAMBAI", "PRABUMULIH - CAMBAI 12in", "LIMAU TIMUR - PRABUMULIH BARAT"]},
     {"file": "OWJA_Pipa.kmz", "area": "OWJA", "lines": ["*"], "points": []},
     {"file": "OKA_Pipeline_Gabungan.kmz", "area": "OKA", "lines": ["Jalur Pipa OKA (DIGIO)", "Jalur Pipa SENBAL (As-Built)"], "points": ["Fasilitas"]},
     {"file": "ORA_Pipa_Minyak_Rokan.kmz", "area": "ORA", "lines": ["Jalur Pipa Minyak Rokan"], "points": ["Fasilitas"]},

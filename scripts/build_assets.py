@@ -139,6 +139,11 @@ def main():
         else:
             raw = features_from_kml(p)
         lines = [r for r in raw if r[0] == "line" and match(r[2], spec.get("lines"))]
+        # Opsional: "line_names" = hanya ambil jalur pipa dengan nama placemark tertentu
+        # (dipakai bila folder KMZ berisi campuran ruas baru dan ruas yang sudah ada di file lain).
+        only = {clean_name(n).lower() for n in spec.get("line_names", [])}
+        if only:
+            lines = [r for r in lines if (r[1] or "").lower() in only]
         points = [r for r in raw if r[0] == "point" and match(r[2], spec.get("points"))]
 
         generic = {"", "viewuser", "untitled path", "path", "line"}
