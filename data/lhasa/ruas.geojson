@@ -1,1 +1,1 @@
-{"type":"FeatureCollection","features":[]}
+{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"LineString","coordinates":[[116.8167,-1.16737],[116.81499,-1.16601],[116.81327,-1.16465],[116.81156,-1.16329],[116.80985,-1.16193],[116.80813,-1.16057],[116.80642,-1.1592],[116.80471,-1.15784],[116.803,-1.15648],[116.80129,-1.15512],[116.79957,-1.15376]]},"properties":{"area":"OKA","aset":"Projek IKN To LBCV 5","level":"rendah","km":2.43,"rasio":0.84,"ari":21.1,"ari95":25.3,"kerentanan":3,"produk":"hari_ini"}}]}
