@@ -146,22 +146,32 @@ def olah_pesan(msg, kapal, statis):
 DIAG = {}  # diagnostik run terakhir (jenis pesan, uji global) — ditulis ke oeja.json, tanpa key
 
 
-def _probe_global(key, detik=20):
-    """Hitung pesan dari seluruh dunia selama beberapa detik: membedakan masalah key/aliran vs cakupan wilayah."""
+def _probe_global(key, detik=60):
+    """Pesan dari wilayah Indonesia selama beberapa detik: membedakan masalah key/aliran vs cakupan wilayah.
+    Mengembalikan ringkasan: jumlah pesan posisi, gagal parse, dan sebaran posisi per kotak 2°."""
+    from collections import Counter
     from websockets.sync.client import connect
-    n, contoh = 0, None
+    n, gagal, sel, contoh = 0, 0, Counter(), None
     akhir = time.monotonic() + detik
     with connect(URL, open_timeout=30, close_timeout=5, max_size=2 ** 22) as ws:
-        ws.send(json.dumps({"APIKey": key, "BoundingBoxes": [[[-90, -180], [90, 180]]], "FilterMessageTypes": ["PositionReport"]}))
+        ws.send(json.dumps({"APIKey": key, "BoundingBoxes": [[[-12, 94], [7, 142]]], "FilterMessageTypes": ["PositionReport", "StandardClassBPositionReport"]}))
         while time.monotonic() < akhir:
             try:
                 raw = ws.recv(timeout=max(1.0, akhir - time.monotonic()))
             except TimeoutError:
                 break
-            n += 1
-            if contoh is None:
-                contoh = str(raw)[:160]
-    return n, contoh
+            try:
+                m = json.loads(raw)
+            except Exception:  # noqa
+                gagal += 1
+                if contoh is None:
+                    contoh = repr(raw[:80])
+                continue
+            md = m.get("MetaData") or {}
+            if "latitude" in md:
+                n += 1
+                sel[f"{int(md['latitude'] // 2 * 2)},{int(md['longitude'] // 2 * 2)}"] += 1
+    return {"pesan_posisi": n, "gagal_parse": gagal, "contoh_gagal": contoh, "sebaran_kotak2deg": dict(sel.most_common(25))}
 
 
 def ambil(key, bbox, detik, log=print):
@@ -185,6 +195,7 @@ def ambil(key, bbox, detik, log=print):
             try:
                 m = json.loads(raw)
             except Exception:  # noqa
+                jenis["gagal_parse"] += 1
                 continue
             if isinstance(m, dict) and m.get("error"):
                 raise RuntimeError(f"AISStream menolak langganan: {m['error']}")
@@ -197,9 +208,8 @@ def ambil(key, bbox, detik, log=print):
     DIAG.update({"jenis_pesan": dict(jenis), "contoh_pesan_non_posisi": contoh_lain})
     if len(kapal) == 0:
         try:
-            ng, cg = _probe_global(key)
-            DIAG.update({"uji_global_20dtk": ng, "uji_global_contoh": cg})
-            log(f"   uji global 20 dtk: {ng} pesan")
+            DIAG["uji_indonesia_60dtk"] = _probe_global(key)
+            log(f"   uji Indonesia 60 dtk: {DIAG['uji_indonesia_60dtk']}")
         except Exception as ex:  # noqa
             DIAG["uji_global_galat"] = str(ex).replace(key, "***")[:200]
     return kapal, statis, n_msg
