@@ -215,6 +215,12 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 .pop .warn{margin-top:6px;font-size:12px;padding:5px 7px;border-radius:6px;background:var(--surface-2);color:var(--ink-2)}
 @media (max-width:1100px){.gt-cols,.ls-cols{grid-template-columns:1fr}.gt-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-main{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
 @media (max-width:560px){.wrap{padding:12px 16px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#map{height:400px}.kpi .val{font-size:24px}.tab{padding:9px 10px 10px}}
+.vf-frame{width:100%;height:480px;border:0;border-radius:8px;background:var(--surface-2);display:block}
+.vf-ph{height:480px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border-radius:8px;background:var(--surface-2);color:var(--ink-2);font-size:13px;text-align:center;padding:16px}
+#vfBox{padding:0 14px}
+#vfTools button[aria-pressed="false"]{text-decoration:none}
+#vfTools button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+@media (max-width:560px){.vf-frame,.vf-ph{height:380px}}
 </style>
 </head>
 <body>
@@ -302,6 +308,19 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
       <button type="button" data-k="besok">Besok</button>
     </div>
     <div class="gt-body" id="lsBody"></div>
+  </section>
+
+  <!-- khusus tab OEJA: lalu lintas kapal di atas pipa offshore -->
+  <section class="card sec" id="vesselCard" hidden>
+    <h3>Lalu lintas kapal di sekitar pipa offshore OEJA (AIS – VesselFinder)</h3>
+    <div class="note">Posisi kapal real-time dari sinyal AIS, peta tertanam resmi VesselFinder. Pipa offshore OEJA 28" (Pagerungan – Porong) melintasi Laut Jawa dan Selat Madura; kapal yang berlabuh, lambat, atau berhenti di atas jalur pipa berisiko menjatuhkan/menyeret jangkar.</div>
+    <div class="maptools" id="vfTools" role="toolbar" aria-label="Fokus peta kapal"></div>
+    <div id="vfBox"></div>
+    <div class="meta" style="padding:8px 14px 0">
+      <span class="tag">Pihak ketiga</span>
+      <span>Sumber: <a href="https://www.vesselfinder.com/" target="_blank" rel="noopener">VesselFinder</a> (widget peta AIS gratis). Data tidak disimpan oleh dashboard.</span>
+    </div>
+    <div class="info" style="margin:8px 14px 14px">Keterbatasan: kapal kecil/nelayan banyak yang tidak memancarkan AIS; posisi bisa tertunda beberapa menit, apalagi di laut lepas tanpa penerima darat; jalur pipa Pertagas <b>tidak</b> digambar di peta ini, jadi bandingkan dengan peta aset di atas. Ini bukan pengganti pengawasan ROW laut / koordinasi dengan KSOP dan Distrik Navigasi.</div>
   </section>
 
   <section class="grid-2">
@@ -1077,10 +1096,43 @@ async function liveChecks(){
   renderLive(g||w);
 }
 
+
+/* ---------- OEJA: peta kapal AIS (widget resmi VesselFinder, dimuat hanya saat tab OEJA dibuka) ---------- */
+const VF_VIEWS=[
+  {k:'jatim',lbl:'Perairan Jawa Timur',lat:-7.15,lon:113.6,zoom:8},
+  {k:'madura',lbl:'Selat Madura (Gresik – Porong – Pasuruan)',lat:-7.35,lon:112.95,zoom:10},
+  {k:'pager',lbl:'Laut Jawa – Pagerungan',lat:-6.95,lon:115.3,zoom:9},
+];
+let vfCur=null,vfTimer=null;
+function vfSrcdoc(v){
+  const h=matchMedia('(max-width:560px)').matches?380:480;
+  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;height:100%;overflow:hidden}</style></head><body>`+
+    `<script>var width="100%";var height="${h}";var latitude="${v.lat}";var longitude="${v.lon}";var zoom="${v.zoom}";var names=false;<\/script>`+
+    `<script src="https://www.vesselfinder.com/aismap.js"><\/script></body></html>`;
+}
+function renderVessel(){
+  const card=$('#vesselCard');const on=state.tab==='OEJA';card.hidden=!on;if(!on)return;
+  const tools=$('#vfTools');
+  if(!tools.childElementCount){
+    tools.innerHTML=VF_VIEWS.map(v=>`<button type="button" data-k="${v.k}" aria-pressed="false">${esc(v.lbl)}</button>`).join('');
+    tools.querySelectorAll('button').forEach(b=>b.onclick=()=>vfShow(b.dataset.k));
+  }
+  if(!vfCur)vfShow('jatim'); // jangan muat ulang widget pada refresh data 15 menit
+}
+function vfShow(k){
+  const v=VF_VIEWS.find(x=>x.k===k)||VF_VIEWS[0];vfCur=v.k;
+  $('#vfTools').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===v.k?'true':'false'));
+  const box=$('#vfBox');
+  box.innerHTML=`<iframe class="vf-frame" title="Peta kapal AIS VesselFinder – ${esc(v.lbl)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+  const f=box.querySelector('iframe');f.srcdoc=vfSrcdoc(v);
+  // bila widget diblokir (jaringan kantor/adblock), beri tautan langsung
+  clearTimeout(vfTimer);vfTimer=setTimeout(()=>{try{const d=f.contentDocument;if(d&&!d.querySelector('iframe')){box.insertAdjacentHTML('beforeend',`<div class="err">Peta VesselFinder tidak termuat (mungkin diblokir jaringan/peramban). <a href="https://www.vesselfinder.com/" target="_blank" rel="noopener">Buka di VesselFinder ↗</a></div>`);}}catch(e){}},12000);
+}
+
 function render(fit){
   [['status',renderStatus],['tab',renderTabs],['judul',renderTitle,'#viewTitle'],['kpi',renderKPIs,'#kpis'],['kartu wilayah',renderOverviewAreas,'#ovAreas'],
    ['peta',()=>drawMap(fit)],['daftar',renderLists,'#hsList'],['cuaca',renderWeather,'#wxGrid'],['gerakan tanah',renderGT,'#gtBody'],['longsor',renderLS,'#lsBody'],
-   ['grafik',renderCharts],['tabel hotspot',renderHsTable,'#hsTable'],['sumber data',renderSources,'#srcTable'],['footer',renderFoot]].forEach(([n,f,el])=>safe(n,f,el));
+   ['grafik',renderCharts],['tabel hotspot',renderHsTable,'#hsTable'],['kapal OEJA',renderVessel,'#vfBox'],['sumber data',renderSources,'#srcTable'],['footer',renderFoot]].forEach(([n,f,el])=>safe(n,f,el));
 }
 
 $('#fConf').onchange=e=>{state.conf=e.target.value;render(false)};
