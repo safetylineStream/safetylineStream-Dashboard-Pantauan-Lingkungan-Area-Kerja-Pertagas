@@ -489,7 +489,7 @@ function sources(){
   else rows.push({id:'lhasa',nama:'Indikasi potensi longsor harian',src:'Model internal — algoritma NASA LHASA 1.1',par:'–',jenis:'Model',jadwal:'2× sehari',data:'Tidak tersedia',ok:null,st:'none',pesan:LOADERR['model longsor (lhasa.json)']});
   if(KAPAL){const ok=KAPAL.status?.ok!==false,t=ok?KAPAL.diperbarui:(KAPAL.status?.terakhir_ok||KAPAL.diperbarui),u=umurJam(t);
     rows.push({id:'kapal',nama:'Lalu lintas kapal (OEJA offshore)',src:esc(KAPAL.sumber||'AISStream.io'),par:'Posisi, kecepatan, status navigasi kapal vs pipa offshore OEJA',jenis:'Observasi AIS terestrial (cakupan tergantung penerima)',jadwal:'Tiap 30 menit',
-      data:`Posisi AIS s.d. ${when(t)}`,ok:t,st:u==null?'none':(u<=2&&ok)?'fresh':u<=6?'delayed':'stale',pesan:ok?'':KAPAL.status?.pesan});}
+      data:(KAPAL.kapal||[]).length?`Posisi AIS s.d. ${when(t)}`:'Tidak ada sinyal AIS di perairan Jawa Timur (cakupan penerima)',ok:t,st:u==null?'none':(u<=2&&ok)?'fresh':u<=6?'delayed':'stale',pesan:ok?'':KAPAL.status?.pesan});}
   return rows;
 }
 
@@ -1130,8 +1130,10 @@ function vfSrcdoc(v){
     `<script src="https://www.vesselfinder.com/aismap.js"><\/script></body></html>`;
 }
 let vmap=null,vLayers={},vMode='pipa',vFit=false;
+let vModeSet=false;
 function renderVessel(){
   const card=$('#vesselCard');const on=state.tab==='OEJA';card.hidden=!on;if(!on)return;
+  if(!vModeSet){vModeSet=true;if(!(KAPAL&&(KAPAL.kapal||[]).length)){vMode='live';document.querySelectorAll('#vMode button').forEach(b=>b.classList.toggle('on',b.dataset.k==='live'));}}
   $('#vkPanel').hidden=vMode!=='pipa';$('#vfPanel').hidden=vMode!=='live';
   if(vMode==='live'){
     const tools=$('#vfTools');
@@ -1194,6 +1196,12 @@ function renderVesselMap(){
     const g=$('#vkGoLive');if(g)g.onclick=e=>{e.preventDefault();setVMode('live')};
     $('#vkTable').innerHTML='';return;
   }
+  if(!K.length){
+    $('#vkNote').innerHTML=`<span class="tag" style="color:var(--critical);border-color:var(--critical)">Tidak ada cakupan</span> Pengambilan AIS ${when(KAPAL.diperbarui)} (${lalu(KAPAL.diperbarui)}): <b>tidak ada sinyal AIS</b> dari jaringan penerima ${esc(KAPAL.sumber||'AISStream.io')} di perairan Jawa Timur. `+
+      `Ini <b>bukan</b> berarti tidak ada kapal di atas pipa — penerima gratis belum menjangkau Selat Madura–Pagerungan. Untuk kondisi kapal saat ini gunakan <a href="#" id="vkGoLive">Peta live VesselFinder</a>; peta ini otomatis menampilkan kapal begitu ada sinyal.`;
+    const g=$('#vkGoLive');if(g)g.onclick=e=>{e.preventDefault();setVMode('live')};
+    $('#vkTable').innerHTML='';return;
+  }
   const j=KAPAL.jumlah||{},umur=umurJam(KAPAL.diperbarui),okT=KAPAL.status?.ok===false?KAPAL.status.terakhir_ok:KAPAL.diperbarui;
   const st=KAPAL.status?.ok===false||umur>2?'delayed':'fresh';
   $('#vkNote').innerHTML=`${frBadge(st)} Data AIS per ${when(okT)} (${lalu(okT)}) · ${fmt(j.total)} kapal di perairan Jawa Timur (${fmt(j.terlihat_run_ini)} terlihat pada pengambilan terakhir, sisanya posisi ≤ ${fmt(KAPAL.simpan_menit)} menit) · `+
@@ -1206,7 +1214,7 @@ function renderVesselMap(){
   document.querySelectorAll('#vkTable tr.link').forEach(tr=>tr.onclick=()=>{const v=near[+tr.dataset.i];
     $('#vmap').scrollIntoView({behavior:'smooth',block:'center'});vmap.setView([v.lat,v.lon],13);L.popup().setLatLng([v.lat,v.lon]).setContent(vPopup(v)).openOn(vmap);});
 }
-function setVMode(k){vMode=k;document.querySelectorAll('#vMode button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));renderVessel();}
+function setVMode(k){vMode=k;vModeSet=true;document.querySelectorAll('#vMode button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));renderVessel();}
 document.querySelectorAll('#vMode button').forEach(b=>b.onclick=()=>setVMode(b.dataset.k));
 function vfShow(k){
   const v=VF_VIEWS.find(x=>x.k===k)||VF_VIEWS[0];vfCur=v.k;

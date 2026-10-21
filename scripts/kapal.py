@@ -146,7 +146,7 @@ def olah_pesan(msg, kapal, statis):
 DIAG = {}  # diagnostik run terakhir (jenis pesan, uji global) — ditulis ke oeja.json, tanpa key
 
 
-def _probe_global(key, detik=60):
+def _probe_global(key, detik=30):
     """Pesan dari wilayah Indonesia selama beberapa detik: membedakan masalah key/aliran vs cakupan wilayah.
     Mengembalikan ringkasan: jumlah pesan posisi, gagal parse, dan sebaran posisi per kotak 2°."""
     from collections import Counter
@@ -208,8 +208,8 @@ def ambil(key, bbox, detik, log=print):
     DIAG.update({"jenis_pesan": dict(jenis), "contoh_pesan_non_posisi": contoh_lain})
     if len(kapal) == 0:
         try:
-            DIAG["uji_indonesia_60dtk"] = _probe_global(key)
-            log(f"   uji Indonesia 60 dtk: {DIAG['uji_indonesia_60dtk']}")
+            DIAG["uji_indonesia_30dtk"] = _probe_global(key)
+            log(f"   uji Indonesia 30 dtk: {DIAG['uji_indonesia_30dtk']}")
         except Exception as ex:  # noqa
             DIAG["uji_global_galat"] = str(ex).replace(key, "***")[:200]
     return kapal, statis, n_msg
@@ -349,6 +349,8 @@ def main(fetch=None, now=None, env=None):
         "bbox": cfg["bbox"], "radius_km": cfg["radius_km"], "sog_diam_knot": cfg.get("sog_diam_knot", 0.5),
         "pipa_offshore_km": pipa_fc.get("total_km"),
         "jumlah": {"total": len(hasil), "terlihat_run_ini": n_baru, "pesan": n_msg, **ring},
+        # cakupan: tanpa satu pun posisi di bbox, "0 kapal" BUKAN berarti perairan kosong
+        "cakupan": "ada" if hasil else "tidak_ada",
         "status": {"ok": True, "waktu": now.isoformat(timespec="seconds"), "terakhir_ok": now.isoformat(timespec="seconds")},
         "kapal": hasil,
     }
