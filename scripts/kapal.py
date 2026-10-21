@@ -143,10 +143,33 @@ def olah_pesan(msg, kapal, statis):
     return True
 
 
+DIAG = {}  # diagnostik run terakhir (jenis pesan, uji global) — ditulis ke oeja.json, tanpa key
+
+
+def _probe_global(key, detik=20):
+    """Hitung pesan dari seluruh dunia selama beberapa detik: membedakan masalah key/aliran vs cakupan wilayah."""
+    from websockets.sync.client import connect
+    n, contoh = 0, None
+    akhir = time.monotonic() + detik
+    with connect(URL, open_timeout=30, close_timeout=5, max_size=2 ** 22) as ws:
+        ws.send(json.dumps({"APIKey": key, "BoundingBoxes": [[[-90, -180], [90, 180]]], "FilterMessageTypes": ["PositionReport"]}))
+        while time.monotonic() < akhir:
+            try:
+                raw = ws.recv(timeout=max(1.0, akhir - time.monotonic()))
+            except TimeoutError:
+                break
+            n += 1
+            if contoh is None:
+                contoh = str(raw)[:160]
+    return n, contoh
+
+
 def ambil(key, bbox, detik, log=print):
     """Kumpulkan pesan AIS dari AISStream selama `detik`. Mengembalikan (kapal, statis, n_pesan)."""
+    from collections import Counter
     from websockets.sync.client import connect
     w, s, e, n = bbox
+    jenis, contoh_lain = Counter(), None
     sub = {"APIKey": key, "BoundingBoxes": [[[s, w], [n, e]]],
            "FilterMessageTypes": ["PositionReport", "StandardClassBPositionReport", "ExtendedClassBPositionReport",
                                   "ShipStaticData", "StaticDataReport"]}
@@ -166,8 +189,19 @@ def ambil(key, bbox, detik, log=print):
             if isinstance(m, dict) and m.get("error"):
                 raise RuntimeError(f"AISStream menolak langganan: {m['error']}")
             n_msg += 1
-            olah_pesan(m, kapal, statis)
-    log(f"   {n_msg} pesan AIS, {len(kapal)} kapal dengan posisi")
+            jenis[(m.get("MessageType") if isinstance(m, dict) else None) or "?"] += 1
+            if not olah_pesan(m, kapal, statis) and contoh_lain is None:
+                contoh_lain = json.dumps(m)[:300] if isinstance(m, dict) else str(m)[:300]
+    log(f"   {n_msg} pesan AIS, {len(kapal)} kapal dengan posisi; jenis: {dict(jenis)}")
+    DIAG.clear()
+    DIAG.update({"jenis_pesan": dict(jenis), "contoh_pesan_non_posisi": contoh_lain})
+    if len(kapal) == 0:
+        try:
+            ng, cg = _probe_global(key)
+            DIAG.update({"uji_global_20dtk": ng, "uji_global_contoh": cg})
+            log(f"   uji global 20 dtk: {ng} pesan")
+        except Exception as ex:  # noqa
+            DIAG["uji_global_galat"] = str(ex).replace(key, "***")[:200]
     return kapal, statis, n_msg
 
 
@@ -308,6 +342,8 @@ def main(fetch=None, now=None, env=None):
         "status": {"ok": True, "waktu": now.isoformat(timespec="seconds"), "terakhir_ok": now.isoformat(timespec="seconds")},
         "kapal": hasil,
     }
+    if DIAG:
+        obj["diagnostik"] = {k: (v.replace(key, "***") if isinstance(v, str) else v) for k, v in DIAG.items()}
     tulis(obj)
     print(f"Kapal: {len(hasil)} (baru {n_baru}) · kritis {ring['kritis']} · waspada {ring['waspada']} · pantau {ring['pantau']}")
     return 0
