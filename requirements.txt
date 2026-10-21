@@ -3,3 +3,4 @@ shapely>=2.0
 pyproj>=3.6
 lxml>=5.0
 pyshp>=2.3
+websockets>=12.0

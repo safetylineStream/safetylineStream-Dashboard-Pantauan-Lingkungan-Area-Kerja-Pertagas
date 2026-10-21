@@ -49,17 +49,43 @@
       "aktif": true,
       "_petunjuk": "Kode provinsi BPS untuk wilayah yang dilalui pipa. {bulan} tanpa nol di depan. Bulan belum terbit → otomatis memakai bulan sebelumnya.",
       "url": "https://vsi.esdm.go.id/portalmbg/api/download-asset-forecast/gertan/forecast/vector/{tahun}/{bulan}/{provinsi}",
-      "provinsi": ["11", "12", "14", "15", "16", "31", "32", "33", "35", "36", "64"],
+      "provinsi": [
+        "11",
+        "12",
+        "14",
+        "15",
+        "16",
+        "31",
+        "32",
+        "33",
+        "35",
+        "36",
+        "64"
+      ],
       "simplify": 0.0002,
       "cadangan_onemap": true
     },
     "layanan": [
-      {"id": "prakiraan", "nama": "Prakiraan Potensi Gerakan Tanah Bulanan", "refresh_hari": 1, "tile_maks_hari": 35,
-       "urls": ["https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Prakiraan_Gerakan_Tanah_Bulanan/MapServer",
-                "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Prakiraan_Gerakan_Tanah_Bulanan/MapServer"]},
-      {"id": "zkgt", "nama": "Zona Kerentanan Gerakan Tanah", "refresh_hari": 30, "tile_maks_hari": 90,
-       "urls": ["https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Zona_Kerentanan_Gerakan_Tanah/MapServer",
-                "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Zona_Kerentanan_Gerakan_Tanah/MapServer"]}
+      {
+        "id": "prakiraan",
+        "nama": "Prakiraan Potensi Gerakan Tanah Bulanan",
+        "refresh_hari": 1,
+        "tile_maks_hari": 35,
+        "urls": [
+          "https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Prakiraan_Gerakan_Tanah_Bulanan/MapServer",
+          "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Prakiraan_Gerakan_Tanah_Bulanan/MapServer"
+        ]
+      },
+      {
+        "id": "zkgt",
+        "nama": "Zona Kerentanan Gerakan Tanah",
+        "refresh_hari": 30,
+        "tile_maks_hari": 90,
+        "urls": [
+          "https://geoportal.esdm.go.id/gis4/rest/services/BGV_GT/Zona_Kerentanan_Gerakan_Tanah/MapServer",
+          "https://geoportal.esdm.go.id/gis4/rest/services/bgl_bgv_gt/Zona_Kerentanan_Gerakan_Tanah/MapServer"
+        ]
+      }
     ],
     "token_url": "https://geoportal.esdm.go.id/gis4/tokens/generateToken",
     "koridor_km": 5
@@ -69,10 +95,19 @@
     "interval_m": 250,
     "koridor_piksel": 1,
     "rasio_waspada": 0.75,
-    "kerentanan_sumber": ["manual", "nasa", "dem"],
+    "kerentanan_sumber": [
+      "manual",
+      "nasa",
+      "dem"
+    ],
     "kerentanan_nasa_url": "https://gpm.nasa.gov/sites/default/files/downloads/global-landslide-susceptibility-map-2-27-23.tif",
     "dem_url": "https://copernicus-dem-90m.s3.amazonaws.com/{n}/{n}.tif",
-    "kelas_lereng_derajat": [5, 10, 15, 25],
+    "kelas_lereng_derajat": [
+      5,
+      10,
+      15,
+      25
+    ],
     "maks_ruas_per_wilayah": 40
   },
   "provinsi_pantauan": [
@@ -89,43 +124,256 @@
     "Jawa Timur"
   ],
   "provinsi_area": {
-    "ONSA": ["Aceh", "Sumatera Utara"],
-    "OCSA": ["Jambi", "Sumatera Selatan"],
-    "ODA": ["Riau"],
-    "OSSA": ["Sumatera Selatan"],
-    "OWJA": ["Banten", "DKI Jakarta", "Jawa Barat"],
-    "OKA": ["Kalimantan Timur"],
-    "ORA": ["Riau"],
-    "OEJA": ["Jawa Timur", "Jawa Tengah", "Jawa Barat"]
+    "ONSA": [
+      "Aceh",
+      "Sumatera Utara"
+    ],
+    "OCSA": [
+      "Jambi",
+      "Sumatera Selatan"
+    ],
+    "ODA": [
+      "Riau"
+    ],
+    "OSSA": [
+      "Sumatera Selatan"
+    ],
+    "OWJA": [
+      "Banten",
+      "DKI Jakarta",
+      "Jawa Barat"
+    ],
+    "OKA": [
+      "Kalimantan Timur"
+    ],
+    "ORA": [
+      "Riau"
+    ],
+    "OEJA": [
+      "Jawa Timur",
+      "Jawa Tengah",
+      "Jawa Barat"
+    ]
   },
   "titik_cuaca": [
-    {"area": "ONSA", "nama": "SM Arun (Lhokseumawe)", "lat": 5.2216, "lon": 97.0776, "adm4": ""},
-    {"area": "ONSA", "nama": "SKG Pangkalan Brandan", "lat": 4.0173, "lon": 98.2762, "adm4": ""},
-    {"area": "ONSA", "nama": "SM Belawan (Medan)", "lat": 3.7734, "lon": 98.6712, "adm4": ""},
-    {"area": "ODA", "nama": "Metering Station Duri", "lat": 1.2602, "lon": 101.2345, "adm4": ""},
-    {"area": "ODA", "nama": "Metering Station Dumai", "lat": 1.6729, "lon": 101.4741, "adm4": ""},
-    {"area": "OCSA", "nama": "SP3 Tempino (Jambi)", "lat": -1.7945, "lon": 103.5143, "adm4": ""},
-    {"area": "OCSA", "nama": "Booster Station KM 139", "lat": -2.5179, "lon": 104.088, "adm4": ""},
-    {"area": "OSSA", "nama": "Kantor Distrik Palembang", "lat": -3.1023, "lon": 104.7038, "adm4": ""},
-    {"area": "OSSA", "nama": "SM Pulau Layang", "lat": -3.0073, "lon": 104.835, "adm4": ""},
-    {"area": "OWJA", "nama": "Ujung barat jalur (± Cilegon)", "lat": -5.995, "lon": 106.0046, "adm4": ""},
-    {"area": "OWJA", "nama": "Muara Karang / Utara Jakarta", "lat": -6.1099, "lon": 106.7805, "adm4": ""},
-    {"area": "OWJA", "nama": "Simpul Bekasi – Cikarang", "lat": -6.304, "lon": 107.1432, "adm4": ""},
-    {"area": "OWJA", "nama": "Ujung timur jalur (± Cirebon)", "lat": -6.7333, "lon": 108.5409, "adm4": ""},
-    {"area": "OKA", "nama": "Ujung selatan jalur (± Balikpapan)", "lat": -1.2446, "lon": 116.8171, "adm4": ""},
-    {"area": "OKA", "nama": "LBCV 1 SENBAL (± Senipah)", "lat": -1.0237, "lon": 117.1117, "adm4": ""},
-    {"area": "OKA", "nama": "LBCV 3 SENBAL", "lat": -1.0907, "lon": 116.9045, "adm4": ""},
-    {"area": "OKA", "nama": "Ujung utara jalur (± Bontang)", "lat": 0.1826, "lon": 117.4879, "adm4": ""},
-    {"area": "ORA", "nama": "Minas Tank Farm", "lat": 0.7461, "lon": 101.4629, "adm4": ""},
-    {"area": "ORA", "nama": "Tie-in Libo (Kandis)", "lat": 0.9244, "lon": 101.1578, "adm4": ""},
-    {"area": "ORA", "nama": "Station Batang", "lat": 1.5503, "lon": 101.1797, "adm4": ""},
-    {"area": "ORA", "nama": "Pig Launcher Seg-8 (Balam–Bangko)", "lat": 1.6697, "lon": 100.7622, "adm4": ""},
-    {"area": "OEJA", "nama": "LBCV 14 Cisem (± Tegal–Brebes)", "lat": -6.9064, "lon": 108.9181, "adm4": ""},
-    {"area": "OEJA", "nama": "ORF Semarang", "lat": -6.9495, "lon": 110.4465, "adm4": ""},
-    {"area": "OEJA", "nama": "ADK Pig Launcher (± Cepu)", "lat": -7.0275, "lon": 111.4931, "adm4": ""},
-    {"area": "OEJA", "nama": "GRE Station (Gresik)", "lat": -7.1901, "lon": 112.659, "adm4": ""},
-    {"area": "OEJA", "nama": "ORF Porong", "lat": -7.5408, "lon": 112.7478, "adm4": ""},
-    {"area": "OEJA", "nama": "Grati Station (Pasuruan)", "lat": -7.6492, "lon": 113.0215, "adm4": ""},
-    {"area": "OEJA", "nama": "Pagerungan Island", "lat": -6.9584, "lon": 115.9271, "adm4": ""}
-  ]
+    {
+      "area": "ONSA",
+      "nama": "SM Arun (Lhokseumawe)",
+      "lat": 5.2216,
+      "lon": 97.0776,
+      "adm4": ""
+    },
+    {
+      "area": "ONSA",
+      "nama": "SKG Pangkalan Brandan",
+      "lat": 4.0173,
+      "lon": 98.2762,
+      "adm4": ""
+    },
+    {
+      "area": "ONSA",
+      "nama": "SM Belawan (Medan)",
+      "lat": 3.7734,
+      "lon": 98.6712,
+      "adm4": ""
+    },
+    {
+      "area": "ODA",
+      "nama": "Metering Station Duri",
+      "lat": 1.2602,
+      "lon": 101.2345,
+      "adm4": ""
+    },
+    {
+      "area": "ODA",
+      "nama": "Metering Station Dumai",
+      "lat": 1.6729,
+      "lon": 101.4741,
+      "adm4": ""
+    },
+    {
+      "area": "OCSA",
+      "nama": "SP3 Tempino (Jambi)",
+      "lat": -1.7945,
+      "lon": 103.5143,
+      "adm4": ""
+    },
+    {
+      "area": "OCSA",
+      "nama": "Booster Station KM 139",
+      "lat": -2.5179,
+      "lon": 104.088,
+      "adm4": ""
+    },
+    {
+      "area": "OSSA",
+      "nama": "Kantor Distrik Palembang",
+      "lat": -3.1023,
+      "lon": 104.7038,
+      "adm4": ""
+    },
+    {
+      "area": "OSSA",
+      "nama": "SM Pulau Layang",
+      "lat": -3.0073,
+      "lon": 104.835,
+      "adm4": ""
+    },
+    {
+      "area": "OWJA",
+      "nama": "Ujung barat jalur (± Cilegon)",
+      "lat": -5.995,
+      "lon": 106.0046,
+      "adm4": ""
+    },
+    {
+      "area": "OWJA",
+      "nama": "Muara Karang / Utara Jakarta",
+      "lat": -6.1099,
+      "lon": 106.7805,
+      "adm4": ""
+    },
+    {
+      "area": "OWJA",
+      "nama": "Simpul Bekasi – Cikarang",
+      "lat": -6.304,
+      "lon": 107.1432,
+      "adm4": ""
+    },
+    {
+      "area": "OWJA",
+      "nama": "Ujung timur jalur (± Cirebon)",
+      "lat": -6.7333,
+      "lon": 108.5409,
+      "adm4": ""
+    },
+    {
+      "area": "OKA",
+      "nama": "Ujung selatan jalur (± Balikpapan)",
+      "lat": -1.2446,
+      "lon": 116.8171,
+      "adm4": ""
+    },
+    {
+      "area": "OKA",
+      "nama": "LBCV 1 SENBAL (± Senipah)",
+      "lat": -1.0237,
+      "lon": 117.1117,
+      "adm4": ""
+    },
+    {
+      "area": "OKA",
+      "nama": "LBCV 3 SENBAL",
+      "lat": -1.0907,
+      "lon": 116.9045,
+      "adm4": ""
+    },
+    {
+      "area": "OKA",
+      "nama": "Ujung utara jalur (± Bontang)",
+      "lat": 0.1826,
+      "lon": 117.4879,
+      "adm4": ""
+    },
+    {
+      "area": "ORA",
+      "nama": "Minas Tank Farm",
+      "lat": 0.7461,
+      "lon": 101.4629,
+      "adm4": ""
+    },
+    {
+      "area": "ORA",
+      "nama": "Tie-in Libo (Kandis)",
+      "lat": 0.9244,
+      "lon": 101.1578,
+      "adm4": ""
+    },
+    {
+      "area": "ORA",
+      "nama": "Station Batang",
+      "lat": 1.5503,
+      "lon": 101.1797,
+      "adm4": ""
+    },
+    {
+      "area": "ORA",
+      "nama": "Pig Launcher Seg-8 (Balam–Bangko)",
+      "lat": 1.6697,
+      "lon": 100.7622,
+      "adm4": ""
+    },
+    {
+      "area": "OEJA",
+      "nama": "LBCV 14 Cisem (± Tegal–Brebes)",
+      "lat": -6.9064,
+      "lon": 108.9181,
+      "adm4": ""
+    },
+    {
+      "area": "OEJA",
+      "nama": "ORF Semarang",
+      "lat": -6.9495,
+      "lon": 110.4465,
+      "adm4": ""
+    },
+    {
+      "area": "OEJA",
+      "nama": "ADK Pig Launcher (± Cepu)",
+      "lat": -7.0275,
+      "lon": 111.4931,
+      "adm4": ""
+    },
+    {
+      "area": "OEJA",
+      "nama": "GRE Station (Gresik)",
+      "lat": -7.1901,
+      "lon": 112.659,
+      "adm4": ""
+    },
+    {
+      "area": "OEJA",
+      "nama": "ORF Porong",
+      "lat": -7.5408,
+      "lon": 112.7478,
+      "adm4": ""
+    },
+    {
+      "area": "OEJA",
+      "nama": "Grati Station (Pasuruan)",
+      "lat": -7.6492,
+      "lon": 113.0215,
+      "adm4": ""
+    },
+    {
+      "area": "OEJA",
+      "nama": "Pagerungan Island",
+      "lat": -6.9584,
+      "lon": 115.9271,
+      "adm4": ""
+    }
+  ],
+  "kapal": {
+    "_petunjuk": "Modul lalu lintas kapal (AIS) di atas pipa offshore. Butuh secret GitHub AISSTREAM_API_KEY (gratis, aisstream.io). Tanpa key modul tidak berjalan dan tidak membuat data.",
+    "aktif": true,
+    "area": [
+      "OEJA"
+    ],
+    "bbox": [
+      112.4,
+      -8.0,
+      116.3,
+      -6.4
+    ],
+    "jendela_detik": 180,
+    "simpan_menit": 90,
+    "radius_km": {
+      "kritis": 0.5,
+      "waspada": 1.0,
+      "pantau": 2.0
+    },
+    "sog_diam_knot": 0.5,
+    "min_ruas_km": 0.2,
+    "maks_kapal_simpan": 1500
+  }
 }

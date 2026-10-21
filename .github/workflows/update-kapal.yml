@@ -1,0 +1,67 @@
+name: Update Kapal AIS (OEJA offshore)
+
+# Posisi kapal AIS di perairan Jawa Timur vs pipa offshore OEJA, tiap 30 menit.
+# Butuh secret repositori AISSTREAM_API_KEY (gratis di https://aisstream.io). Tanpa secret: job selesai tanpa mengubah apa pun.
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-kapal
+  cancel-in-progress: false
+
+jobs:
+  jalankan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      AISSTREAM_API_KEY: ${{ secrets.AISSTREAM_API_KEY }}
+    steps:
+      - name: Cek API key
+        id: cek
+        run: |
+          if [ -z "$AISSTREAM_API_KEY" ]; then echo "AISSTREAM_API_KEY belum diset — modul kapal dilewati."; echo "aktif=0" >> "$GITHUB_OUTPUT"; else echo "aktif=1" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v5
+        if: steps.cek.outputs.aktif == '1'
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v6
+        if: steps.cek.outputs.aktif == '1'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependensi
+        if: steps.cek.outputs.aktif == '1'
+        run: pip install -r requirements.txt
+
+      - name: Ambil AIS & analisis terhadap pipa offshore
+        if: steps.cek.outputs.aktif == '1'
+        run: python scripts/kapal.py
+        timeout-minutes: 6
+        continue-on-error: true
+
+      - name: Simpan hasil ke repositori
+        if: steps.cek.outputs.aktif == '1'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          [ -f data/kapal/oeja.json ] || { echo "Belum ada data kapal."; exit 0; }
+          cp data/kapal/oeja.json "$RUNNER_TEMP/oeja.json"
+          for i in 1 2 3; do
+            git fetch -q origin ${{ github.ref_name }}
+            git reset -q --hard origin/${{ github.ref_name }}
+            mkdir -p data/kapal && cp "$RUNNER_TEMP/oeja.json" data/kapal/oeja.json
+            git add data/kapal/oeja.json
+            if git diff --cached --quiet; then echo "Tidak ada perubahan data."; exit 0; fi
+            git commit -q -m "Update kapal AIS $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M WIB')"
+            git push -q origin HEAD:${{ github.ref_name }} && exit 0
+            echo "Push ditolak (ada perubahan baru), mencoba lagi..."; sleep 5
+          done
+          exit 1

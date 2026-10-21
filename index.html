@@ -218,6 +218,10 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 .vf-frame{width:100%;height:480px;border:0;border-radius:8px;background:var(--surface-2);display:block}
 .vf-ph{height:480px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border-radius:8px;background:var(--surface-2);color:var(--ink-2);font-size:13px;text-align:center;padding:16px}
 #vfBox{padding:0 14px}
+#vmap{height:480px;margin:0 14px;border-radius:8px}
+#vkLegend{padding:0 14px 8px}
+.vk-ic svg{display:block;overflow:visible}
+@media (max-width:560px){#vmap{height:380px}}
 #vfTools button[aria-pressed="false"]{text-decoration:none}
 #vfTools button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 @media (max-width:560px){.vf-frame,.vf-ph{height:380px}}
@@ -312,15 +316,25 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 
   <!-- khusus tab OEJA: lalu lintas kapal di atas pipa offshore -->
   <section class="card sec" id="vesselCard" hidden>
-    <h3>Lalu lintas kapal di sekitar pipa offshore OEJA (AIS – VesselFinder)</h3>
-    <div class="note">Posisi kapal real-time dari sinyal AIS, peta tertanam resmi VesselFinder. Pipa offshore OEJA 28" (Pagerungan – Porong) melintasi Laut Jawa dan Selat Madura; kapal yang berlabuh, lambat, atau berhenti di atas jalur pipa berisiko menjatuhkan/menyeret jangkar.</div>
-    <div class="maptools" id="vfTools" role="toolbar" aria-label="Fokus peta kapal"></div>
-    <div id="vfBox"></div>
-    <div class="meta" style="padding:8px 14px 0">
-      <span class="tag">Pihak ketiga</span>
-      <span>Sumber: <a href="https://www.vesselfinder.com/" target="_blank" rel="noopener">VesselFinder</a> (widget peta AIS gratis). Data tidak disimpan oleh dashboard.</span>
+    <h3>Lalu lintas kapal di sekitar pipa offshore OEJA (AIS)</h3>
+    <div class="note">Pipa offshore OEJA 28" (Pagerungan – Porong) melintasi Laut Jawa dan Selat Madura. Kapal yang berlabuh, lambat, atau berhenti di atas jalur pipa berisiko menjatuhkan/menyeret jangkar.</div>
+    <div class="sub-tabs" id="vMode" style="padding:0 14px">
+      <button type="button" data-k="pipa" class="on">Kapal × pipa offshore</button>
+      <button type="button" data-k="live">Peta live VesselFinder</button>
     </div>
-    <div class="info" style="margin:8px 14px 14px">Keterbatasan: kapal kecil/nelayan banyak yang tidak memancarkan AIS; posisi bisa tertunda beberapa menit, apalagi di laut lepas tanpa penerima darat; jalur pipa Pertagas <b>tidak</b> digambar di peta ini, jadi bandingkan dengan peta aset di atas. Ini bukan pengganti pengawasan ROW laut / koordinasi dengan KSOP dan Distrik Navigasi.</div>
+    <div id="vkPanel">
+      <div class="note" id="vkNote" style="padding-top:0"></div>
+      <div class="legend" id="vkLegend"></div>
+      <div id="vmap"></div>
+      <div class="tbl" style="margin:10px 14px 0"><table id="vkTable"></table></div>
+    </div>
+    <div id="vfPanel" hidden>
+      <div class="note" style="padding-top:0">Posisi kapal real-time dari peta tertanam resmi VesselFinder. Peta ini milik pihak ketiga, jadi <b>jalur pipa tidak bisa digambar di atasnya</b> — gunakan tab "Kapal × pipa offshore" untuk melihat kapal bersama pipa.</div>
+      <div class="maptools" id="vfTools" role="toolbar" aria-label="Fokus peta kapal"></div>
+      <div id="vfBox"></div>
+      <div class="meta" style="padding:8px 14px 0"><span class="tag">Pihak ketiga</span><span>Sumber: <a href="https://www.vesselfinder.com/" target="_blank" rel="noopener">VesselFinder</a> (widget peta AIS gratis).</span></div>
+    </div>
+    <div class="info" style="margin:10px 14px 14px">Keterbatasan AIS: kapal kecil/nelayan banyak yang tidak memancarkan AIS; posisi bisa tertunda, apalagi di laut lepas tanpa penerima darat. Garis pantai pemisah ruas darat/laut dari Natural Earth 1:10m (±beberapa ratus meter). Modul ini pendukung keputusan — bukan pengganti patroli ROW laut maupun koordinasi dengan KSOP dan Distrik Navigasi.</div>
   </section>
 
   <section class="grid-2">
@@ -374,6 +388,7 @@ const fmt=(v,d=0)=>(v===null||v===undefined||v==='')?'–':Number(v).toLocaleStr
 const bust=()=>'?t='+Date.now();
 const TZ='Asia/Jakarta';
 
+let KAPAL=null,KPIPA=null;
 let DATA={},ASSETS={type:'FeatureCollection',features:[],areas:{}},HIST=[],GT={prakiraan:null,zkgt:null},LS=null,LSR=null,map=null,layers={},areaColor={},charts={},AREAS=[];
 const LOADERR={};          // berkas data yang gagal dimuat → ditampilkan, tidak membuat halaman kosong
 const LIVE={gempa:null,gempaErr:null,wx:{},wxErr:null};  // hasil cek langsung dari browser (opsional)
@@ -395,6 +410,7 @@ async function loadData(){
     getJSON('data/history/ringkasan.json'),getJSON('data/gerakan_tanah/prakiraan.geojson'),null,
     getJSON('data/lhasa/lhasa.json','model longsor (lhasa.json)',true),getJSON('data/lhasa/ruas.geojson')]);
   if(d)DATA=d;if(a)ASSETS=a;HIST=Array.isArray(h)?h:[];GT.prakiraan=p;LS=ls;LSR=lsr;
+  [KPIPA,KAPAL]=await Promise.all([getJSON('data/kapal/pipa_offshore.geojson'),getJSON('data/kapal/oeja.json')]);
   // zona kerentanan hanya diunduh bila pipeline menandainya tersedia (hindari 404 yang tidak perlu)
   const Zm=DATA.gerakan_tanah?.zkgt||{};
   if(Zm.tersedia&&Zm.berkas_peta==='prakiraan.geojson'&&GT.prakiraan){
@@ -471,6 +487,9 @@ function sources(){
     rows.push({id:'lhasa',nama:'Indikasi potensi longsor harian',src:'Model internal — algoritma NASA LHASA 1.1',par:'Hujan anteseden 7 hari vs ambang ARI95 NASA × kerentanan lereng',jenis:'Model (indikasi), memakai prakiraan hujan — bukan observasi',jadwal:'2× sehari (05:15 & 16:15 WIB)',
       data:`Hari ini ${LS.produk?.hari_ini?.tanggal||'–'} · besok ${LS.produk?.besok?.tanggal||'–'}`,ok:okk?t:null,st:freshOf(t,FRESH.terjadwal,!okk),pesan:LS.status?.hari_ini?.pesan});}
   else rows.push({id:'lhasa',nama:'Indikasi potensi longsor harian',src:'Model internal — algoritma NASA LHASA 1.1',par:'–',jenis:'Model',jadwal:'2× sehari',data:'Tidak tersedia',ok:null,st:'none',pesan:LOADERR['model longsor (lhasa.json)']});
+  if(KAPAL){const ok=KAPAL.status?.ok!==false,t=ok?KAPAL.diperbarui:(KAPAL.status?.terakhir_ok||KAPAL.diperbarui),u=umurJam(t);
+    rows.push({id:'kapal',nama:'Lalu lintas kapal (OEJA offshore)',src:esc(KAPAL.sumber||'AISStream.io'),par:'Posisi, kecepatan, status navigasi kapal vs pipa offshore OEJA',jenis:'Observasi AIS terestrial (cakupan tergantung penerima)',jadwal:'Tiap 30 menit',
+      data:`Posisi AIS s.d. ${when(t)}`,ok:t,st:u==null?'none':(u<=2&&ok)?'fresh':u<=6?'delayed':'stale',pesan:ok?'':KAPAL.status?.pesan});}
   return rows;
 }
 
@@ -550,7 +569,7 @@ $('#tabs').addEventListener('keydown',e=>{
 /* ---------- header ---------- */
 function renderStatus(){
   const rows=sources();
-  const short={hotspot:'Hotspot',gempa:'Gempa',cuaca:'Cuaca',udara:'Udara',pvmbg_prakiraan:'PVMBG prakiraan',pvmbg_zkgt:'PVMBG zona',lhasa:'Model longsor'};
+  const short={hotspot:'Hotspot',gempa:'Gempa',cuaca:'Cuaca',udara:'Udara',pvmbg_prakiraan:'PVMBG prakiraan',pvmbg_zkgt:'PVMBG zona',lhasa:'Model longsor',kapal:'Kapal AIS'};
   let h=`<span class="chip" title="Waktu GitHub Actions terakhir memproses data utama">Pemrosesan terakhir: <b>${when(DATA.generated_at)}</b></span>`;
   rows.forEach(r=>{
     h+=`<span class="chip" title="${esc(r.nama)}: ${FR_LBL[r.st]}${r.ok?' · berhasil diambil '+when(r.ok):''}${r.pesan?' · '+esc(r.pesan):''}">${frBadge(r.st,short[r.id]||r.nama)}</span>`;});
@@ -1110,15 +1129,85 @@ function vfSrcdoc(v){
     `<script>var width="100%";var height="${h}";var latitude="${v.lat}";var longitude="${v.lon}";var zoom="${v.zoom}";var names=false;<\/script>`+
     `<script src="https://www.vesselfinder.com/aismap.js"><\/script></body></html>`;
 }
+let vmap=null,vLayers={},vMode='pipa',vFit=false;
 function renderVessel(){
   const card=$('#vesselCard');const on=state.tab==='OEJA';card.hidden=!on;if(!on)return;
-  const tools=$('#vfTools');
-  if(!tools.childElementCount){
-    tools.innerHTML=VF_VIEWS.map(v=>`<button type="button" data-k="${v.k}" aria-pressed="false">${esc(v.lbl)}</button>`).join('');
-    tools.querySelectorAll('button').forEach(b=>b.onclick=()=>vfShow(b.dataset.k));
+  $('#vkPanel').hidden=vMode!=='pipa';$('#vfPanel').hidden=vMode!=='live';
+  if(vMode==='live'){
+    const tools=$('#vfTools');
+    if(!tools.childElementCount){
+      tools.innerHTML=VF_VIEWS.map(v=>`<button type="button" data-k="${v.k}" aria-pressed="false">${esc(v.lbl)}</button>`).join('');
+      tools.querySelectorAll('button').forEach(b=>b.onclick=()=>vfShow(b.dataset.k));
+    }
+    if(!vfCur)vfShow('jatim'); // widget tidak dimuat ulang pada refresh data 15 menit
+    return;
   }
-  if(!vfCur)vfShow('jatim'); // jangan muat ulang widget pada refresh data 15 menit
+  renderVesselMap();
 }
+const V_ST={kritis:'Diam/berlabuh ≤ {k} km dari pipa',waspada:'Melintas ≤ {k} km, atau diam ≤ {w} km',pantau:'≤ {p} km dari pipa',luar:'Lebih jauh'};
+function vStatusText(k){const r=KAPAL?.radius_km||{kritis:.5,waspada:1,pantau:2};return V_ST[k].replace('{k}',fmt(r.kritis,1)).replace('{w}',fmt(r.waspada,1)).replace('{p}',fmt(r.pantau,1));}
+function vIcon(v){
+  const c=css(STATUS[v.status].v),line=css('--ink'),sz=v.status==='luar'?12:16,ang=v.cog??v.heading;
+  const shape=(v.diam||ang==null)?`<circle cx="0" cy="0" r="${sz/2.6}" fill="${c}" stroke="${line}" stroke-width="1.2"/>`
+    :`<path d="M0,-${sz/2} L${sz/3},${sz/2} L0,${sz/4} L-${sz/3},${sz/2} Z" fill="${c}" stroke="${line}" stroke-width="1" transform="rotate(${ang})"/>`;
+  return L.divIcon({className:'vk-ic',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],html:`<svg width="${sz}" height="${sz}" viewBox="-${sz/2} -${sz/2} ${sz} ${sz}">${shape}</svg>`});
+}
+function vPopup(v){
+  return `<div class="pop"><b>${esc(v.nama||'MMSI '+v.mmsi)}</b> ${badge(v.status)}`+popRows([
+    ['MMSI',esc(v.mmsi)],['IMO',v.imo?esc(v.imo):''],['Jenis',esc(v.tipe||'')],['Panjang',v.panjang_m?fmt(v.panjang_m)+' m':''],
+    ['Status navigasi',esc(v.nav_label||'')],['Kecepatan',v.sog!=null?fmt(v.sog,1)+' knot':'–'],['Haluan',v.cog!=null?fmt(v.cog)+'°':''],
+    ['Tujuan',esc(v.tujuan||'')],['Jarak ke pipa offshore',v.jarak_pipa_km!=null?`<b>${fmt(v.jarak_pipa_km*1000)} m</b> (${esc(v.ruas||'')})`:'–'],
+    ['Posisi AIS',`${when(v.waktu_utc)} <span style="color:var(--muted)">(${lalu(v.waktu_utc)})</span>`],
+    ['Koordinat',`${v.lat}, ${v.lon}`],['Lihat',`<a target="_blank" rel="noopener" href="https://www.vesselfinder.com/vessels/details/${encodeURIComponent(v.mmsi)}">VesselFinder ↗</a>`]])+
+    (v.status==='kritis'?`<div class="warn">Kapal diam/berlabuh di dekat pipa offshore — konfirmasi ke kapal/KSOP bahwa tidak ada lego jangkar di koridor pipa.</div>`:'')+`</div>`;
+}
+function renderVesselMap(){
+  if(typeof L==='undefined'){$('#vmap').innerHTML='<div class="err">Library peta gagal dimuat.</div>';return;}
+  if(!vmap){
+    vmap=L.map('vmap',{preferCanvas:false}).setView([-7.15,113.9],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(vmap);
+    vLayers.zona=L.layerGroup().addTo(vmap);vLayers.darat=L.layerGroup().addTo(vmap);vLayers.pipa=L.layerGroup().addTo(vmap);vLayers.kapal=L.layerGroup().addTo(vmap);
+    L.control.layers(null,{'Koridor pipa offshore':vLayers.zona,'Pipa darat OEJA':vLayers.darat,'Pipa offshore':vLayers.pipa,'Kapal (AIS)':vLayers.kapal},{collapsed:true}).addTo(vmap);
+    L.control.scale({imperial:false}).addTo(vmap);
+    vFit=true;
+  }
+  setTimeout(()=>vmap.invalidateSize(),50);
+  Object.values(vLayers).forEach(l=>l.clearLayers());
+  const fc=KPIPA||{features:[]};
+  (fc.features||[]).filter(f=>f.properties.kind==='zona').forEach(f=>L.geoJSON(f,{style:{color:css('--s1'),weight:1,opacity:.5,dashArray:'4 4',fillColor:css('--s1'),fillOpacity:.08},interactive:false}).addTo(vLayers.zona));
+  L.geoJSON({type:'FeatureCollection',features:(ASSETS.features||[]).filter(f=>f.properties.area==='OEJA'&&f.properties.kind==='pipa')},
+    {style:{color:css(areaColor.OEJA||'--s1'),weight:2,opacity:.55},onEachFeature:(f,l)=>l.bindPopup(`<b>${esc(f.properties.name)}</b><br>OEJA · ${esc(f.properties.grup)}`)}).addTo(vLayers.darat);
+  const pip=L.geoJSON({type:'FeatureCollection',features:(fc.features||[]).filter(f=>f.properties.kind!=='zona')},
+    {style:{color:css('--ink'),weight:4,opacity:.9},onEachFeature:(f,l)=>l.bindPopup(`<b>${esc(f.properties.name)}</b> — ruas offshore<br>${fmt(f.properties.km,1)} km di laut`)}).addTo(vLayers.pipa);
+  const K=KAPAL&&Array.isArray(KAPAL.kapal)?KAPAL.kapal:[];
+  const ord={luar:0,pantau:1,waspada:2,kritis:3};
+  K.slice().sort((a,b)=>ord[a.status]-ord[b.status]).forEach(v=>L.marker([v.lat,v.lon],{icon:vIcon(v),zIndexOffset:ord[v.status]*100,title:v.nama||String(v.mmsi)}).bindPopup(vPopup(v)).addTo(vLayers.kapal));
+  if(vFit&&pip.getLayers().length){vmap.fitBounds(pip.getBounds(),{padding:[20,20]});vFit=false;}
+  // legenda
+  $('#vkLegend').innerHTML=`<span><i class="line" style="background:${css('--ink')};height:4px"></i>Pipa offshore (${fmt(fc.total_km,0)} km)</span><span><i class="line" style="background:${css(areaColor.OEJA||'--s1')};opacity:.6"></i>Pipa darat OEJA</span>`+
+    `<span><i style="display:inline-block;width:14px;height:10px;border:1px dashed ${css('--s1')};background:color-mix(in srgb,${css('--s1')} 10%,transparent)"></i>Koridor ${fmt((KAPAL?.radius_km?.kritis??.5)*1000)} m</span>`+
+    ['kritis','waspada','pantau','luar'].map(k=>`<span><i class="dot" style="background:${css(STATUS[k].v)}"></i>${STATUS[k].label}: ${vStatusText(k)}</span>`).join('')+
+    `<span>▲ bergerak (arah haluan) · ● diam/berlabuh</span>`;
+  // catatan status data
+  if(!KAPAL){
+    $('#vkNote').innerHTML=`<span class="tag">Belum aktif</span> Data posisi kapal (AIS) untuk analisis jarak ke pipa belum diaktifkan; peta ini menampilkan jalur pipa offshore dan koridornya. Untuk melihat kapal saat ini, buka tab <a href="#" id="vkGoLive">Peta live VesselFinder</a>.`;
+    const g=$('#vkGoLive');if(g)g.onclick=e=>{e.preventDefault();setVMode('live')};
+    $('#vkTable').innerHTML='';return;
+  }
+  const j=KAPAL.jumlah||{},umur=umurJam(KAPAL.diperbarui),okT=KAPAL.status?.ok===false?KAPAL.status.terakhir_ok:KAPAL.diperbarui;
+  const st=KAPAL.status?.ok===false||umur>2?'delayed':'fresh';
+  $('#vkNote').innerHTML=`${frBadge(st)} Data AIS per ${when(okT)} (${lalu(okT)}) · ${fmt(j.total)} kapal di perairan Jawa Timur (${fmt(j.terlihat_run_ini)} terlihat pada pengambilan terakhir, sisanya posisi ≤ ${fmt(KAPAL.simpan_menit)} menit) · `+
+    `<b>${fmt(j.kritis)}</b> kritis · <b>${fmt(j.waspada)}</b> waspada · <b>${fmt(j.pantau)}</b> pantau · diperbarui tiap 30 menit · sumber ${esc(KAPAL.sumber||'AIS')}`+
+    (KAPAL.status?.ok===false?` · <span style="color:var(--critical)">pengambilan terakhir gagal: ${esc(KAPAL.status.pesan||'')}</span>`:'');
+  const near=K.filter(v=>v.status!=='luar');
+  $('#vkTable').innerHTML=near.length?`<thead><tr><th>Status</th><th>Kapal</th><th>Jenis</th><th>Status navigasi</th><th>Kecepatan</th><th>Jarak ke pipa</th><th>Ruas</th><th>Posisi AIS</th></tr></thead><tbody>`+
+    near.map((v,i)=>`<tr class="link" data-i="${i}"><td>${badge(v.status)}</td><td><b>${esc(v.nama||'–')}</b><br><span style="color:var(--muted);font-size:12px">MMSI ${esc(v.mmsi)}</span></td><td>${esc(v.tipe||'–')}</td><td>${esc(v.nav_label||(v.diam?'Diam':'–'))}</td><td>${v.sog!=null?fmt(v.sog,1)+' kn':'–'}</td><td><b>${fmt(v.jarak_pipa_km*1000)} m</b></td><td>${esc(v.ruas||'')}</td><td>${jam(v.waktu_utc)} <span style="color:var(--muted)">(${lalu(v.waktu_utc)})</span></td></tr>`).join('')+'</tbody>'
+    :`<tbody><tr><td class="empty">✓ Tidak ada kapal dalam radius ${fmt(KAPAL.radius_km?.pantau??2,1)} km dari pipa offshore pada data terakhir.</td></tr></tbody>`;
+  document.querySelectorAll('#vkTable tr.link').forEach(tr=>tr.onclick=()=>{const v=near[+tr.dataset.i];
+    $('#vmap').scrollIntoView({behavior:'smooth',block:'center'});vmap.setView([v.lat,v.lon],13);L.popup().setLatLng([v.lat,v.lon]).setContent(vPopup(v)).openOn(vmap);});
+}
+function setVMode(k){vMode=k;document.querySelectorAll('#vMode button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));renderVessel();}
+document.querySelectorAll('#vMode button').forEach(b=>b.onclick=()=>setVMode(b.dataset.k));
 function vfShow(k){
   const v=VF_VIEWS.find(x=>x.k===k)||VF_VIEWS[0];vfCur=v.k;
   $('#vfTools').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===v.k?'true':'false'));

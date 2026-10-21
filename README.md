@@ -217,7 +217,14 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 - Jarak dihitung dari titik hotspot/episentrum ke **jalur pipa atau fasilitas terdekat** pada `data/assets.geojson` secara geodesik (Haversine; diuji terhadap perhitungan WGS84 independen, selisih < 20 m). Geometri pipa telah disederhanakan (±30 m) supaya halaman ringan. Lokasi hotspot sendiri punya ketidakpastian sebesar pikselnya (VIIRS ±375 m, MODIS ±1 km).
 
 
-## Lalu lintas kapal OEJA (AIS – VesselFinder)
-Khusus tab **OEJA** (ada pipa offshore Pagerungan – Porong), dashboard menampilkan peta kapal real-time dari **widget peta resmi VesselFinder** (`aismap.js`), dipusatkan ke perairan Jawa Timur dengan tiga fokus: Perairan Jawa Timur, Selat Madura, dan Laut Jawa–Pagerungan. Widget dimuat langsung oleh browser pengguna; dashboard **tidak** mengambil, menyimpan, atau mengolah data kapal, dan tidak melakukan scraping (dilarang ketentuan VesselFinder). Bila widget diblokir jaringan, tampil tautan ke situs VesselFinder.
+## Lalu lintas kapal OEJA (AIS)
+Khusus tab **OEJA** (pipa offshore 28" Pagerungan – Porong, ±378 km di laut). Kartu ini punya dua tampilan:
 
-Analisis otomatis kedekatan kapal terhadap jalur pipa (mis. kapal berlabuh ≤ 500 m dari pipa) butuh data AIS mentah melalui API berlisensi (VesselFinder API berbayar, atau AISStream.io dengan API key yang disimpan di GitHub Secrets) dan belum diaktifkan.
+1. **Kapal × pipa offshore** — peta dashboard sendiri berisi ruas pipa offshore, koridor 500 m, dan posisi kapal AIS. Tiap kapal diberi status dari jarak tegak lurus ke pipa offshore:
+   kritis = diam/berlabuh (SOG < 0,5 kn atau status berlabuh/tambat/NUC/kandas) ≤ 0,5 km · waspada = melintas ≤ 0,5 km atau diam ≤ 1 km · pantau ≤ 2 km. Ambang di `config/monitoring.json` → `kapal`.
+   - Ruas offshore diturunkan dari `assets.geojson` dikurangi daratan Natural Earth 1:10m: `python tools/pipa_offshore.py` → `data/kapal/pipa_offshore.geojson` (jalankan ulang bila aset berubah).
+   - Posisi kapal: `scripts/kapal.py` via workflow **Update Kapal AIS** (tiap 30 menit) dari **AISStream.io** → `data/kapal/oeja.json`. Posisi lama ≤ 90 menit dibawa ke run berikutnya (kapal berlabuh jarang memancar); waktu yang ditampilkan selalu waktu pesan AIS.
+   - **Aktivasi:** daftar gratis di https://aisstream.io (login GitHub) → buat API key → GitHub repo *Settings → Secrets and variables → Actions → New repository secret* bernama `AISSTREAM_API_KEY`. Tanpa secret, workflow selesai tanpa mengubah data dan kartu menampilkan "Belum aktif".
+2. **Peta live VesselFinder** — widget peta resmi VesselFinder (`aismap.js`), real-time. Peta pihak ketiga ini tidak bisa diberi overlay pipa. Dashboard tidak melakukan scraping VesselFinder (dilarang ketentuan mereka).
+
+Keterbatasan: AIS terestrial tidak menjangkau semua perairan; kapal kecil/nelayan sering tidak memancarkan AIS. Modul ini pendukung keputusan, bukan pengganti patroli ROW laut atau koordinasi dengan KSOP/Distrik Navigasi.
