@@ -225,6 +225,20 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 #vfTools button[aria-pressed="false"]{text-decoration:none}
 #vfTools button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 @media (max-width:560px){.vf-frame,.vf-ph{height:380px}}
+/* Petir (Vaisala Xweather) */
+.lt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:12px}
+.lt-a{align-self:start;border:1px solid var(--grid);border-radius:10px;padding:10px 12px;min-width:0;text-align:left;font:inherit;color:inherit;background:var(--surface);cursor:pointer;width:100%}
+.lt-a:hover{border-color:var(--axis)}
+.lt-a.k{border-color:var(--critical);box-shadow:inset 3px 0 0 var(--critical)} .lt-a.w{box-shadow:inset 3px 0 0 var(--serious)} .lt-a.p{box-shadow:inset 3px 0 0 var(--warning)}
+.lt-a .h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lt-a .h b{font-size:14px}
+.lt-a .m{font-size:12px;color:var(--ink-2);margin-top:4px}
+.lt-a .act{font-size:12px;margin-top:6px;padding:5px 7px;border-radius:6px;background:var(--surface-2);color:var(--ink)}
+.lt-live{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--critical)}
+.lt-live i{width:8px;height:8px;border-radius:50%;background:var(--critical);animation:ltp 1.6s infinite}
+@keyframes ltp{0%{opacity:1}50%{opacity:.25}100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.lt-live i{animation:none}}
+.lt-ic svg{display:block;overflow:visible}
 </style>
 </head>
 <body>
@@ -235,7 +249,7 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
       <div>
       <h1>PERTAGAS <span class="brand-accent">WASPADA</span></h1>
       <div class="expand"><b>W</b>atch &amp; <b>A</b>nalytics for <b>S</b>patial <b>P</b>ipeline <b>A</b>nomaly &amp; <b>D</b>isaster <b>A</b>wareness</div>
-      <div class="sub">Hotspot karhutla (deteksi satelit) · Gempa bumi &amp; tsunami (BMKG) · Gerakan tanah (PVMBG) · Indikasi potensi longsor harian (model LHASA) · Cuaca, kelembapan &amp; kualitas udara (model) per wilayah kerja</div>
+      <div class="sub">Hotspot karhutla (deteksi satelit) · Gempa bumi &amp; tsunami (BMKG) · Gerakan tanah (PVMBG) · Indikasi potensi longsor harian (model LHASA) · Sambaran petir real-time (Vaisala Xweather) · Cuaca, kelembapan &amp; kualitas udara (model) per wilayah kerja</div>
       <div class="byline">Dashboard by <b>Fungsi HSSE Pertamina Gas</b></div>
       </div>
     </div>
@@ -292,6 +306,12 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
   </section>
 
   <!-- khusus tab wilayah -->
+  <section class="card sec" id="ltCard">
+    <h3 id="ltTitle">⚡ Sambaran petir real-time terhadap jalur pipa &amp; fasilitas (Vaisala Xweather)</h3>
+    <div class="note" id="ltNote"></div>
+    <div class="gt-body" id="ltBody"></div>
+  </section>
+
   <section class="card sec" id="wxCard">
     <h3>Cuaca, kelembapan &amp; kualitas udara</h3>
     <div class="note" id="wxNote">Data model cuaca & kualitas udara per titik pantau di wilayah ini, plus prakiraan 3 hari</div>
@@ -389,6 +409,8 @@ const bust=()=>'?t='+Date.now();
 const TZ='Asia/Jakarta';
 
 let KAPAL=null,KPIPA=null;
+let PETIR=null,PCFG=null;  // data petir terjadwal (data/petir/latest.json) + config petir (config/monitoring.json)
+const LT={map:new Map(),ok:null,err:null,info:null,busy:false,bbox:null,circ:{},n:0};  // hasil cek langsung petir dari browser
 let DATA={},ASSETS={type:'FeatureCollection',features:[],areas:{}},HIST=[],GT={prakiraan:null,zkgt:null},LS=null,LSR=null,map=null,layers={},areaColor={},charts={},AREAS=[];
 const LOADERR={};          // berkas data yang gagal dimuat → ditampilkan, tidak membuat halaman kosong
 const LIVE={gempa:null,gempaErr:null,wx:{},wxErr:null};  // hasil cek langsung dari browser (opsional)
@@ -411,6 +433,7 @@ async function loadData(){
     getJSON('data/lhasa/lhasa.json','model longsor (lhasa.json)',true),getJSON('data/lhasa/ruas.geojson')]);
   if(d)DATA=d;if(a)ASSETS=a;HIST=Array.isArray(h)?h:[];GT.prakiraan=p;LS=ls;LSR=lsr;
   [KPIPA,KAPAL]=await Promise.all([getJSON('data/kapal/pipa_offshore.geojson'),getJSON('data/kapal/oeja.json')]);
+  {const [pt,cfg]=await Promise.all([getJSON('data/petir/latest.json'),PCFG?null:getJSON('config/monitoring.json')]);PETIR=pt;if(cfg)PCFG=cfg.petir||{};LT.bbox=null;LT.circ={};}
   // zona kerentanan hanya diunduh bila pipeline menandainya tersedia (hindari 404 yang tidak perlu)
   const Zm=DATA.gerakan_tanah?.zkgt||{};
   if(Zm.tersedia&&Zm.berkas_peta==='prakiraan.geojson'&&GT.prakiraan){
@@ -490,6 +513,12 @@ function sources(){
   if(KAPAL){const ok=KAPAL.status?.ok!==false,t=ok?KAPAL.diperbarui:(KAPAL.status?.terakhir_ok||KAPAL.diperbarui),u=umurJam(t);
     rows.push({id:'kapal',nama:'Lalu lintas kapal (OEJA offshore)',src:esc(KAPAL.sumber||'AISStream.io'),par:'Posisi, kecepatan, status navigasi kapal vs pipa offshore OEJA',jenis:'Observasi AIS terestrial (cakupan tergantung penerima)',jadwal:'Tiap 30 menit',
       data:(KAPAL.kapal||[]).length?`Posisi AIS s.d. ${when(t)}`:'Tidak ada sinyal AIS di perairan Jawa Timur (cakupan penerima)',ok:t,st:u==null?'none':(u<=2&&ok)?'fresh':u<=6?'delayed':'stale',pesan:ok?'':KAPAL.status?.pesan});}
+  if(PETIR||ltLive()){const P=PETIR||{},ok=P.status?.ok!==false,t=ok?P.diperbarui:(P.status?.terakhir_ok||P.diperbarui),u=umurJam(t);
+    let st=u==null?'none':(u<=0.75&&ok)?'fresh':u<=2?'delayed':'stale',extra='';
+    if(LT.ok&&umurJam(LT.ok)<=0.2){st='fresh';extra=`cek langsung ${jam(LT.ok)}`;}
+    rows.push({id:'petir',nama:'Sambaran petir',src:'Vaisala Xweather Lightning API (GLD360)',par:`Sambaran ${P.filter==='cg'||!P.filter?'cloud-to-ground (CG)':'CG & IC'}: waktu, lokasi, arus puncak vs jalur pipa/fasilitas (≤ ${fmt(ltR().pantau)} km)`,jenis:'Observasi jaringan deteksi petir (real-time, latensi < 1 menit)',
+      jadwal:'Tiap 10 menit (beberapa kali ambil per jadwal)'+(ltLive()?' + cek langsung tiap '+fmt(PCFG.browser.interval_detik||120)+' dtk saat dashboard dibuka':''),
+      data:PETIR?`Sambaran ≤ ${fmt(P.simpan_menit||90)} menit s.d. ${when(t)}${P.mode==='standard'?' · jendela 5 menit per pengambilan':''}`:'Data terjadwal belum ada',ok:t||LT.ok,st,extra,pesan:(ok?P.status?.pesan:P.status?.pesan)||LT.err||''});}
   return rows;
 }
 
@@ -558,6 +587,7 @@ function selectTab(id){
   history.replaceState(null,'',id===OV?location.pathname:'#'+id);
   render(true);
   liveWx(id).then(c=>c&&renderLive(true));
+  livePetir().then(c=>c&&renderPetirLive());
   window.scrollTo({top:Math.min(scrollY,$('.tabbar').offsetTop),behavior:'smooth'});
 }
 $('#tabs').addEventListener('keydown',e=>{
@@ -569,7 +599,7 @@ $('#tabs').addEventListener('keydown',e=>{
 /* ---------- header ---------- */
 function renderStatus(){
   const rows=sources();
-  const short={hotspot:'Hotspot',gempa:'Gempa',cuaca:'Cuaca',udara:'Udara',pvmbg_prakiraan:'PVMBG prakiraan',pvmbg_zkgt:'PVMBG zona',lhasa:'Model longsor',kapal:'Kapal AIS'};
+  const short={hotspot:'Hotspot',gempa:'Gempa',cuaca:'Cuaca',udara:'Udara',pvmbg_prakiraan:'PVMBG prakiraan',pvmbg_zkgt:'PVMBG zona',lhasa:'Model longsor',kapal:'Kapal AIS',petir:'Petir'};
   let h=`<span class="chip" title="Waktu GitHub Actions terakhir memproses data utama">Pemrosesan terakhir: <b>${when(DATA.generated_at)}</b></span>`;
   rows.forEach(r=>{
     h+=`<span class="chip" title="${esc(r.nama)}: ${FR_LBL[r.st]}${r.ok?' · berhasil diambil '+when(r.ok):''}${r.pesan?' · '+esc(r.pesan):''}">${frBadge(r.st,short[r.id]||r.nama)}</span>`;});
@@ -637,6 +667,7 @@ function renderOverviewAreas(){
       <div class="foot"><span>Suhu ${rng(t)}°C · RH ${rng(rh)}% <span style="color:var(--muted)">(model, ${jam(wx[0]?.waktu)})</span></span></div>
       <div class="foot"><span>Gerakan tanah (prakiraan ${namaBulan(ym)}${ym&&ym!==bulanIni()?' — bukan bulan ini':''}): ${pk?`${gtBadge(pk.terburuk)} ${fmt(pk.pipa_km?.tinggi,1)} km pipa zona tinggi`:(P.tersedia?'belum dianalisis untuk wilayah ini':'data belum tersedia')}</span></div>
       <div class="foot"><span>Indikasi longsor hari ini (model): ${(()=>{const a=lsArea(k,'hari_ini');return a?`${lsBadge(a.terburuk)} ${fmt((a.pipa_km.tinggi||0)+(a.pipa_km.sedang||0),1)} km pipa ≥ sedang`:'–'})()}</span></div>
+      <div class="foot"><span>Petir ${fmt(ltAC())} menit: ${ltAreaTxt(k)}</span></div>
       <div class="foot"><span>${qs?`Gempa terdekat (7 hari) ${fmt(qs.per_area[k].jarak_km)} km (M ${fmt(qs.mag,1)}, ${lalu(qs.datetime)})`:'Tidak ada gempa tercatat dalam 7 hari'}</span><span class="go">Buka ›</span></div>
     </button>`;}).join('');
   el.querySelectorAll('.area').forEach(b=>b.onclick=()=>selectTab(b.dataset.id));
@@ -653,8 +684,8 @@ function initMap(){
   base['Peta jalan (OSM)'].addTo(map);
   layers.pipa=L.layerGroup().addTo(map);layers.fas=L.layerGroup().addTo(map);
   layers.gtZona=L.layerGroup();layers.gtPrak=L.layerGroup().addTo(map);
-  layers.ls=L.layerGroup().addTo(map);layers.hs=L.layerGroup().addTo(map);layers.eq=L.layerGroup().addTo(map);layers.wx=L.layerGroup().addTo(map);
-  L.control.layers(base,{'Jalur pipa':layers.pipa,'Fasilitas':layers.fas,'Hotspot':layers.hs,'Gempa':layers.eq,
+  layers.ls=L.layerGroup().addTo(map);layers.hs=L.layerGroup().addTo(map);layers.eq=L.layerGroup().addTo(map);layers.lt=L.layerGroup().addTo(map);layers.wx=L.layerGroup().addTo(map);
+  L.control.layers(base,{'Jalur pipa':layers.pipa,'Fasilitas':layers.fas,'Hotspot':layers.hs,'Gempa':layers.eq,'Sambaran petir':layers.lt,
     'Prakiraan gerakan tanah (bulan ini)':layers.gtPrak,'Zona kerentanan gerakan tanah':layers.gtZona,'Potensi longsor (model LHASA)':layers.ls,'Label cuaca':layers.wx},{collapsed:true}).addTo(map);
   map.createPane('gt');map.getPane('gt').style.zIndex=350;
   L.control.scale({imperial:false}).addTo(map);
@@ -667,7 +698,7 @@ function initMap(){
 let lastBounds=null;
 function fitArea(){if(map&&lastBounds&&lastBounds.isValid())map.fitBounds(lastBounds,{padding:[24,24],maxZoom:11});}
 // Filter cepat lapisan peta (sinkron dengan kontrol lapisan Leaflet)
-const QUICK=[['pipa','Jalur pipa',['pipa']],['fas','Aset/fasilitas',['fas']],['hs','Hotspot',['hs']],['eq','Gempa',['eq']],['ls','Longsor (model)',['ls']],['gt','Gerakan tanah',['gtPrak','gtZona']]];
+const QUICK=[['pipa','Jalur pipa',['pipa']],['fas','Aset/fasilitas',['fas']],['hs','Hotspot',['hs']],['eq','Gempa',['eq']],['lt','Petir',['lt']],['ls','Longsor (model)',['ls']],['gt','Gerakan tanah',['gtPrak','gtZona']]];
 function renderMapTools(){
   if(!map){$('#mapTools').innerHTML='';return;}
   const on=keys=>keys.some(k=>layers[k]&&map.hasLayer(layers[k]));
@@ -729,6 +760,7 @@ function drawMap(fit){
     const c=css(g.tsunami?'--critical':'--quake'),old=(eqAge(g)??1e9)>GEMPA_BARU_JAM;
     L.circleMarker([g.lat,g.lon],{radius:Math.max(6,((+g.mag||0)-2)*4),weight:old?1:2,color:c,fillColor:c,fillOpacity:old?.06:.25,opacity:old?.5:1,dashArray:old?'4 3':null}).bindPopup(eqPopup(g)).addTo(layers.eq);
   });
+  ltDrawMap();
   if(!isOV())(DATA.cuaca||[]).filter(w=>w.area===state.tab).map(wxNow).forEach(w=>{
     L.marker([w.lat,w.lon],{icon:L.divIcon({className:'',html:`<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1px 5px;font:600 11px system-ui;color:var(--ink);white-space:nowrap;transform:translate(8px,-22px)">${fmt(w.suhu)}° · RH ${fmt(w.rh)}%</div>`,iconSize:null})})
       .bindPopup(`<b>${esc(w.nama)}</b><br>${esc(w.cuaca)} · ${fmt(w.suhu,1)}°C · RH ${fmt(w.rh)}%<br>Angin ${fmt(w.angin_kmh)} km/jam dari ${esc(w.angin_arah)} · PM2.5 ${fmt(w.pm25)} µg/m³<br><span style="color:var(--muted)">Data model ${esc(w.sumber)} · ${when(w.waktu)}</span>`).addTo(layers.wx);
@@ -738,6 +770,7 @@ function drawMap(fit){
   let lg=(isOV()?AREAS:[state.tab]).map(k=>`<span><i class="line" style="background:${css(areaColor[k])}"></i>${k}</span>`).join('');
   lg+=`<span style="margin-left:6px">Hotspot:</span>`+['kritis','waspada','pantau','luar'].map(k=>`<span><i class="dot" style="background:${css(STATUS[k].v)}"></i>${STATUS[k].icon} ${STATUS[k].label}</span>`).join('');
   lg+=`<span><i class="dot" style="background:${css('--surface-2')};outline:2px dashed ${css('--ink')};outline-offset:-1px"></i>Berulang di lokasi sama</span>`;
+  if(ltStrikes().length)lg+=`<span style="margin-left:6px">${ltBolt(css('--critical'),13)} Sambaran petir (pudar = > ${fmt(ltAC())} menit)</span>`;
   lg+=`<span><i class="dot" style="border:2px solid ${css('--quake')};width:10px;height:10px"></i>Episentrum gempa (≤ 7 hari)</span><span><i class="dot" style="border:1px dashed ${css('--quake')};width:10px;height:10px;opacity:.6"></i>Gempa lebih lama</span>`;
   if(GT.prakiraan||GT.zkgt)lg+=`<span style="margin-left:6px">Gerakan tanah:</span>`+GT_LV.map(k=>`<span><i style="display:inline-block;width:12px;height:10px;border-radius:2px;background:${css(GT_INFO[k].v)};opacity:.6"></i>${GT_INFO[k].label}</span>`).join('');
   if(LSR&&(LSR.features||[]).length)lg+=`<span style="margin-left:6px">Indikasi longsor (model) ${LS_PROD[state.ls]}:</span>`+LS_LV.map(k=>`<span><i class="line" style="height:5px;background:${css(LS_INFO[k].v)}"></i>${LS_INFO[k].label}</span>`).join('');
@@ -1059,8 +1092,147 @@ function renderSources(){
 function renderFoot(){
   $('#foot').innerHTML=`Sumber data: <a href="https://sipongi.gakkum.kehutanan.go.id/sebaran-titik-panas" target="_blank" rel="noopener">SiPongi+ Kemenhut</a> (satelit NASA MODIS/VIIRS) ·
    <a href="https://inatews.bmkg.go.id/" target="_blank" rel="noopener">BMKG InaTEWS</a> (data.bmkg.go.id) ·
-   Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (<a href="https://vsi.esdm.go.id/portalmbg/" target="_blank" rel="noopener">Portal MBG</a>) · Indikasi longsor: model internal berdasarkan algoritma <a href="https://github.com/nasa/LHASA" target="_blank" rel="noopener">NASA LHASA 1.1</a> (ambang ARI95 NASA, hujan model Open-Meteo, kerentanan lereng NASA/Copernicus DEM) · Cuaca: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (model) · Kualitas udara: CAMS via Open-Meteo (model) · Aset: KMZ wilayah kerja Pertagas.<br>
+   Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (<a href="https://vsi.esdm.go.id/portalmbg/" target="_blank" rel="noopener">Portal MBG</a>) · Indikasi longsor: model internal berdasarkan algoritma <a href="https://github.com/nasa/LHASA" target="_blank" rel="noopener">NASA LHASA 1.1</a> (ambang ARI95 NASA, hujan model Open-Meteo, kerentanan lereng NASA/Copernicus DEM) · Petir: <a href="https://www.xweather.com/weather-api/lightning-api" target="_blank" rel="noopener">Vaisala Xweather</a> (jaringan GLD360) · Cuaca: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (model) · Kualitas udara: CAMS via Open-Meteo (model) · Aset: KMZ wilayah kerja Pertagas.<br>
    PERTAGAS WASPADA — dashboard by Fungsi HSSE PT Pertamina Gas. Semua waktu ditampilkan dalam WIB (UTC+7). Jarak = jarak geodesik (Haversine) ke jalur pipa/fasilitas terdekat. Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran. Untuk peringatan dini tsunami resmi, selalu rujuk BMKG.`;
+}
+
+/* ---------- Sambaran petir (Vaisala Xweather) ---------- */
+// Status wilayah dihitung ulang di browser dari waktu sambaran, sehingga "all-clear" berjalan walau data belum diperbarui.
+const LT_R0={kritis:8,waspada:16,pantau:30};
+const ltR=()=>PETIR?.radius_km||PCFG?.radius_km||LT_R0;
+const ltAC=()=>PETIR?.all_clear_menit??PCFG?.all_clear_menit??30;
+const ltKeep=()=>PETIR?.simpan_menit??PCFG?.simpan_menit??90;
+const ltLive=()=>!!(PCFG&&PCFG.aktif!==false&&PCFG.browser&&PCFG.browser.client_id&&PCFG.browser.client_secret);
+const ltMin=s=>{const d=parseT(s.waktu_utc);return d?(Date.now()-d.getTime())/6e4:1e9;};
+const LT_ORD={kritis:0,waspada:1,pantau:2,luar:3};
+const LT_ACT={kritis:'Hentikan pekerjaan luar ruang, hot work, kerja di ketinggian, loading/unloading & venting. Personel berlindung di bangunan/kendaraan tertutup.',
+  waspada:'Siapkan penghentian pekerjaan luar ruang; supervisor memantau pergerakan badai.',pantau:'Badai petir dalam radius pantau — informasikan supervisor lapangan.'};
+function ltStrikes(){
+  const out=new Map(),keep=ltKeep();
+  for(const s of [...(PETIR?.sambaran||[]),...LT.map.values()])if(s&&ltMin(s)<=keep&&!out.has(s.id))out.set(s.id,s);
+  return [...out.values()].sort((a,b)=>ltMin(a)-ltMin(b));
+}
+// sudut pandang tab: di tab wilayah, jarak dihitung ke aset wilayah itu
+function ltView(s){
+  if(isOV())return {d:s.jarak_km,st:klas(s.jarak_km,ltR()),area:s.area};
+  const d=s.per_area?.[state.tab];return d==null?null:{d,st:klas(d,ltR()),area:state.tab};
+}
+function ltArea(k){
+  const ac=ltAC(),r=ltR();let st=null,n=0,near=null,last=null,lastCrit=null;
+  for(const s of ltStrikes()){const d=s.per_area?.[k];if(d==null)continue;const t=parseT(s.waktu_utc);if(!last||t>last)last=t;
+    if(ltMin(s)>ac)continue;n++;const c=klas(d,r);if(c!=='luar'&&(!st||LT_ORD[c]<LT_ORD[st]))st=c;
+    if(near==null||d<near)near=d;if((c==='kritis'||c==='waspada')&&(!lastCrit||t>lastCrit))lastCrit=t;}
+  return {st,n,near,last,clear:lastCrit?new Date(lastCrit.getTime()+ac*6e4):null};
+}
+const ltOn=()=>!!(PETIR||ltLive());
+function ltAreaTxt(k){
+  if(!ltOn())return '<span style="color:var(--muted)">modul belum aktif</span>';
+  const a=ltArea(k);return a.st?`${badge(a.st)} ${a.n} sambaran, terdekat ${fmt(a.near,1)} km`:'<span class="badge b-aman">✓ Tidak ada sambaran dekat aset</span>';
+}
+function ltBolt(c,sz,op){return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" aria-hidden="true" style="opacity:${op??1}"><path d="M13.5 1 4 13.5h6.2L8.8 23 20 9.6h-6.4z" fill="${c}" stroke="${css('--surface')}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;}
+function ltPopup(s){
+  const v=ltView(s)||{d:s.jarak_km,st:klas(s.jarak_km,ltR()),area:s.area};
+  return `<div class="pop"><b>⚡ Sambaran petir ${esc(s.tipe==='IC'?'awan-ke-awan (IC)':'awan-ke-tanah (CG)')}</b> ${badge(v.st)} ${s.live?'<span class="tag">cek langsung</span>':''}`+popRows([
+    ['Waktu',`${when(s.waktu_utc)} <span style="color:var(--muted)">(${lalu(s.waktu_utc)})</span>`],
+    ['Jarak ke aset',`<b>${fmt(v.d,2)} km</b> dari ${esc(s.aset||'aset')}${isOV()?` (${esc(s.area)})`:''}`],
+    ['Fasilitas terdekat',s.fasilitas?`${esc(s.fasilitas)} (${fmt(s.jarak_fasilitas_km,1)} km)`:''],
+    ['Arus puncak',s.arus_ka!=null?`${fmt(s.arus_ka,1)} kA (${s.arus_ka<0?'negatif':'positif'})`:''],['Sensor',s.sensor!=null?fmt(s.sensor)+' sensor':''],
+    ['Koordinat',`${s.lat}, ${s.lon} · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+s.lat},${+s.lon}">Google Maps</a>`],['Sumber','Vaisala Xweather (GLD360)']])+
+    `<div class="warn">${s.dekat_aset||v.d<=(PETIR?.sambaran_dekat_km??1)?'<b>Sambaran ≤ '+fmt(PETIR?.sambaran_dekat_km??1,1)+' km dari aset</b> — periksa kerusakan setelah badai reda: proteksi katodik & insulating joint, instrumen/SCADA, panel listrik, vent/flare, grounding. ':''}Lokasi sambaran memiliki ketidakpastian ±beberapa ratus meter.</div></div>`;
+}
+function ltDrawMap(){
+  if(!map||!layers.lt)return;layers.lt.clearLayers();const ac=ltAC();
+  ltStrikes().map(s=>({s,v:ltView(s)})).filter(x=>x.v&&x.v.st!=='luar').sort((a,b)=>LT_ORD[b.v.st]-LT_ORD[a.v.st]).forEach(({s,v})=>{
+    const old=ltMin(s)>ac,sz=v.st==='kritis'?22:18;
+    L.marker([s.lat,s.lon],{icon:L.divIcon({className:'lt-ic',html:ltBolt(css(STATUS[v.st].v),sz,old?.45:1),iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]}),zIndexOffset:1000-LT_ORD[v.st]*100,title:'Sambaran petir '+jam(s.waktu_utc)})
+      .bindPopup(ltPopup(s)).addTo(layers.lt);});
+}
+function renderPetir(){
+  const body=$('#ltBody'),note=$('#ltNote');if(!body)return;
+  const r=ltR(),ac=ltAC();
+  if(!ltOn()){
+    note.innerHTML=`<span class="tag">Belum aktif</span> Modul siap dipakai, tinggal diaktifkan.`;
+    body.innerHTML=`<div class="info">Modul ini mengambil data sambaran petir real-time dari <b>Vaisala Xweather</b> (jaringan GLD360) lalu menghitung jarak tiap sambaran ke jalur pipa &amp; fasilitas. Status: <b>kritis ≤ ${fmt(r.kritis)} km</b> (hentikan pekerjaan luar ruang), <b>waspada ≤ ${fmt(r.waspada)} km</b>, <b>pantau ≤ ${fmt(r.pantau)} km</b>; aman kembali ${fmt(ac)} menit setelah sambaran terakhir.<br><br>
+      Untuk mengaktifkan: tambahkan secret repositori <code>XWEATHER_CLIENT_ID</code> dan <code>XWEATHER_CLIENT_SECRET</code> (Settings → Secrets and variables → Actions), lalu jalankan workflow <i>Update Petir (Xweather)</i>. Langkah lengkap ada di README bagian <b>A8</b>.</div>`;
+    return;}
+  const P=PETIR||{},ok=P.status?.ok!==false,t=ok?P.diperbarui:(P.status?.terakhir_ok||P.diperbarui);
+  const fr=LT.ok&&umurJam(LT.ok)<=0.2?'fresh':!t?'none':umurJam(t)<=0.75&&ok?'fresh':umurJam(t)<=2?'delayed':'stale';
+  const liveTxt=ltLive()?(LT.ok?` · <span class="lt-live"><i></i>LIVE</span> cek langsung ${jam(LT.ok)} (tiap ${fmt(PCFG.browser.interval_detik||120)} dtk${isOV()?'':', wilayah '+state.tab})`:'')+(LT.err?` · <span style="color:var(--critical)">cek langsung: ${esc(LT.err)}</span>`:'')+(LT.info&&isOV()?` · ${esc(LT.info)}`:''):'';
+  note.innerHTML=`${frBadge(fr)} ${t?`Data terjadwal per ${when(t)} (${lalu(t)})`:'Belum ada data terjadwal'}${liveTxt} · sambaran ${P.filter==='cg'||!P.filter?'awan-ke-tanah (CG)':'CG & IC'} ≤ ${fmt(r.pantau)} km dari aset, ${fmt(ltKeep())} menit terakhir`+
+    (!ok?` · <span style="color:var(--critical)">pengambilan terakhir gagal: ${esc(P.status?.pesan||'')}</span>`:'')+(P.jumlah?.terpotong?` · <span style="color:var(--critical)">${fmt(P.jumlah.terpotong)} kueri mencapai batas ${fmt(P.mode==='enterprise'?50000:1000)} sambaran (badai sangat aktif — sebagian sambaran jauh mungkin tidak terambil)</span>`:'');
+  const areas=isOV()?AREAS:[state.tab];
+  const cards=areas.map(k=>{const a=ltArea(k),cl=a.st?a.st[0]:'';
+    return `<button type="button" class="lt-a ${cl}" data-id="${k}"><div class="h"><b><i class="line" style="background:${css(areaColor[k])};vertical-align:middle;margin-right:6px"></i>${k}</b>${a.st?badge(a.st):'<span class="badge b-aman">✓ Aman</span>'}</div>
+      ${a.last?`<div class="m">${a.n?`<b>${a.n}</b> sambaran dalam ${fmt(ac)} menit terakhir · terdekat <b>${fmt(a.near,1)} km</b>`:`Tidak ada sambaran ≤ ${fmt(r.pantau)} km dalam ${fmt(ac)} menit terakhir`}</div>
+      <div class="m">Sambaran terakhir ${jam(a.last.toISOString())} (${lalu(a.last.toISOString())})</div>`:`<div class="m">Tidak ada sambaran ≤ ${fmt(r.pantau)} km dalam ${fmt(ltKeep())} menit terakhir</div>`}
+      ${a.st?`<div class="act">${isOV()?LT_ACT[a.st].split('. ')[0]+'.':LT_ACT[a.st]}${a.clear?`<br><b>Perkiraan aman:</b> ${jam(a.clear.toISOString())} bila tidak ada sambaran baru ≤ ${fmt(r.waspada)} km`:''}</div>`:''}</button>`;}).join('');
+  const rows=ltStrikes().map(s=>({s,v:ltView(s)})).filter(x=>x.v&&x.v.st!=='luar');
+  const tbl=rows.length?`<div class="tbl" style="margin-top:0"><table><thead><tr><th>Waktu (WIB)</th><th>Status</th><th class="num">Jarak ke aset</th><th>Aset terdekat</th><th>Fasilitas terdekat</th><th class="num">Arus puncak</th><th>Jenis</th></tr></thead><tbody>`+
+    rows.slice(0,300).map(({s,v},i)=>`<tr class="link" data-i="${i}"${ltMin(s)>ac?' style="opacity:.7"':''}><td style="white-space:nowrap">${jam(s.waktu_utc)} <span style="color:var(--muted)">${lalu(s.waktu_utc)}</span>${s.live?' <span class="tag">live</span>':''}</td><td>${badge(v.st)}${s.dekat_aset?' <span class="badge b-kritis" title="Sambaran sangat dekat aset — periksa kerusakan">≤ '+fmt(PETIR?.sambaran_dekat_km??1,1)+' km</span>':''}</td>
+      <td class="num"><b>${fmt(v.d,2)}</b> km</td><td>${esc(s.aset)}${isOV()?` <span style="color:var(--muted)">(${esc(s.area)})</span>`:''}</td><td>${s.fasilitas?`${esc(s.fasilitas)} <span style="color:var(--muted)">${fmt(s.jarak_fasilitas_km,1)} km</span>`:'–'}</td>
+      <td class="num">${s.arus_ka!=null?fmt(s.arus_ka,1)+' kA':'–'}</td><td>${esc(s.tipe||'–')}</td></tr>`).join('')+`</tbody></table></div>`
+    :`<div class="empty">✓ Tidak ada sambaran petir dalam radius ${fmt(r.pantau)} km dari aset${isOV()?'':' '+state.tab} selama ${fmt(ltKeep())} menit terakhir.</div>`;
+  body.innerHTML=`<div class="lt-grid">${cards}</div>${tbl}
+    <div class="info" style="margin-top:10px">Radius: <b>kritis ≤ ${fmt(r.kritis)} km</b> (setara aturan 30-30: kilat–guruh &lt; 30 detik) · <b>waspada ≤ ${fmt(r.waspada)} km</b> · <b>pantau ≤ ${fmt(r.pantau)} km</b>, diukur ke jalur pipa/fasilitas terdekat. Pekerjaan luar ruang dilanjutkan <b>${fmt(ac)} menit</b> setelah sambaran terakhir dalam radius waspada. ${P.mode==='standard'?'Akses standar Xweather menyimpan 5 menit data per pengambilan; data terjadwal diambil beberapa kali per 10 menit sehingga sebagian sambaran di sela pengambilan bisa tidak tercatat. ':''}Modul ini pendukung keputusan — tetap ikuti pengamatan visual/guruh di lapangan dan prosedur cuaca buruk area.</div>`;
+  body.querySelectorAll('.lt-a').forEach(b=>b.onclick=()=>{if(isOV())selectTab(b.dataset.id);});
+  body.querySelectorAll('tr.link').forEach(tr=>tr.onclick=()=>{const s=rows[+tr.dataset.i].s;focusMap(s.lat,s.lon,11,ltPopup(s));});
+}
+// ---- cek langsung ke Xweather dari browser (opsional, kunci aplikasi khusus browser yang dikunci ke domain)
+function ltBBox(){
+  if(LT.bbox)return LT.bbox;const bb={};
+  for(const f of ASSETS.features||[]){const a=f.properties.area,g=f.geometry;if(!g)continue;
+    const pts=g.type==='Point'?[g.coordinates]:g.type==='LineString'?g.coordinates:g.type==='MultiLineString'?g.coordinates.flat():[];
+    for(const [x,y] of pts){const b=bb[a]||(bb[a]=[x,y,x,y]);b[0]=Math.min(b[0],x);b[1]=Math.min(b[1],y);b[2]=Math.max(b[2],x);b[3]=Math.max(b[3],y);}}
+  return LT.bbox=bb;
+}
+function ltCircles(area){
+  const key=area||'*';if(LT.circ[key])return LT.circ[key];
+  const R=+PCFG.radius_kueri_km||100,rc=R-ltR().pantau-2.5;
+  // pakai lingkaran hasil pipeline bila ada (sudah dioptimalkan); bila tidak, sebar sederhana di browser
+  const srv=(PETIR?.lingkaran||[]).filter(c=>!area||(c[3]||[]).includes(area)).map(c=>({lat:c[0],lon:c[1],r:c[2]}));
+  if(srv.length)return LT.circ[key]=srv;
+  const pts=[];for(const f of ASSETS.features||[]){if(area&&f.properties.area!==area)continue;const g=f.geometry;if(!g)continue;
+    if(g.type==='Point'){pts.push([g.coordinates[1],g.coordinates[0]]);continue;}
+    for(const c of g.type==='LineString'?[g.coordinates]:g.type==='MultiLineString'?g.coordinates:[])for(let i=0;i<c.length;i++){
+      if(!i){pts.push([c[0][1],c[0][0]]);continue;}const n=Math.max(1,Math.ceil(haversine(c[i-1][1],c[i-1][0],c[i][1],c[i][0])/5));
+      for(let k=1;k<=n;k++)pts.push([c[i-1][1]+(c[i][1]-c[i-1][1])*k/n,c[i-1][0]+(c[i][0]-c[i-1][0])*k/n]);}}
+  pts.sort((a,b)=>a[1]-b[1]);const cov=new Uint8Array(pts.length),out=[];
+  for(let i=0;i<pts.length;i++){if(cov[i])continue;out.push({lat:+pts[i][0].toFixed(4),lon:+pts[i][1].toFixed(4),r:R});
+    for(let j=i;j<pts.length;j++)if(!cov[j]&&haversine(pts[i][0],pts[i][1],pts[j][0],pts[j][1])<=rc)cov[j]=1;}
+  return LT.circ[key]=out;
+}
+function ltAnalyse(r){
+  const lat=+r?.loc?.lat,lon=+(r?.loc?.long??r?.loc?.lon);if(!Number.isFinite(lat)||!Number.isFinite(lon)||(lat===0&&lon===0))return null;
+  const ts=r.ob?.timestamp,t=ts?new Date(ts*1000):parseT(r.ob?.dateTimeISO);if(!t||isNaN(t))return null;
+  const p=r.ob?.pulse||{},tipe=String(p.type||'').toUpperCase()||null;
+  if(tipe==='IC'&&String(PCFG.filter??'cg').toLowerCase()==='cg')return null;
+  const rp=ltR().pantau,pad=(rp+1)/111,bb=ltBBox(),per={};let best=null;
+  for(const [a,b] of Object.entries(bb)){const pl=pad/Math.max(.2,Math.cos(lat*RAD));if(lon<b[0]-pl||lon>b[2]+pl||lat<b[1]-pad||lat>b[3]+pad)continue;
+    const n=nearestAsset(lat,lon,a);if(n.d<=rp){per[a]=Math.round(n.d*100)/100;if(!best||n.d<best.d)best=n;}}
+  if(!best)return null;
+  let fd=null,fp=null;for(const f of ASSETS.features||[]){if(f.properties.kind!=='fasilitas'||f.geometry?.type!=='Point')continue;const d=haversine(lat,lon,f.geometry.coordinates[1],f.geometry.coordinates[0]);if(fd==null||d<fd){fd=d;fp=f.properties;}}
+  return {id:String(r.id),lat:+lat.toFixed(4),lon:+lon.toFixed(4),waktu_utc:t.toISOString(),tipe,arus_ka:p.peakamp!=null?Math.round(p.peakamp/100)/10:null,sensor:p.numSensors??null,
+    jarak_km:Math.round(best.d*100)/100,area:best.p.area,aset:best.p.name,jenis_aset:best.p.kind,fasilitas:fp?.name||null,jarak_fasilitas_km:fd!=null?Math.round(fd*10)/10:null,
+    per_area:per,status:klas(best.d,ltR()),dekat_aset:best.d<=(PETIR?.sambaran_dekat_km??PCFG.sambaran_dekat_km??1),live:true};
+}
+async function livePetir(){
+  if(!ltLive()||LT.busy||document.hidden||!(ASSETS.features||[]).length)return false;
+  const B=PCFG.browser,area=isOV()?null:state.tab,circ=ltCircles(area),maks=+B.maks_kueri_per_putaran||8;
+  if(circ.length>maks){LT.info=`cek langsung aktif di tab wilayah (ringkasan semua wilayah butuh ${circ.length} kueri, batas ${maks})`;return true;}
+  LT.info=null;
+  LT.busy=true;
+  try{
+    const base=String(PCFG.endpoint||'https://data.api.xweather.com/lightning').replace(/\/$/,''),filt=(PCFG.filter||'').trim();
+    const q=c=>`${base}/closest?p=${c.lat},${c.lon}&radius=${c.r}km&limit=${+PCFG.limit||1000}${filt?'&filter='+encodeURIComponent(filt):''}&client_id=${encodeURIComponent(B.client_id)}&client_secret=${encodeURIComponent(B.client_secret)}`;
+    const res=await Promise.allSettled(circ.map(c=>fetchTimeout(q(c),12000)));
+    let okN=0,err=null;
+    for(const x of res){if(x.status!=='fulfilled'){err=x.reason?.name==='AbortError'?'waktu habis':(x.reason?.message||'gagal');continue;}
+      const js=x.value;if(js&&js.success===false&&js.error?.code!=='warn_no_data'){err=js.error?.code||'ditolak server';continue;}
+      okN++;for(const r of (Array.isArray(js?.response)?js.response:[])){const s=ltAnalyse(r);if(s)LT.map.set(s.id,s);}}
+    const keep=ltKeep();for(const [k,s] of LT.map)if(ltMin(s)>keep)LT.map.delete(k);
+    if(okN){LT.ok=new Date().toISOString();LT.err=err&&`${res.length-okN} dari ${res.length} kueri gagal (${err})`;}else LT.err=err||'gagal';
+    return true;
+  }finally{LT.busy=false;}
 }
 
 /* ---------- cek langsung dari browser (opsional; bila gagal, data terjadwal tetap dipakai) ---------- */
@@ -1110,9 +1282,16 @@ function renderLive(redrawMap){
   safe('status',renderStatus);safe('kpi',renderKPIs,'#kpis');safe('daftar',renderLists,'#eqList');
   safe('cuaca',renderWeather,'#wxGrid');safe('sumber',renderSources,'#srcTable');if(redrawMap)safe('peta',()=>drawMap(false));
 }
+// render ringan setelah cek petir langsung (tanpa menggambar ulang seluruh peta)
+function renderPetirLive(){
+  safe('petir',renderPetir,'#ltBody');safe('peta petir',ltDrawMap);safe('status',renderStatus);safe('sumber',renderSources,'#srcTable');
+  if(isOV())safe('kartu wilayah',renderOverviewAreas,'#ovAreas');
+}
 async function liveChecks(){
   const [g,w]=await Promise.all([liveGempa(),liveWx(state.tab)]);
   renderLive(g||w);
+  if(await livePetir())renderPetirLive();
+  ltSchedule();
 }
 
 
@@ -1229,7 +1408,7 @@ function vfShow(k){
 function render(fit){
   [['status',renderStatus],['tab',renderTabs],['judul',renderTitle,'#viewTitle'],['kpi',renderKPIs,'#kpis'],['kartu wilayah',renderOverviewAreas,'#ovAreas'],
    ['peta',()=>drawMap(fit)],['daftar',renderLists,'#hsList'],['cuaca',renderWeather,'#wxGrid'],['gerakan tanah',renderGT,'#gtBody'],['longsor',renderLS,'#lsBody'],
-   ['grafik',renderCharts],['tabel hotspot',renderHsTable,'#hsTable'],['kapal OEJA',renderVessel,'#vfBox'],['sumber data',renderSources,'#srcTable'],['footer',renderFoot]].forEach(([n,f,el])=>safe(n,f,el));
+   ['grafik',renderCharts],['tabel hotspot',renderHsTable,'#hsTable'],['kapal OEJA',renderVessel,'#vfBox'],['petir',renderPetir,'#ltBody'],['sumber data',renderSources,'#srcTable'],['footer',renderFoot]].forEach(([n,f,el])=>safe(n,f,el));
 }
 
 $('#fConf').onchange=e=>{state.conf=e.target.value;render(false)};
@@ -1242,6 +1421,10 @@ window.addEventListener('hashchange',()=>{const id=decodeURIComponent(location.h
 async function refreshData(){for(const k in LOADERR)delete LOADERR[k];await loadData();render(false);liveChecks();}
 setInterval(refreshData,15*60*1000);
 setInterval(()=>liveGempa().then(ch=>renderLive(ch)),10*60*1000);
+// Petir: tampilan diperbarui tiap menit (umur sambaran & all-clear berjalan); cek langsung ke Xweather bila diaktifkan
+setInterval(()=>safe('petir',renderPetir,'#ltBody'),60*1000);
+function ltSchedule(){clearTimeout(LT.timer);if(!ltLive())return;LT.timer=setTimeout(async()=>{if(!document.hidden&&await livePetir())renderPetirLive();ltSchedule();},Math.max(60,+PCFG.browser.interval_detik||120)*1000);}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ltLive()&&(!LT.ok||umurJam(LT.ok)*3600>(+PCFG.browser.interval_detik||120)))livePetir().then(c=>c&&renderPetirLive());});
 // Saat tab browser kembali aktif setelah lama, segarkan data
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&umurJam(window.__lastRefresh||0)>0.25){window.__lastRefresh=new Date().toISOString();refreshData();}});
 window.__lastRefresh=new Date().toISOString();

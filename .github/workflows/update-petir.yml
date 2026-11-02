@@ -1,0 +1,77 @@
+name: Update Petir (Xweather)
+
+# Sambaran petir real-time Vaisala Xweather vs jalur pipa & fasilitas, tiap 10 menit.
+# Satu job mengambil data beberapa kali (config/monitoring.json → petir.polling) supaya jendela data
+# 5 menit (akses standar) tersambung, lalu commit SEKALI — dan hanya bila ada perubahan bermakna atau
+# sudah 30 menit (heartbeat). Ini menjaga batas build GitHub Pages (±10 per jam).
+# Butuh secret repositori XWEATHER_CLIENT_ID dan XWEATHER_CLIENT_SECRET. Tanpa secret: job selesai tanpa mengubah apa pun.
+on:
+  schedule:
+    - cron: "3,13,23,33,43,53 * * * *"
+  workflow_dispatch:
+    inputs:
+      putaran:
+        description: "Jumlah putaran pengambilan (1 = sekali ambil, untuk uji)"
+        required: false
+        default: "1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-petir
+  cancel-in-progress: false
+
+jobs:
+  jalankan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    env:
+      XWEATHER_CLIENT_ID: ${{ secrets.XWEATHER_CLIENT_ID }}
+      XWEATHER_CLIENT_SECRET: ${{ secrets.XWEATHER_CLIENT_SECRET }}
+      PETIR_PUTARAN: ${{ github.event.inputs.putaran }}
+    steps:
+      - name: Cek kredensial
+        id: cek
+        run: |
+          if [ -z "$XWEATHER_CLIENT_ID" ] || [ -z "$XWEATHER_CLIENT_SECRET" ]; then echo "Secret XWEATHER_CLIENT_ID/XWEATHER_CLIENT_SECRET belum diset — modul petir dilewati."; echo "aktif=0" >> "$GITHUB_OUTPUT"; else echo "aktif=1" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v5
+        if: steps.cek.outputs.aktif == '1'
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v6
+        if: steps.cek.outputs.aktif == '1'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependensi
+        if: steps.cek.outputs.aktif == '1'
+        run: pip install -r requirements.txt
+
+      - name: Ambil sambaran petir & analisis terhadap aset
+        if: steps.cek.outputs.aktif == '1'
+        run: python scripts/petir.py
+        timeout-minutes: 11
+        continue-on-error: true
+
+      - name: Simpan hasil ke repositori
+        if: steps.cek.outputs.aktif == '1'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          [ -d data/petir ] || { echo "Belum ada data petir."; exit 0; }
+          rm -rf "$RUNNER_TEMP/petir" && cp -r data/petir "$RUNNER_TEMP/petir"
+          for i in 1 2 3; do
+            git fetch -q origin ${{ github.ref_name }}
+            git reset -q --hard origin/${{ github.ref_name }}
+            mkdir -p data && rm -rf data/petir && cp -r "$RUNNER_TEMP/petir" data/petir
+            git add -A data/petir
+            if git diff --cached --quiet; then echo "Tidak ada perubahan data."; exit 0; fi
+            git commit -q -m "Update petir $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M WIB')"
+            git push -q origin HEAD:${{ github.ref_name }} && exit 0
+            echo "Push ditolak (ada perubahan baru), mencoba lagi..."; sleep 5
+          done
+          exit 1

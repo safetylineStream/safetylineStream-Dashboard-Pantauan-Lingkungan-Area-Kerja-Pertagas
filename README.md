@@ -1,7 +1,7 @@
 # PERTAGAS WASPADA
 **Watch & Analytics for Spatial Pipeline Anomaly & Disaster Awareness** — dashboard pemantauan geohazard & lingkungan jalur pipa PT Pertamina Gas, by Fungsi HSSE Pertamina Gas.
 
-Dashboard ini memantau **hotspot karhutla**, **gempa bumi & tsunami**, **gerakan tanah (PVMBG)**, serta **cuaca, kelembapan dan kualitas udara** di sekitar jalur pipa dan fasilitas Pertagas per wilayah kerja. Datanya diperbarui otomatis oleh GitHub Actions dan ditampilkan lewat GitHub Pages.
+Dashboard ini memantau **hotspot karhutla**, **gempa bumi & tsunami**, **gerakan tanah (PVMBG)**, **sambaran petir real-time (Vaisala Xweather)**, serta **cuaca, kelembapan dan kualitas udara** di sekitar jalur pipa dan fasilitas Pertagas per wilayah kerja. Datanya diperbarui otomatis oleh GitHub Actions dan ditampilkan lewat GitHub Pages.
 
 ```
  SiPongi+ (hotspot)  ─┐
@@ -21,6 +21,7 @@ Dashboard ini memantau **hotspot karhutla**, **gempa bumi & tsunami**, **gerakan
 | `scripts/build_assets.py` | Mengubah KMZ/SHP → `data/assets.geojson` |
 | `scripts/fetch_all.py` | Mengambil data harian dan menghitung jarak ke aset |
 | `scripts/gerakan_tanah.py` | Mengambil data gerakan tanah PVMBG dan menghitung panjang pipa/fasilitas di tiap zona |
+| `scripts/petir.py` | Mengambil sambaran petir real-time Vaisala Xweather dan menghitung jaraknya ke jalur pipa & fasilitas → `data/petir/` (lihat A8) |
 | `scripts/lhasa.py` | Menghitung potensi longsor harian (algoritma NASA LHASA 1.1) di sepanjang seluruh jalur pipa & fasilitas → `data/lhasa/` |
 | `lhasa_statis/` | Ambang hujan ARI95 resmi NASA (potongan Indonesia) dan, opsional, peta kerentanan manual `kerentanan.tif` |
 | `gerakan_tanah_raw/` | (Opsional) file peta gerakan tanah manual bila layanan online tidak bisa diakses |
@@ -100,6 +101,26 @@ Data gerakan tanah diambil dari peta PVMBG di ESDM One Map:
 
 Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagian B7.
 
+### A8. (Opsional, berbayar) Deteksi sambaran petir real-time — Vaisala Xweather
+Modul petir mengambil data sambaran dari **Vaisala Xweather Lightning API** (jaringan GLD360) lalu menghitung jarak tiap sambaran ke jalur pipa & fasilitas terdekat. Data Xweather Lightning **berbayar** (ada uji coba gratis 30 hari); pastikan langganan Anda mencakup endpoint `lightning`.
+
+1. Masuk ke akun Xweather (https://account.xweather.com) → **Apps** → buat aplikasi baru. Catat **Client ID** dan **Client Secret**.
+2. Di GitHub: **Settings → Secrets and variables → Actions → New repository secret**, buat dua secret:
+   - `XWEATHER_CLIENT_ID` = Client ID
+   - `XWEATHER_CLIENT_SECRET` = Client Secret
+3. Tab **Actions → Update Petir (Xweather) → Run workflow** (isi *putaran* = `1` untuk uji). Bila ✅, muat ulang dashboard: kartu **⚡ Sambaran petir** terisi dan chip **Petir** di kanan atas berwarna hijau.
+4. Setelah itu workflow berjalan otomatis **tiap 10 menit**; tiap jadwal mengambil data 3× (jeda 4 menit) dan hanya membuat commit bila ada perubahan atau sudah 30 menit (menjaga batas build GitHub Pages ±10/jam).
+
+**Cara kerja & kuota.** Akses standar Xweather hanya memberi data **5 menit terakhir** dalam lingkaran **maks 100 km**. Skrip otomatis menyebar lingkaran kueri sehingga seluruh jalur pipa + radius pantau 30 km tertutup — untuk aset saat ini **20 lingkaran per pengambilan** (tercatat di `data/petir/latest.json` → `jumlah.kueri`). Dengan 3 pengambilan per 10 menit ≈ **8.640 kueri/hari**. Endpoint lightning memakai *access multiplier* (standar ±10×), jadi periksa batas akses harian paket Anda. Untuk menghemat: kurangi `petir.polling.jumlah` atau ubah jadwal cron di `.github/workflows/update-petir.yml`.
+Bila memiliki add-on **Lightning Enterprise**, ubah `petir.mode` menjadi `"enterprise"`: skrip memakai kueri kotak (`within`) per wilayah — hanya 8 kueri per pengambilan — dengan riwayat 15 menit sehingga tidak ada celah antar-pengambilan.
+
+**Mode LIVE di browser (opsional, benar-benar real-time).** Data terjadwal tiba di dashboard dengan jeda ±10–15 menit (jadwal Actions + build Pages). Untuk pemantauan saat badai, dashboard dapat mengambil data langsung dari Xweather setiap 2 menit selama halaman dibuka:
+1. Di Xweather buat **aplikasi kedua** khusus browser dengan *namespace/domain* `safetylinestream.github.io` (kunci hanya diterima dari domain itu).
+2. Isi `config/monitoring.json` → `petir.browser.client_id` dan `client_secret` dengan kunci aplikasi kedua tersebut.
+3. ⚠️ Kunci ini **terlihat publik** di repo. **Jangan pernah** memakai kunci server (secret Actions) di sini. Cek langsung hanya berjalan di tab wilayah (2–8 kueri per putaran) dan berhenti saat tab browser tidak aktif, supaya kuota tidak boros.
+
+Tanpa secret, workflow petir selesai tanpa mengubah data dan kartu petir menampilkan "Belum aktif".
+
 ---
 
 ## Bagian B — Operasional harian (command & operate)
@@ -116,6 +137,9 @@ Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagi
 | ⚠ **Berpotensi tsunami** | Dari rilis BMKG | Ikuti ERP dan instruksi resmi BMKG/BPBD |
 | Gerakan tanah — **prakiraan Tinggi/Menengah** | Ruas pipa atau fasilitas berada di zona potensi gerakan tanah bulan ini (PVMBG, dipengaruhi curah hujan) | Patroli ROW lebih sering saat hujan lebat; cek retakan tanah, amblesan, tiang/patok miring, dan kondisi *crossing* sungai/lereng |
 | Gerakan tanah — **zona kerentanan Tinggi** | Kondisi geologi dasar yang rentan (tidak berubah bulanan) | Masukkan ke penilaian risiko geohazard/integritas pipa; prioritaskan inspeksi dan monitoring pergerakan tanah |
+| ⚡ Petir **Kritis** (sambaran ≤ 8 km dari pipa/fasilitas dalam 30 menit) | Setara aturan 30-30 (kilat–guruh < 30 detik ≈ 10 km) | **Hentikan** pekerjaan luar ruang, *hot work*, kerja di ketinggian, *loading/unloading* dan *venting*; personel berlindung. Lanjutkan **30 menit** setelah sambaran terakhir ≤ 16 km (kartu menampilkan *Perkiraan aman*) |
+| ⚡ Petir **Waspada** (≤ 16 km) / **Pantau** (≤ 30 km) | Badai petir mendekat | Siapkan penghentian pekerjaan; supervisor memantau arah badai |
+| ⚡ Sambaran **≤ 1 km** dari aset | Kemungkinan sambaran langsung/imbas ke aset | Setelah badai reda: periksa proteksi katodik & *insulating joint*, instrumen/SCADA, panel listrik, vent/flare dan *grounding* |
 | RH, suhu, angin, PM2.5 | RH rendah + angin kencang = risiko rambatan api naik; PM2.5 tinggi = indikasi asap | Pertimbangkan pembatasan *hot work* / pekerjaan lapangan |
 
 - **Tab wilayah** di bagian atas: **Ringkasan semua** menampilkan kartu tiap wilayah (klik kartu untuk membuka tabnya), lalu satu tab untuk tiap wilayah kerja (ONSA, OCSA, ODA, OSSA, OWJA). Angka kecil di tab menunjukkan jumlah hotspot dengan status terburuk di wilayah itu. Tanda ✓ berarti tidak ada hotspot dalam radius.
@@ -142,6 +166,7 @@ Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagi
 | Titik cuaca (tambah/hapus lokasi) | `config/monitoring.json` | `titik_cuaca` |
 | Memakai data cuaca **BMKG resmi** | `config/monitoring.json` | isi `adm4` (lihat B5) |
 | Provinsi di grafik | `config/monitoring.json` | `provinsi_pantauan` (tab Ringkasan), `provinsi_area` (tab wilayah) |
+| Radius & aturan petir (kritis/waspada/pantau, all-clear, mode, kunci LIVE) | `config/monitoring.json` | `petir` |
 | Jam update | `.github/workflows/update-data.yml` | `cron` (jam UTC = WIB − 7) |
 
 Contoh: update setiap 3 jam → ganti kedua baris cron dengan `- cron: "0 */3 * * *"`.
@@ -206,6 +231,8 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 | Chip **SiPongi+: gagal** | Server SiPongi sedang gangguan atau berubah alamat. Data lama tetap tampil. Isi `FIRMS_MAP_KEY` sebagai cadangan |
 | Jadwal tidak jalan | Jadwal GitHub bisa terlambat 5–30 menit. Pada repo **public**, jadwal dinonaktifkan GitHub setelah 60 hari tanpa aktivitas; aktifkan lagi di tab Actions |
 | Chip **PVMBG Prakiraan GT / Zona GT: gagal** | Layanan ESDM One Map meminta login atau sedang gangguan. Isi `ONEMAP_USERNAME`/`ONEMAP_PASSWORD`, atau pakai file manual (B7). Arahkan kursor ke chip untuk melihat pesan errornya |
+| Chip **Petir** merah / pesan `invalid_client` atau `unauthorized` | Client ID/Secret salah, langganan tidak mencakup endpoint lightning, atau namespace aplikasi Xweather tidak cocok. Periksa secret (A8) dan paket Xweather Anda |
+| Kartu petir: "kueri mencapai batas 1000 sambaran" | Badai sangat aktif di dalam satu lingkaran 100 km; sambaran terdekat tetap terambil (diurutkan dari terdekat), sambaran jauh bisa terlewat |
 | Peta kosong saat file dibuka dari komputer | Browser memblokir `fetch` dari file lokal. Buka lewat GitHub Pages, atau jalankan `python -m http.server` lalu buka `http://localhost:8000` |
 
 ## Catatan sumber data
@@ -213,6 +240,7 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 - **BMKG InaTEWS** (`data.bmkg.go.id/DataMKG/TEWS/`): data terbuka gempa terbaru, M 5.0+ terkini, dan gempa dirasakan, termasuk keterangan potensi tsunami. Cantumkan BMKG sebagai sumber.
 - **Cuaca**: BMKG (`api.bmkg.go.id`, prakiraan per 3 jam, bila `adm4` diisi) dan Open-Meteo. Keduanya **model/prakiraan**, bukan pengamatan stasiun. Kualitas udara dari Open-Meteo Air Quality (model CAMS global ±45 km); PM2.5/PM10 dalam µg/m³ dan US AQI (EPA, rata-rata 24 jam) — **bukan ISPU** stasiun KLHK. Catatan lisensi: API gratis Open-Meteo ditujukan untuk penggunaan non-komersial; untuk penggunaan korporat pertimbangkan langganan API Open-Meteo atau sumber BMKG.
 - **PVMBG – Badan Geologi**: *Prakiraan Potensi Gerakan Tanah Bulanan* diambil dari **Portal MBG** PVMBG — `https://vsi.esdm.go.id/portalmbg/api/download-asset-forecast/gertan/forecast/vector/{tahun}/{bulan}/{kode_provinsi}` (shapefile ZIP per provinsi, kode provinsi BPS; diatur di `config/monitoring.json` → `gerakan_tanah.portalmbg`). Atribut `Zona_Perki` = zona prakiraan bulan itu (Tinggi, Menengah, Rendah, Berpotensi banjir bandang/aliran bahan rombakan); atribut `Unsur` = zona kerentanan gerakan tanah dasar. Bila bulan berjalan belum terbit, dipakai bulan sebelumnya dan dashboard menandainya. Hasil per provinsi disimpan di `data/gerakan_tanah/cache_portal/` dan hanya diunduh ulang bila tanggal terbitnya berubah. Layanan GIS ESDM One Map tetap dipakai sebagai cadangan bila Portal MBG gagal.
+- **Petir**: Vaisala Xweather Lightning API (`data.api.xweather.com/lightning`, jaringan GLD360). Default hanya sambaran awan-ke-tanah (CG); lokasi sambaran memiliki ketidakpastian ±beberapa ratus meter. Sambaran ≤ 30 km dari aset diarsipkan per hari (WIB) di `data/petir/arsip/YYYY-MM-DD.json` sebagai bukti audit. Data berlisensi — cantumkan Vaisala Xweather sebagai sumber.
 - **Potensi longsor**: algoritma NASA LHASA 1.1 (github.com/nasa/LHASA, tag v1.1.1) dihitung internal; ambang ARI95 NASA, hujan Open-Meteo, kerentanan dari peta global NASA atau Copernicus DEM GLO-90 (© DLR/Airbus, ESA). Bersifat indikatif, bukan pengganti informasi resmi PVMBG.
 - Jarak dihitung dari titik hotspot/episentrum ke **jalur pipa atau fasilitas terdekat** pada `data/assets.geojson` secara geodesik (Haversine; diuji terhadap perhitungan WGS84 independen, selisih < 20 m). Geometri pipa telah disederhanakan (±30 m) supaya halaman ringan. Lokasi hotspot sendiri punya ketidakpastian sebesar pikselnya (VIIRS ±375 m, MODIS ±1 km).
 
