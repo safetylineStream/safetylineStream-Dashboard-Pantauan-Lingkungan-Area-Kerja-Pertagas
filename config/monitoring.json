@@ -375,5 +375,39 @@
     "sog_diam_knot": 0.5,
     "min_ruas_km": 0.2,
     "maks_kapal_simpan": 1500
+  },
+  "petir": {
+    "_petunjuk": "Modul sambaran petir real-time dari Vaisala Xweather (jaringan GLD360). Butuh secret GitHub XWEATHER_CLIENT_ID dan XWEATHER_CLIENT_SECRET (langganan Xweather dengan akses endpoint lightning). Tanpa secret modul tidak berjalan dan tidak membuat data. mode 'standard' = kueri lingkaran (maks 100 km, data 5 menit terakhir) yang otomatis disebar menutup seluruh jalur pipa; mode 'enterprise' = kueri kotak per wilayah dengan riwayat beberapa menit (butuh add-on Lightning Enterprise).",
+    "aktif": true,
+    "mode": "standard",
+    "endpoint": "https://data.api.xweather.com/lightning",
+    "radius_kueri_km": 100,
+    "filter": "cg",
+    "limit": 1000,
+    "limit_enterprise": 50000,
+    "lookback_enterprise_menit": 15,
+    "radius_km": {
+      "kritis": 8,
+      "waspada": 16,
+      "pantau": 30
+    },
+    "_radius_petunjuk": "Jarak sambaran ke jalur pipa/fasilitas terdekat. Kritis 8 km mengikuti praktik 30-30 (petir terlihat & guruh < 30 detik ≈ 10 km): hentikan pekerjaan luar ruang, hot work, bekerja di ketinggian, loading/unloading dan venting. Waspada 16 km: siapkan penghentian. Pantau 30 km: badai mendekat.",
+    "sambaran_dekat_km": 1.0,
+    "all_clear_menit": 30,
+    "simpan_menit": 90,
+    "jarak_sampel_km": 2,
+    "polling": {
+      "_petunjuk": "Satu job GitHub Actions (tiap 10 menit) mengambil data beberapa kali agar jendela 5 menit mode standard tersambung.",
+      "jumlah": 3,
+      "jeda_detik": 240
+    },
+    "heartbeat_menit": 30,
+    "browser": {
+      "_petunjuk": "Mode LIVE di browser (opsional, benar-benar real-time selama dashboard dibuka). Isi dengan kunci aplikasi Xweather TERPISAH yang namespace-nya dikunci ke domain GitHub Pages (mis. safetylinestream.github.io). Kunci ini terlihat publik di repo — JANGAN pakai kunci server. Kosongkan untuk menonaktifkan.",
+      "client_id": "",
+      "client_secret": "",
+      "interval_detik": 120,
+      "maks_kueri_per_putaran": 8
+    }
   }
 }
