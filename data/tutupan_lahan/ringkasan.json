@@ -1,0 +1,193 @@
+{
+ "diperbarui": "2026-11-06T22:46:37+07:00",
+ "diperiksa": "2026-11-06T22:46:37+07:00",
+ "signature": "d3355d2c856509d9",
+ "sumber": "ESA WorldCover 10 m 2021 v200",
+ "lisensi": "© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) — CC BY 4.0",
+ "parameter": {
+  "radius_hotspot_m": 500,
+  "radius_koridor_m": 250,
+  "interval_koridor_m": 500,
+  "ambang_terbangun": 0.4,
+  "ambang_vegetasi_min": 0.3,
+  "ambang_vegetasi_lebat": 0.5
+ },
+ "kelas": {
+  "10": {
+   "label": "Tutupan pohon (hutan/kebun berkayu)",
+   "warna": "#006400"
+  },
+  "20": {
+   "label": "Semak belukar",
+   "warna": "#ffbb22"
+  },
+  "30": {
+   "label": "Padang rumput/alang-alang",
+   "warna": "#ffff4c"
+  },
+  "40": {
+   "label": "Lahan pertanian (sawah/tegalan)",
+   "warna": "#f096ff"
+  },
+  "50": {
+   "label": "Lahan terbangun (permukiman/industri)",
+   "warna": "#fa0000"
+  },
+  "60": {
+   "label": "Lahan terbuka/jarang vegetasi",
+   "warna": "#b4b4b4"
+  },
+  "70": {
+   "label": "Salju/es",
+   "warna": "#f0f0f0"
+  },
+  "80": {
+   "label": "Badan air",
+   "warna": "#0064c8"
+  },
+  "90": {
+   "label": "Lahan basah herba (rawa)",
+   "warna": "#0096a0"
+  },
+  "95": {
+   "label": "Mangrove",
+   "warna": "#00cf75"
+  },
+  "100": {
+   "label": "Lumut",
+   "warna": "#fae6a0"
+  }
+ },
+ "kategori": {
+  "vegetasi_lebat": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+  "vegetasi_rendah": "Vegetasi rendah (pertanian, rumput)",
+  "non_vegetasi": "Non-vegetasi (terbangun, terbuka, air)"
+ },
+ "wms": {
+  "url": "https://services.terrascope.be/wms/v2",
+  "layer": "WORLDCOVER_2021_MAP",
+  "layer_cadangan": "WORLDCOVER_2020_MAP"
+ },
+ "klhk": null,
+ "per_area": {
+  "ONSA": {
+   "total_km": 579.1,
+   "kelas_km": {
+    "10": 453.9,
+    "40": 45.8,
+    "50": 37.3,
+    "30": 18.9,
+    "95": 15.4,
+    "80": 6.1,
+    "90": 1.7
+   },
+   "kategori_km": {
+    "vegetasi_lebat": 427.4,
+    "vegetasi_rendah": 105.4,
+    "non_vegetasi": 46.4
+   }
+  },
+  "OCSA": {
+   "total_km": 260.5,
+   "kelas_km": {
+    "10": 226.3,
+    "50": 30.1,
+    "40": 2.6,
+    "80": 0.9,
+    "30": 0.5
+   },
+   "kategori_km": {
+    "vegetasi_lebat": 213.2,
+    "non_vegetasi": 42.0,
+    "vegetasi_rendah": 5.2
+   }
+  },
+  "ODA": {
+   "total_km": 134.9,
+   "kelas_km": {
+    "10": 127.6,
+    "50": 6.8,
+    "30": 0.5
+   },
+   "kategori_km": {
+    "vegetasi_lebat": 118.8,
+    "non_vegetasi": 15.1,
+    "vegetasi_rendah": 1.0
+   }
+  },
+  "OSSA": {
+   "total_km": 530.4,
+   "kelas_km": {
+    "10": 379.5,
+    "50": 68.1,
+    "30": 54.5,
+    "40": 24.4,
+    "80": 3.9
+   },
+   "kategori_km": {
+    "vegetasi_lebat": 330.4,
+    "non_vegetasi": 99.0,
+    "vegetasi_rendah": 101.0
+   }
+  },
+  "OWJA": {
+   "total_km": 527.0,
+   "kelas_km": {
+    "50": 258.5,
+    "40": 175.4,
+    "10": 75.6,
+    "30": 13.8,
+    "80": 3.7
+   },
+   "kategori_km": {
+    "non_vegetasi": 268.0,
+    "vegetasi_lebat": 29.9,
+    "vegetasi_rendah": 229.1
+   }
+  },
+  "OKA": {
+   "total_km": 183.9,
+   "kelas_km": {
+    "10": 162.5,
+    "50": 16.5,
+    "30": 5.0
+   },
+   "kategori_km": {
+    "vegetasi_lebat": 112.0,
+    "vegetasi_rendah": 56.7,
+    "non_vegetasi": 15.3
+   }
+  },
+  "ORA": {
+   "total_km": 267.1,
+   "kelas_km": {
+    "10": 264.0,
+    "50": 2.5,
+    "40": 0.6
+   },
+   "kategori_km": {
+    "vegetasi_lebat": 261.0,
+    "vegetasi_rendah": 0.9,
+    "non_vegetasi": 5.2
+   }
+  },
+  "OEJA": {
+   "total_km": 1091.1,
+   "kelas_km": {
+    "40": 377.4,
+    "80": 377.4,
+    "50": 189.1,
+    "10": 118.7,
+    "30": 21.4,
+    "60": 5.0,
+    "90": 1.6,
+    "95": 0.5
+   },
+   "kategori_km": {
+    "non_vegetasi": 547.4,
+    "vegetasi_lebat": 44.5,
+    "vegetasi_rendah": 499.2
+   }
+  }
+ }
+}
