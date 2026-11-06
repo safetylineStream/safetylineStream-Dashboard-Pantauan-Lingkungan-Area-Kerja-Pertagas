@@ -130,9 +130,9 @@ def ringkas_hist(nilai, c=None):
 # ------------------------------------------------------------------ baca raster
 def _env():
     return dict(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".tif",
-                GDAL_HTTP_TIMEOUT="45", GDAL_HTTP_CONNECTTIMEOUT="20", GDAL_HTTP_MAX_RETRY="2",
-                GDAL_HTTP_RETRY_DELAY="2", GDAL_HTTP_USERAGENT=UA, VSI_CACHE="TRUE",
-                VSI_CACHE_SIZE=str(256 * 1024 * 1024), GDAL_CACHEMAX="512")
+                GDAL_HTTP_TIMEOUT=45, GDAL_HTTP_CONNECTTIMEOUT=20, GDAL_HTTP_MAX_RETRY=2,
+                GDAL_HTTP_RETRY_DELAY=2, GDAL_HTTP_USERAGENT=UA, VSI_CACHE=True,
+                VSI_CACHE_SIZE=256 * 1024 * 1024, GDAL_CACHEMAX=512)
 
 
 def kelas_titik(titik, radius_m, faktor=1, batas_detik=None, c=None):
@@ -158,7 +158,8 @@ def kelas_titik(titik, radius_m, faktor=1, batas_detik=None, c=None):
                 log(f"  tutupan lahan: batas waktu {batas_detik:.0f} dtk tercapai, sisa titik dilewati")
                 break
             try:
-                src = rasterio.open("/vsicurl/" + WC_URL.format(tile=tile))
+                u = WC_URL.format(tile=tile)
+                src = rasterio.open(("/vsicurl/" + u) if u.startswith("http") else u)
             except Exception as e:  # noqa — tile laut/tidak ada
                 gagal.append(f"{tile}: {str(e)[:80]}")
                 continue
