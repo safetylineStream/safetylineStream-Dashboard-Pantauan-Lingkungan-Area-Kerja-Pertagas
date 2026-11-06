@@ -29,7 +29,7 @@ jobs:
           cache: pip
 
       - name: Install dependensi
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt rasterio numpy
 
       - name: Ambil hotspot, gempa, cuaca & analisis jarak ke aset
         env:

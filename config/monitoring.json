@@ -375,5 +375,14 @@
     "sog_diam_knot": 0.5,
     "min_ruas_km": 0.2,
     "maks_kapal_simpan": 1500
+  },
+  "tutupan_lahan": {
+    "_petunjuk": "Tutupan lahan ESA WorldCover 10 m untuk klasifikasi hotspot & lapisan peta. Hotspot di lahan non-vegetasi (terbangun ≥ ambang_terbangun atau vegetasi < ambang_vegetasi_min dalam radius_hotspot_m) dianggap sumber panas non-vegetasi. Koridor pipa dihitung ulang otomatis bila aset/parameter berubah (workflow Update Tutupan Lahan).",
+    "radius_hotspot_m": 500,
+    "radius_koridor_m": 250,
+    "interval_koridor_m": 500,
+    "ambang_terbangun": 0.4,
+    "ambang_vegetasi_min": 0.3,
+    "ambang_vegetasi_lebat": 0.5
   }
 }

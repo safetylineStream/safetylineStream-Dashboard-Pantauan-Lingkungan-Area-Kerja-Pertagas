@@ -1,0 +1,65 @@
+name: Update Tutupan Lahan (ESA WorldCover)
+
+# Tutupan lahan di sepanjang koridor pipa (lapisan peta + ringkasan per wilayah) dan pengecekan layanan
+# peta penutupan lahan KLHK. Dihitung ulang hanya bila aset atau parameter berubah; selain itu cepat selesai.
+# Jam GitHub = UTC: Senin 20:30 UTC = Selasa 03:30 WIB.
+on:
+  schedule:
+    - cron: "30 20 * * 1"
+  push:
+    paths:
+      - "data/assets.geojson"
+      - "scripts/tutupan_lahan.py"
+  workflow_dispatch:
+    inputs:
+      paksa:
+        description: "Hitung ulang koridor walau aset tidak berubah"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  jalankan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependensi
+        run: pip install -r requirements.txt rasterio numpy
+
+      - name: Klasifikasi tutupan lahan koridor pipa
+        run: python scripts/tutupan_lahan.py ${{ inputs.paksa && '--paksa' || '' }}
+        timeout-minutes: 50
+
+      - name: Simpan hasil ke repositori
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          [ -d data/tutupan_lahan ] || { echo "Belum ada hasil."; exit 0; }
+          mkdir -p "$RUNNER_TEMP/tl"
+          for f in koridor.geojson ringkasan.json; do [ -f "data/tutupan_lahan/$f" ] && cp "data/tutupan_lahan/$f" "$RUNNER_TEMP/tl/"; done
+          for i in 1 2 3; do
+            git fetch -q origin ${{ github.ref_name }}
+            git reset -q --hard origin/${{ github.ref_name }}
+            mkdir -p data/tutupan_lahan && cp "$RUNNER_TEMP"/tl/* data/tutupan_lahan/
+            git add -A data/tutupan_lahan/
+            if git diff --cached --quiet; then echo "Tidak ada perubahan data."; exit 0; fi
+            git commit -q -m "Update tutupan lahan $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M WIB')"
+            git push -q origin HEAD:${{ github.ref_name }} && exit 0
+            echo "Push ditolak (ada perubahan baru), mencoba lagi..."; sleep 5
+          done
+          exit 1

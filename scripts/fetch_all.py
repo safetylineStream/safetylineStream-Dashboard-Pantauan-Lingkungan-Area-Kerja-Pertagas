@@ -589,6 +589,14 @@ def main():
                 log("  FIRMS:", e)
         if raw is not None:
             near, per_prov = analyse_hotspots(raw, assets)
+            # Tutupan lahan (ESA WorldCover) di sekitar hotspot ≤ radius pantau — dipakai klasifikasi
+            # multi-bahaya: hotspot di lahan non-vegetasi tidak dianggap titik api lahan.
+            if os.environ.get("TUTUPAN_LAHAN", "1") != "0":
+                try:
+                    from tutupan_lahan import tambah_tutupan
+                    tambah_tutupan(near, batas_detik=max(10, min(150, sisa_waktu() - 300)))
+                except Exception as e:  # noqa — tidak boleh menggagalkan data hotspot
+                    log("  tutupan lahan dilewati:", e)
             pantau = set(CFG["provinsi_pantauan"])
             out["hotspot"] = {"sumber": src, "periode_jam": CFG["hotspot"]["periode_jam"], "diperbarui": sekarang,
                               "jenis": "Deteksi titik panas satelit (bukan konfirmasi kebakaran)",

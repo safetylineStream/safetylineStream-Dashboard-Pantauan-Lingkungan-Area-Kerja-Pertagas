@@ -1,0 +1,4 @@
+{
+  "_petunjuk": "Daftar lokasi sumber panas yang SUDAH diverifikasi area (flare, kilang, PLTU, pabrik, insinerator). Hotspot dalam radius_km dari lokasi ini diberi peluang P = 1 (tidak dianggap titik api lahan) sampai tanggal 'berlaku_sampai'. Tambahkan satu objek per lokasi lalu commit. Contoh: {\"nama\": \"Flare Kilang X\", \"area\": \"ODA\", \"lat\": 1.6800, \"lon\": 101.4500, \"radius_km\": 1.0, \"diverifikasi\": \"Nama petugas / 2026-11-06\", \"berlaku_sampai\": \"2026-12-31\"}",
+  "lokasi": []
+}

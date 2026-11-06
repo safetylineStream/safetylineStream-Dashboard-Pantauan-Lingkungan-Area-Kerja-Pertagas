@@ -208,6 +208,27 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 | Chip **PVMBG Prakiraan GT / Zona GT: gagal** | Layanan ESDM One Map meminta login atau sedang gangguan. Isi `ONEMAP_USERNAME`/`ONEMAP_PASSWORD`, atau pakai file manual (B7). Arahkan kursor ke chip untuk melihat pesan errornya |
 | Peta kosong saat file dibuka dari komputer | Browser memblokir `fetch` dari file lokal. Buka lewat GitHub Pages, atau jalankan `python -m http.server` lalu buka `http://localhost:8000` |
 
+## Klasifikasi status multi-bahaya & tutupan lahan
+
+Sejak November 2026 status Kritis / Waspada / Pantau / Normal **tidak lagi ditentukan oleh jarak satu hotspot**.
+Status dihitung di `klasifikasi.js` dengan skor risiko **R = P × K** (peluang × konsekuensi, 1–5):
+Kritis R 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2. Status **per area** = skor tertinggi di area itu dari
+hotspot, gempa/tsunami, gerakan tanah PVMBG + model longsor LHASA, cuaca & kualitas udara, dan kapal offshore.
+Status satu area tidak memengaruhi area lain. Penjelasan lengkap ada di dashboard ("Cara status dihitung").
+
+* **Hotspot** hanya dianggap titik api lahan bila berada di lahan bervegetasi. Tutupan lahan diambil dari
+  **ESA WorldCover 10 m 2021** dalam radius 500 m (`scripts/tutupan_lahan.py`, dijalankan oleh *Update Data Harian*).
+  Hotspot di kawasan terbangun/terbuka/air = **sumber panas non-vegetasi**: tetap tampil (penanda pucat), tetapi
+  peluang maksimal P = 2 sehingga tidak bisa memicu Kritis.
+* **Lokasi sumber panas yang sudah diverifikasi** (flare, kilang, PLTU) dicatat di `config/sumber_panas_dikenal.json`
+  → hotspot di sekitarnya diberi P = 1 sampai tanggal berlaku.
+* **Peta tutupan lahan:** lapisan "Tutupan lahan — peta ESA WorldCover 10 m" (WMS Terrascope) dan
+  "Tutupan lahan — sepanjang koridor pipa" (ruas pipa diwarnai kelas dominan dalam radius 250 m). Klik peta untuk
+  identifikasi. Bila layanan *Penutupan Lahan* KLHK dapat diakses, lapisannya ditambahkan otomatis.
+  Koridor dihitung oleh workflow **Update Tutupan Lahan** (otomatis bila `data/assets.geojson` berubah, tiap Selasa,
+  atau manual dengan opsi *paksa*). Parameter di `config/monitoring.json` → `tutupan_lahan`.
+* Uji otomatis: `python -m pytest tests -q` dan `node tests/klasifikasi.test.js`.
+
 ## Catatan sumber data
 - **SiPongi+** (Kemenhut): hotspot 24 jam dari satelit NASA MODIS, SNPP, NOAA-20 dan NOAA-21. Endpoint `opsroom.sipongidata.my.id` adalah layanan data di balik peta SiPongi dan tidak didokumentasikan resmi, jadi bisa berubah sewaktu-waktu. Karena itu disediakan cadangan FIRMS.
 - **BMKG InaTEWS** (`data.bmkg.go.id/DataMKG/TEWS/`): data terbuka gempa terbaru, M 5.0+ terkini, dan gempa dirasakan, termasuk keterangan potensi tsunami. Cantumkan BMKG sebagai sumber.

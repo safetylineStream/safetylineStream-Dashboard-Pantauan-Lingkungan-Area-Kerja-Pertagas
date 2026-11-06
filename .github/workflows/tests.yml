@@ -9,6 +9,7 @@ on:
       - "tests/**"
       - "config/**"
       - "requirements.txt"
+      - "klasifikasi.js"
   workflow_dispatch:
 
 permissions:
@@ -26,3 +27,5 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt pytest
       - run: python -m pytest tests -q
+      - name: Uji rumusan klasifikasi multi-bahaya (klasifikasi.js)
+        run: node tests/klasifikasi.test.js

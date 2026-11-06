@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="klasifikasi.js"></script>
 <style>
 :root{
   color-scheme: light;
@@ -108,7 +109,12 @@ button:hover{background:var(--surface-2)}
 .b-waspada{background:color-mix(in srgb,var(--serious) 18%,transparent);color:#b4502a}
 .b-pantau{background:color-mix(in srgb,var(--warning) 22%,transparent);color:#8a5d00}
 .b-luar{background:var(--surface-2);color:var(--ink-2)}
-.b-aman{background:var(--surface-2);color:var(--good)}
+.b-aman,.b-normal{background:var(--surface-2);color:var(--good)}
+.b-nonveg{background:var(--surface-2);color:var(--ink-2)}
+.lc-legend{background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font:12px/1.35 system-ui,sans-serif;max-width:230px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.lc-legend b{display:block;margin-bottom:3px}.lc-legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px;border:1px solid rgba(0,0,0,.15)}
+.klas-info{padding:2px 14px 12px;font-size:12.5px;color:var(--ink-2)}.klas-info summary{cursor:pointer;font-weight:600;color:var(--ink)}.klas-info ul{margin:6px 0 0 18px;padding:0}.klas-info li{margin:2px 0}
+#riskTable tr[data-a]{cursor:pointer} #riskTable td{vertical-align:top}
 .b-tsunami{background:var(--critical);color:#fff;border-color:transparent}
 :root[data-theme="dark"] .b-waspada{color:var(--serious)} :root[data-theme="dark"] .b-pantau{color:var(--warning)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .b-waspada{color:var(--serious)} :root:not([data-theme="light"]) .b-pantau{color:var(--warning)}}
@@ -262,6 +268,23 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 
   <section class="kpis" id="kpis"></section>
 
+  <section class="card sec" id="riskCard">
+    <h3 id="riskTitle">Status area operasi — klasifikasi multi-bahaya</h3>
+    <div class="note" id="riskNote"></div>
+    <div class="tbl" style="max-height:none"><table id="riskTable"></table></div>
+    <details class="klas-info"><summary>Cara status dihitung</summary>
+      <ul>
+        <li><b>Skor risiko R = P × K.</b> P (1–5) = peluang bahaya benar-benar mengenai aset dalam 24–72 jam; K (1–5) = konsekuensi bila aset terkena. Kritis R 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2.</li>
+        <li><b>Status area = skor tertinggi di area itu</b> dari hotspot, gempa/tsunami, gerakan tanah PVMBG + model longsor LHASA, cuaca &amp; kualitas udara, dan kapal di atas pipa offshore. Status satu area tidak memengaruhi area lain. Bila ≥ 2 jenis bahaya berstatus Waspada berdekatan (≤ 5 km), status naik satu tingkat.</li>
+        <li><b>Hotspot:</b> jarak hanya titik awal (≤ 0,5 km = 4 · ≤ 1 km = 3 · ≤ 3 km = 2 · ≤ 5 km = 1), lalu dikoreksi keyakinan satelit (±1), kondisi kering (+1), hujan (−1), klaster ≥ 3 titik (+1), berulang ≥ 3 hari di lokasi sama (−2) dan tutupan lahan.</li>
+        <li><b>Tutupan lahan (ESA WorldCover 10 m, radius 500 m):</b> vegetasi lebat +1; pertanian/rumput 0; <b>kawasan terbangun, lahan terbuka atau air = sumber panas non-vegetasi</b> — P maks. 2, sehingga tidak bisa memicu Kritis (biasanya flare, cerobong industri, pembakaran sampah).</li>
+        <li><b>Konsekuensi hotspot:</b> api permukaan jarang merusak pipa tertanam → K = 2; fasilitas dalam 1 km → K = 4. Lokasi yang sudah diverifikasi area sebagai sumber panas (config/sumber_panas_dikenal.json) diberi P = 1.</li>
+        <li><b>Gerakan tanah:</b> prakiraan bulanan PVMBG tanpa pemicu hujan maks. P = 2; naik bila model LHASA sedang/tinggi atau prakiraan hujan ≥ 50 mm. <b>Gempa</b> dihitung bila M ≥ 5 dalam 72 jam. <b>Cuaca/udara</b> berdampak pada pekerjaan lapangan (K = 2).</li>
+        <li><b>Tindakan:</b> Kritis = verifikasi lapangan ≤ 6 jam · Waspada = patroli/pengecekan ≤ 24 jam · Pantau = pantau di dashboard.</li>
+      </ul>
+    </details>
+  </section>
+
   <!-- khusus tab Ringkasan -->
   <section class="areas" id="ovAreas"></section>
 
@@ -378,6 +401,7 @@ const STATUS={
   kritis:{label:'Kritis',icon:'▲',v:'--critical'},
   waspada:{label:'Waspada',icon:'◆',v:'--serious'},
   pantau:{label:'Pantau',icon:'●',v:'--warning'},
+  normal:{label:'Normal',icon:'✓',v:'--good'},
   luar:{label:'Di luar radius',icon:'○',v:'--muted'}
 };
 const OV='RINGKASAN';
@@ -388,7 +412,7 @@ const fmt=(v,d=0)=>(v===null||v===undefined||v==='')?'–':Number(v).toLocaleStr
 const bust=()=>'?t='+Date.now();
 const TZ='Asia/Jakarta';
 
-let KAPAL=null,KPIPA=null;
+let KAPAL=null,KPIPA=null,KLAS=null,DIKENAL=[],TL={ring:null,koridor:null};
 let DATA={},ASSETS={type:'FeatureCollection',features:[],areas:{}},HIST=[],GT={prakiraan:null,zkgt:null},LS=null,LSR=null,map=null,layers={},areaColor={},charts={},AREAS=[];
 const LOADERR={};          // berkas data yang gagal dimuat → ditampilkan, tidak membuat halaman kosong
 const LIVE={gempa:null,gempaErr:null,wx:{},wxErr:null};  // hasil cek langsung dari browser (opsional)
@@ -411,6 +435,8 @@ async function loadData(){
     getJSON('data/lhasa/lhasa.json','model longsor (lhasa.json)',true),getJSON('data/lhasa/ruas.geojson')]);
   if(d)DATA=d;if(a)ASSETS=a;HIST=Array.isArray(h)?h:[];GT.prakiraan=p;LS=ls;LSR=lsr;
   [KPIPA,KAPAL]=await Promise.all([getJSON('data/kapal/pipa_offshore.geojson'),getJSON('data/kapal/oeja.json')]);
+  {const [dk,tr,tk]=await Promise.all([getJSON('config/sumber_panas_dikenal.json'),getJSON('data/tutupan_lahan/ringkasan.json'),getJSON('data/tutupan_lahan/koridor.geojson')]);
+   DIKENAL=(dk&&Array.isArray(dk.lokasi))?dk.lokasi:[];TL={ring:tr,koridor:tk};}
   // zona kerentanan hanya diunduh bila pipeline menandainya tersedia (hindari 404 yang tidak perlu)
   const Zm=DATA.gerakan_tanah?.zkgt||{};
   if(Zm.tersedia&&Zm.berkas_peta==='prakiraan.geojson'&&GT.prakiraan){
@@ -422,6 +448,8 @@ async function loadData(){
   AREAS=Object.keys(DATA.areas||ASSETS.areas||{});
   if(!DATA.areas)DATA.areas=ASSETS.areas||{};
   AREAS.forEach((k,i)=>areaColor[k]=AREA_COLORS[i%AREA_COLORS.length]);
+  try{KLAS=window.KlasifikasiWaspada?KlasifikasiWaspada.hitung({data:DATA,lhasa:LS,ruasLhasa:LSR,kapal:KAPAL,dikenal:DIKENAL,now:new Date()}):null;}
+  catch(e){console.error('klasifikasi',e);KLAS=null;LOADERR['klasifikasi status (klasifikasi.js)']=e.message;}
 }
 async function load(){
   await loadData();
@@ -439,7 +467,16 @@ function allHotspots(){
 }
 const hotspots=()=>allHotspots().filter(h=>isOV()||h.area===state.tab);
 const countBy=(hs,area,st)=>hs.filter(h=>(!area||h.area===area)&&h.status===st).length;
-function worstOf(area){const hs=allHotspots();return countBy(hs,area,'kritis')?'kritis':countBy(hs,area,'waspada')?'waspada':countBy(hs,area,'pantau')?'pantau':null;}
+// Status tampilan: hasil klasifikasi multi-bahaya (klasifikasi.js); cadangan = kategori jarak lama
+const hsSt=h=>h.risiko?.status||h.status;
+const hsR=h=>h.risiko&&h.risiko.status!=='luar'?h.risiko.R:null;
+const areaSt=k=>KLAS?.area?.[k]?.status||null;
+function worstOf(area){if(KLAS){const s=areaSt(area);return s&&s!=='normal'?s:null;}const hs=allHotspots();return countBy(hs,area,'kritis')?'kritis':countBy(hs,area,'waspada')?'waspada':countBy(hs,area,'pantau')?'pantau':null;}
+const LC_WARNA={10:'#006400',20:'#ffbb22',30:'#ffff4c',40:'#f096ff',50:'#fa0000',60:'#b4b4b4',70:'#f0f0f0',80:'#0064c8',90:'#0096a0',95:'#00cf75',100:'#fae6a0'};
+const LC_LABEL={10:'Tutupan pohon (hutan/kebun berkayu)',20:'Semak belukar',30:'Padang rumput/alang-alang',40:'Lahan pertanian (sawah/tegalan)',50:'Lahan terbangun (permukiman/industri)',60:'Lahan terbuka/jarang vegetasi',80:'Badan air',90:'Lahan basah herba (rawa)',95:'Mangrove'};
+const LC_KAT={vegetasi_lebat:'vegetasi lebat',vegetasi_rendah:'vegetasi rendah',non_vegetasi:'non-vegetasi'};
+function lahanTxt(t){if(!t)return '';return `<i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${LC_WARNA[t.kode]||'#999'};vertical-align:-1px;margin-right:4px"></i>${esc(t.label)} (${fmt((t.porsi||0)*100)}%) · <b>${esc(LC_KAT[t.kategori]||'')}</b>`;}
+const nonVegBadge=h=>h&&h.risiko&&h.risiko.nonVegetasi?'<span class="badge b-nonveg" title="Lokasi didominasi lahan terbangun/terbuka/air (ESA WorldCover). Kemungkinan sumber panas industri/kota, bukan kebakaran lahan.">▣ non-vegetasi</span>':'';
 // gempa dilihat dari sudut pandang tab aktif (jarak ke aset wilayah itu)
 function eqView(g){
   if(isOV()||!g.per_area||!g.per_area[state.tab]) return {jarak_km:g.jarak_km,aset:g.aset,status:g.status,area:g.area};
@@ -541,12 +578,12 @@ function safe(name,fn,el){try{return fn();}catch(e){console.error(name,e);const 
 function renderTabs(){
   const hs=allHotspots();
   const tab=(id,label,color,extra)=>`<button class="tab" role="tab" id="tab-${id}" aria-selected="${state.tab===id}" data-id="${id}" style="--tab-c:${color?css(color):'var(--ink)'}">${color?`<span class="sw" style="background:${css(color)}"></span>`:''}${label}${extra||''}</button>`;
-  const ovCnt=countBy(hs,null,'kritis');
-  let h=tab(OV,'Ringkasan semua',null,ovCnt?`<span class="cnt k" title="Hotspot kritis">▲${ovCnt}</span>`:'');
+  const ovCnt=KLAS?KLAS.rekap.kritis.length:countBy(hs,null,'kritis');
+  let h=tab(OV,'Ringkasan semua',null,ovCnt?`<span class="cnt k" title="${KLAS?'Area berstatus Kritis':'Hotspot kritis'}">▲${ovCnt}</span>`:'');
   AREAS.forEach(k=>{
     const w=worstOf(k);
     const n=w?countBy(hs,k,w):0;
-    const cnt=w?`<span class="cnt ${w[0]}" title="${STATUS[w].label}">${STATUS[w].icon}${n}</span>`:'<span class="cnt ok" title="Tidak ada hotspot dalam radius">✓</span>';
+    const cnt=w?`<span class="cnt ${w[0]}" title="${STATUS[w].label}${KLAS?` (R ${KLAS.area[k]?.R})`:''}">${STATUS[w].icon}${KLAS?'':n}</span>`:`<span class="cnt ok" title="${KLAS?'Normal':'Tidak ada hotspot dalam radius'}">✓</span>`;
     h+=tab(k,k,areaColor[k],cnt);
   });
   $('#tabs').innerHTML=h;
@@ -598,9 +635,16 @@ function renderKPIs(){
   const near=recent.slice().sort((a,b)=>a.jarak_km-b.jarak_km)[0];
   const tsu=recent.filter(g=>g.tsunami);const last=LIVE.gempa||(DATA.gempa||{}).terbaru;
   const rep=st=>{const n=hs.filter(h=>(!area||h.area===area)&&h.status===st&&h.persisten).length;return n?` · <b>${n} berulang</b>`:''};
-  let h=kpi(`Hotspot ≤ ${r.kritis} km`,countBy(hs,area,'kritis'),'Kritis — verifikasi lapangan segera'+rep('kritis'),'--critical','▲')+
-    kpi(`Hotspot ${r.kritis}–${r.waspada} km`,countBy(hs,area,'waspada'),'Waspada — patroli ROW'+rep('waspada'),'--serious','◆')+
-    kpi(`Hotspot ${r.waspada}–${r.pantau} km`,countBy(hs,area,'pantau'),'Pantau — koordinasi Manggala Agni/BPBD'+rep('pantau'),'--warning','●');
+  const h5=hs.filter(x=>(!area||x.area===area)&&x.status!=='luar');
+  const nRisk=h5.filter(x=>['kritis','waspada'].includes(hsSt(x))).length, nNon=h5.filter(x=>x.risiko?.nonVegetasi).length, nRep=h5.filter(x=>x.persisten).length;
+  let h='';
+  if(KLAS&&isOV()){const rk=KLAS.rekap;
+    h+=kpi('Kondisi area operasi',rk.kritis.length?`${rk.kritis.length} dari ${AREAS.length} Kritis`:'Tidak ada area Kritis',
+      `${rk.waspada.length} Waspada · ${rk.pantau.length} Pantau · ${rk.normal.length} Normal — status dihitung per area${rk.kritis.length?` (Kritis: ${rk.kritis.join(', ')})`:''}`,rk.kritis.length?'--critical':rk.waspada.length?'--serious':'--good',rk.kritis.length?'▲':rk.waspada.length?'◆':'✓');
+  }else if(KLAS){const A=KLAS.area[area]||{};const st=A.status||'normal';
+    h+=kpi(`Status ${area}`,`${STATUS[st].label}${A.R?` <span style="font-size:14px;color:var(--muted)">R ${A.R}</span>`:''}`,A.pemicu?esc(A.pemicu.teks)+(A.eskalasi?` · naik satu tingkat: ${esc(A.eskalasi)}`:''):'Tidak ada temuan bahaya',STATUS[st].v,STATUS[st].icon);}
+  h+=kpi('Hotspot berisiko (Waspada/Kritis)',`${nRisk} <span style="font-size:14px;color:var(--muted)">dari ${h5.length}</span>`,`hotspot ≤ ${r.pantau} km dari aset (≤ ${r.kritis} km: ${countBy(hs,area,'kritis')} · ${r.kritis}–${r.waspada} km: ${countBy(hs,area,'waspada')} · ${r.waspada}–${r.pantau} km: ${countBy(hs,area,'pantau')}) — sisanya Pantau/Normal`,nRisk?'--serious':'--good',nRisk?'◆':'✓')+
+    kpi('Sumber panas non-vegetasi',nNon,`hotspot ≤ ${r.pantau} km di kawasan terbangun/terbuka/air (ESA WorldCover) — bukan titik api lahan${nRep?` · ${nRep} berulang di lokasi sama`:''}`,'--axis','▣');
   if(isOV()){
     h+=kpi('Hotspot nasional',fmt(DATA.hotspot?.total_nasional),`${DATA.hotspot?.periode_jam||24} jam s.d. ${jam(DATA.hotspot?.diperbarui)} · ${esc(DATA.hotspot?.sumber||'-')}`);
   }else{
@@ -628,12 +672,14 @@ function renderOverviewAreas(){
     const hk=hs.filter(h=>h.area===k&&h.status!=='luar'&&h.persisten).length;
     return `<button type="button" class="card area" data-id="${k}">
       <div class="area-h"><div><b><i class="line" style="background:${css(areaColor[k])};vertical-align:middle;margin-right:6px"></i>${k}</b><div class="nm">${esc(DATA.areas[k].nama)}</div></div>${badge(worstOf(k))}</div>
-      <div class="counts">
-        <div><div class="n">${countBy(hs,k,'kritis')}</div><div class="k"><span style="color:${css('--critical')}">▲</span>≤ ${r.kritis} km</div></div>
-        <div><div class="n">${countBy(hs,k,'waspada')}</div><div class="k"><span style="color:${css('--serious')}">◆</span>≤ ${r.waspada} km</div></div>
-        <div><div class="n">${countBy(hs,k,'pantau')}</div><div class="k"><span style="color:${css('--warning')}">●</span>≤ ${r.pantau} km</div></div>
+      ${KLAS&&KLAS.area[k]?.pemicu?`<div class="foot"><span><b>R ${KLAS.area[k].R}</b> · ${esc(KLAS.area[k].pemicu.teks)}${KLAS.area[k].eskalasi?' · <b>naik satu tingkat</b> (bahaya gabungan)':''}</span></div>`:''}
+      <div class="counts" title="Jumlah hotspot menurut jarak ke aset (bukan status)">
+        <div><div class="n">${countBy(hs,k,'kritis')}</div><div class="k">hotspot ≤ ${r.kritis} km</div></div>
+        <div><div class="n">${countBy(hs,k,'waspada')}</div><div class="k">${r.kritis}–${r.waspada} km</div></div>
+        <div><div class="n">${hs.filter(h=>h.area===k&&['kritis','waspada'].includes(hsSt(h))).length}</div><div class="k">berisiko (R ≥ 8)</div></div>
       </div>
       ${hk?`<div class="foot"><span>↻ ${hk} hotspot berulang di lokasi sama (verifikasi)</span></div>`:''}
+      ${(()=>{const nv=hs.filter(h=>h.area===k&&h.status!=='luar'&&h.risiko?.nonVegetasi).length;return nv?`<div class="foot"><span>▣ ${nv} hotspot di lahan non-vegetasi (bukan titik api lahan)</span></div>`:'';})()}
       <div class="foot"><span>Suhu ${rng(t)}°C · RH ${rng(rh)}% <span style="color:var(--muted)">(model, ${jam(wx[0]?.waktu)})</span></span></div>
       <div class="foot"><span>Gerakan tanah (prakiraan ${namaBulan(ym)}${ym&&ym!==bulanIni()?' — bukan bulan ini':''}): ${pk?`${gtBadge(pk.terburuk)} ${fmt(pk.pipa_km?.tinggi,1)} km pipa zona tinggi`:(P.tersedia?'belum dianalisis untuk wilayah ini':'data belum tersedia')}</span></div>
       <div class="foot"><span>Indikasi longsor hari ini (model): ${(()=>{const a=lsArea(k,'hari_ini');return a?`${lsBadge(a.terburuk)} ${fmt((a.pipa_km.tinggi||0)+(a.pipa_km.sedang||0),1)} km pipa ≥ sedang`:'–'})()}</span></div>
@@ -654,8 +700,28 @@ function initMap(){
   layers.pipa=L.layerGroup().addTo(map);layers.fas=L.layerGroup().addTo(map);
   layers.gtZona=L.layerGroup();layers.gtPrak=L.layerGroup().addTo(map);
   layers.ls=L.layerGroup().addTo(map);layers.hs=L.layerGroup().addTo(map);layers.eq=L.layerGroup().addTo(map);layers.wx=L.layerGroup().addTo(map);
-  L.control.layers(base,{'Jalur pipa':layers.pipa,'Fasilitas':layers.fas,'Hotspot':layers.hs,'Gempa':layers.eq,
-    'Prakiraan gerakan tanah (bulan ini)':layers.gtPrak,'Zona kerentanan gerakan tanah':layers.gtZona,'Potensi longsor (model LHASA)':layers.ls,'Label cuaca':layers.wx},{collapsed:true}).addTo(map);
+  // Tutupan lahan: peta ESA WorldCover 10 m (WMS Terrascope), ruas koridor pipa per kelas, dan penutupan lahan KLHK bila layanannya tersedia
+  map.createPane('lc');map.getPane('lc').style.zIndex=250;
+  const wms=TL.ring?.wms||{url:'https://services.terrascope.be/wms/v2',layer:'WORLDCOVER_2021_MAP',layer_cadangan:'WORLDCOVER_2020_MAP'};
+  layers.wc=L.tileLayer.wms(wms.url,{layers:wms.layer,format:'image/png',transparent:true,opacity:.6,maxZoom:18,pane:'lc',attribution:'ESA WorldCover 2021 (CC BY 4.0) · Terrascope'});
+  {let err=0;layers.wc.on('tileerror',()=>{if(++err===4&&wms.layer_cadangan&&layers.wc.wmsParams.layers!==wms.layer_cadangan)layers.wc.setParams({layers:wms.layer_cadangan});});}
+  layers.tlKor=L.layerGroup();
+  const ov={'Jalur pipa':layers.pipa,'Fasilitas':layers.fas,'Hotspot':layers.hs,'Gempa':layers.eq,
+    'Prakiraan gerakan tanah (bulan ini)':layers.gtPrak,'Zona kerentanan gerakan tanah':layers.gtZona,'Potensi longsor (model LHASA)':layers.ls,'Label cuaca':layers.wx,
+    'Tutupan lahan — peta ESA WorldCover 10 m':layers.wc,'Tutupan lahan — sepanjang koridor pipa':layers.tlKor};
+  if(TL.ring?.klhk?.url){
+    const ArcExport=L.TileLayer.extend({getTileUrl(c){const ts=this.getTileSize(),m=this._map,nw=m.unproject([c.x*ts.x,c.y*ts.y],c.z),se=m.unproject([(c.x+1)*ts.x,(c.y+1)*ts.y],c.z);
+      const a=L.CRS.EPSG3857.project(nw),b=L.CRS.EPSG3857.project(se);
+      return `${this._url}/export?bbox=${a.x},${b.y},${b.x},${a.y}&bboxSR=3857&imageSR=3857&size=${ts.x},${ts.y}&format=png32&transparent=true&f=image`;}});
+    layers.klhk=new ArcExport(TL.ring.klhk.url,{opacity:.6,pane:'lc',maxZoom:18,attribution:esc(TL.ring.klhk.sumber||'KLHK')});
+    ov[`Penutupan lahan KLHK ${TL.ring.klhk.tahun||''}`]=layers.klhk;
+  }
+  L.control.layers(base,ov,{collapsed:true}).addTo(map);
+  const LcLegend=L.Control.extend({options:{position:'bottomright'},onAdd(){const d=L.DomUtil.create('div','lc-legend');d.id='lcLegend';d.hidden=true;L.DomEvent.disableClickPropagation(d);return d;}});
+  new LcLegend().addTo(map);
+  map.on('overlayadd overlayremove',()=>{renderLcLegend();renderMapTools();});
+  let lastPop=0;map.on('popupopen',()=>{lastPop=Date.now();});
+  map.on('click',e=>{if(Date.now()-lastPop<400)return;if(!['wc','tlKor','klhk'].some(k=>layers[k]&&map.hasLayer(layers[k])))return;identifyLahan(e.latlng);});
   map.createPane('gt');map.getPane('gt').style.zIndex=350;
   L.control.scale({imperial:false}).addTo(map);
   // tombol reset tampilan
@@ -667,7 +733,7 @@ function initMap(){
 let lastBounds=null;
 function fitArea(){if(map&&lastBounds&&lastBounds.isValid())map.fitBounds(lastBounds,{padding:[24,24],maxZoom:11});}
 // Filter cepat lapisan peta (sinkron dengan kontrol lapisan Leaflet)
-const QUICK=[['pipa','Jalur pipa',['pipa']],['fas','Aset/fasilitas',['fas']],['hs','Hotspot',['hs']],['eq','Gempa',['eq']],['ls','Longsor (model)',['ls']],['gt','Gerakan tanah',['gtPrak','gtZona']]];
+const QUICK=[['pipa','Jalur pipa',['pipa']],['fas','Aset/fasilitas',['fas']],['hs','Hotspot',['hs']],['eq','Gempa',['eq']],['ls','Longsor (model)',['ls']],['gt','Gerakan tanah',['gtPrak','gtZona']],['lc','Tutupan lahan',['wc','tlKor']]];
 function renderMapTools(){
   if(!map){$('#mapTools').innerHTML='';return;}
   const on=keys=>keys.some(k=>layers[k]&&map.hasLayer(layers[k]));
@@ -679,10 +745,10 @@ function renderMapTools(){
   $('#mapTools').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const q=b.dataset.q;
     if(q==='reset')return fitArea();
-    const groups=q==='all'?QUICK.flatMap(x=>x[2]):QUICK.find(x=>x[0]===q)[2];
+    const groups=q==='all'?QUICK.filter(x=>x[0]!=='lc').flatMap(x=>x[2]):QUICK.find(x=>x[0]===q)[2];
     const show=q==='all'?true:!on(groups);
     groups.forEach(k=>{if(!layers[k])return;show?layers[k].addTo(map):map.removeLayer(layers[k]);});
-    renderMapTools();});
+    renderMapTools();renderLcLegend();});
   $('#findAsset').onchange=e=>locateAsset(e.target.value);
 }
 function locateAsset(name){
@@ -695,7 +761,7 @@ function locateAsset(name){
 }
 function drawMap(fit){
   if(!map){$('#legend').innerHTML='';return;}
-  Object.values(layers).forEach(l=>l.clearLayers());
+  Object.values(layers).forEach(l=>l.clearLayers&&l.clearLayers());
   if(segHi){map.removeLayer(segHi);segHi=null;}
   const inTab=f=>isOV()||f.properties.area===state.tab;
   const feats=ASSETS.features.filter(inTab);
@@ -719,10 +785,15 @@ function drawMap(fit){
       L.geoJSON(f,{style:{color:c,weight:7,opacity:.85,lineCap:'round'}}).bindPopup(lsPopup(f.properties)).addTo(layers.ls);
     });
   }
-  const order={luar:0,pantau:1,waspada:2,kritis:3};
-  hotspots().slice().sort((a,b)=>order[a.status]-order[b.status]).forEach(h=>{
-    // hotspot berulang: cincin putus-putus gelap (tetap terbaca tanpa membedakan warna)
-    L.circleMarker([h.lat,h.lon],{radius:h.status==='luar'?4:7,weight:h.persisten?2.5:2,color:h.persisten?css('--ink'):css('--surface'),dashArray:h.persisten?'3 2':null,fillColor:css(STATUS[h.status].v),fillOpacity:.95})
+  if(TL.koridor)(TL.koridor.features||[]).filter(inTab).forEach(f=>{
+    L.geoJSON(f,{pane:'lc',style:{color:LC_WARNA[f.properties.kode]||'#999',weight:8,opacity:.9,lineCap:'butt'}})
+      .bindPopup(lcKorPopup(f.properties)).addTo(layers.tlKor);
+  });
+  const order={luar:0,normal:1,pantau:2,waspada:3,kritis:4};
+  hotspots().slice().sort((a,b)=>order[hsSt(a)]-order[hsSt(b)]).forEach(h=>{
+    // hotspot berulang: cincin putus-putus gelap · non-vegetasi: isian pucat (sumber panas industri/kota)
+    const st=hsSt(h),nv=h.risiko?.nonVegetasi;
+    L.circleMarker([h.lat,h.lon],{radius:st==='luar'?4:7,weight:h.persisten?2.5:2,color:h.persisten?css('--ink'):css('--surface'),dashArray:h.persisten?'3 2':null,fillColor:css((STATUS[st]||STATUS.luar).v),fillOpacity:nv?.45:.95})
       .bindPopup(hsPopup(h)).addTo(layers.hs);
   });
   quakes('all').forEach(g=>{
@@ -736,7 +807,8 @@ function drawMap(fit){
   {const b=pipa.getBounds();layers.fas.eachLayer(l=>b.extend(l.getLatLng()));lastBounds=b;}
   if(fit)fitArea();
   let lg=(isOV()?AREAS:[state.tab]).map(k=>`<span><i class="line" style="background:${css(areaColor[k])}"></i>${k}</span>`).join('');
-  lg+=`<span style="margin-left:6px">Hotspot:</span>`+['kritis','waspada','pantau','luar'].map(k=>`<span><i class="dot" style="background:${css(STATUS[k].v)}"></i>${STATUS[k].icon} ${STATUS[k].label}</span>`).join('');
+  lg+=`<span style="margin-left:6px">Hotspot (status risiko):</span>`+['kritis','waspada','pantau','normal','luar'].map(k=>`<span><i class="dot" style="background:${css(STATUS[k].v)}"></i>${STATUS[k].icon} ${k==='luar'?'> 5 km':STATUS[k].label}</span>`).join('');
+  lg+=`<span><i class="dot" style="background:${css('--warning')};opacity:.45"></i>Pucat = lahan non-vegetasi</span>`;
   lg+=`<span><i class="dot" style="background:${css('--surface-2')};outline:2px dashed ${css('--ink')};outline-offset:-1px"></i>Berulang di lokasi sama</span>`;
   lg+=`<span><i class="dot" style="border:2px solid ${css('--quake')};width:10px;height:10px"></i>Episentrum gempa (≤ 7 hari)</span><span><i class="dot" style="border:1px dashed ${css('--quake')};width:10px;height:10px;opacity:.6"></i>Gempa lebih lama</span>`;
   if(GT.prakiraan||GT.zkgt)lg+=`<span style="margin-left:6px">Gerakan tanah:</span>`+GT_LV.map(k=>`<span><i style="display:inline-block;width:12px;height:10px;border-radius:2px;background:${css(GT_INFO[k].v)};opacity:.6"></i>${GT_INFO[k].label}</span>`).join('');
@@ -744,19 +816,87 @@ function drawMap(fit){
   $('#legend').innerHTML=lg;
   const r=DATA.radius.hotspot;
   $('#mapTitle').textContent=isOV()?'Peta semua wilayah kerja':`Peta wilayah ${state.tab}`;
-  $('#mapNote').textContent=`Status hotspot = jarak geodesik ke jalur pipa/fasilitas terdekat: kritis ≤ ${r.kritis} km · waspada ≤ ${r.waspada} km · pantau ≤ ${r.pantau} km. Klik penanda untuk detail.`;
-  renderMapTools();
+  $('#mapNote').textContent=`Warna hotspot = status risiko (R = P × K): jarak ke aset hanya titik awal, lalu dikoreksi tutupan lahan, keyakinan satelit, titik berulang dan cuaca. Hotspot > ${r.pantau} km dari aset tidak dinilai. Aktifkan lapisan "Tutupan lahan" (ikon lapisan kanan atas) lalu klik peta untuk mengidentifikasi tutupan lahan.`;
+  renderMapTools();renderLcLegend();
+}
+/* ---------- Status area (klasifikasi multi-bahaya) ---------- */
+const JENIS_LBL={hotspot:'Hotspot',gempa:'Gempa/tsunami',gerakan_tanah:'Gerakan tanah/longsor',cuaca:'Cuaca/udara',kapal:'Kapal offshore'};
+function renderRisk(){
+  const el=$('#riskTable');
+  if(!KLAS){$('#riskNote').textContent='Klasifikasi tidak tersedia (klasifikasi.js gagal dimuat). Status memakai kategori jarak hotspot.';el.innerHTML='';return;}
+  if(isOV()){
+    const rk=KLAS.rekap,n=AREAS.length;
+    $('#riskTitle').textContent='Status area operasi — klasifikasi multi-bahaya';
+    $('#riskNote').innerHTML=`<b>Kondisi umum: ${rk.kritis.length?`${rk.kritis.length} dari ${n} area Kritis (${rk.kritis.join(', ')}) — ${n-rk.kritis.length} area lain tidak Kritis`:'tidak ada area Kritis'}.</b> Kritis ${rk.kritis.length} · Waspada ${rk.waspada.length} · Pantau ${rk.pantau.length} · Normal ${rk.normal.length}. Status tiap area berdiri sendiri. Klik baris untuk membuka wilayah.`;
+    const ord=AREAS.slice().sort((a,b)=>(KlasifikasiWaspada.URUT[areaSt(b)]-KlasifikasiWaspada.URUT[areaSt(a)])||((KLAS.area[b].R||0)-(KLAS.area[a].R||0)));
+    el.innerHTML='<thead><tr><th>Wilayah</th><th>Status</th><th class="num">R</th><th>Pemicu utama</th><th>Temuan lain</th></tr></thead><tbody>'+ord.map(k=>{
+      const A=KLAS.area[k],lain=A.temuan.slice(1).filter(t=>t.R>=3),c={};lain.forEach(t=>c[t.jenis]=(c[t.jenis]||0)+1);
+      return `<tr data-a="${k}"><td><b>${k}</b><div class="m" style="font-size:12px;color:var(--muted)">${esc(DATA.areas[k]?.nama||'')}</div></td><td>${badge(A.status==='normal'?null:A.status)}</td><td class="num">${A.R||'–'}</td>
+        <td>${A.pemicu?esc(A.pemicu.teks):'Tidak ada temuan'}${A.eskalasi?`<div style="font-size:12px;color:var(--critical)">Naik satu tingkat: ${esc(A.eskalasi)}</div>`:''}</td>
+        <td style="font-size:12.5px">${Object.entries(c).map(([j,v])=>`${JENIS_LBL[j]||j} ${v}`).join(' · ')||'–'}</td></tr>`;}).join('')+'</tbody>';
+    el.querySelectorAll('tr[data-a]').forEach(r=>r.onclick=()=>selectTab(r.dataset.a));
+  }else{
+    const k=state.tab,A=KLAS.area[k]||{temuan:[]},pa=TL.ring?.per_area?.[k];
+    $('#riskTitle').textContent=`Penentu status ${k} — klasifikasi multi-bahaya`;
+    let note=`Status <b>${(STATUS[A.status]||STATUS.normal).label}</b>${A.R?` (R ${A.R})`:''} = temuan dengan skor tertinggi.${A.eskalasi?` Naik satu tingkat: ${esc(A.eskalasi)}.`:''}`;
+    if(pa&&pa.total_km){const kk=pa.kategori_km||{},p=x=>fmt(100*(kk[x]||0)/pa.total_km);note+=` · Koridor pipa ${k} (${fmt(pa.total_km)} km, ESA WorldCover): ${p('vegetasi_lebat')}% vegetasi lebat, ${p('vegetasi_rendah')}% pertanian/rumput, ${p('non_vegetasi')}% non-vegetasi.`;}
+    $('#riskNote').innerHTML=note;
+    const t=A.temuan.filter(x=>x.R>=1).slice(0,15);
+    el.innerHTML='<thead><tr><th>Jenis bahaya</th><th>Status</th><th class="num">P × K = R</th><th>Keterangan</th></tr></thead><tbody>'+(t.length?t.map((x,i)=>
+      `<tr data-i="${i}"${x.ref?' style="cursor:pointer"':''}><td>${JENIS_LBL[x.jenis]||x.jenis}</td><td>${badge(x.status==='normal'?null:x.status)}</td><td class="num">${x.P} × ${x.K} = <b>${x.R}</b></td><td>${esc(x.teks)}</td></tr>`).join('')
+      :'<tr><td colspan="4" class="empty">✓ Tidak ada temuan bahaya di wilayah ini.</td></tr>')+'</tbody>';
+    el.querySelectorAll('tr[data-i]').forEach(r=>{const x=t[+r.dataset.i];if(x&&x.ref)r.onclick=()=>focusMap(x.ref.lat,x.ref.lon,13,hsPopup(x.ref));});
+  }
+}
+/* ---------- Tutupan lahan di peta ---------- */
+function renderLcLegend(){
+  const d=document.getElementById('lcLegend');if(!d||!map)return;
+  const on=['wc','tlKor','klhk'].filter(k=>layers[k]&&map.hasLayer(layers[k]));
+  d.hidden=!on.length;if(!on.length)return;
+  let h='';
+  if(on.includes('wc')||on.includes('tlKor'))h+='<b>Tutupan lahan (ESA WorldCover 10 m)</b>'+Object.entries(LC_LABEL).map(([k,v])=>`<div><i style="background:${LC_WARNA[k]}"></i>${v}</div>`).join('');
+  if(on.includes('klhk'))h+=`<b style="margin-top:4px">Penutupan lahan KLHK ${esc(TL.ring?.klhk?.tahun||'')}</b><div style="color:var(--muted)">Klik peta untuk melihat kelasnya.</div>`;
+  h+='<div style="color:var(--muted);margin-top:3px">Klik peta untuk identifikasi.</div>';
+  d.innerHTML=h;
+}
+function lcKorPopup(p){
+  return `<div class="pop"><b>Tutupan lahan koridor pipa</b>`+popRows([['Kelas dominan',`<i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${LC_WARNA[p.kode]};margin-right:4px"></i>${esc(p.kelas)}`],
+    ['Kategori',esc(LC_KAT[p.kategori]||'–')],['Porsi rata-rata',p.porsi!=null?fmt(p.porsi*100)+'% dalam radius 250 m':''],['Ruas',`${esc(p.aset)} (${esc(p.area)}) · ${fmt(p.km,2)} km`],
+    ['Sumber','ESA WorldCover 10 m 2021 v200']])+'</div>';
+}
+async function identifyLahan(ll){
+  // 1) kelas ruas koridor pipa terdekat (≤ 600 m), 2) penutupan lahan KLHK (bila lapisannya aktif & layanannya mengizinkan)
+  let best=null,bd=0.6;
+  for(const f of (TL.koridor?.features||[]))for(const c of f.geometry.coordinates){const d=haversine(ll.lat,ll.lng,c[1],c[0]);if(d<bd){bd=d;best=f;}}
+  const rows=[['Koordinat',`${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`]];
+  if(best)rows.push(['Koridor pipa terdekat',`<i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${LC_WARNA[best.properties.kode]};margin-right:4px"></i>${esc(best.properties.kelas)} · ${esc(best.properties.aset)} (${fmt(bd,2)} km)`]);
+  else rows.push(['Koridor pipa','> 0,6 km dari jalur pipa — baca kelas dari warna peta &amp; legenda']);
+  const pop=L.popup().setLatLng(ll).setContent(`<div class="pop"><b>Identifikasi tutupan lahan</b>${popRows(rows)}${layers.klhk&&map.hasLayer(layers.klhk)?'<div class="warn">Memeriksa penutupan lahan KLHK…</div>':''}</div>`).openOn(map);
+  if(layers.klhk&&map.hasLayer(layers.klhk)){
+    try{
+      const b=map.getBounds(),sz=map.getSize();
+      const u=`${TL.ring.klhk.url}/identify?f=json&geometry=${ll.lng},${ll.lat}&geometryType=esriGeometryPoint&sr=4326&layers=visible&tolerance=2&mapExtent=${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}&imageDisplay=${sz.x},${sz.y},96&returnGeometry=false`;
+      const js=await fetchTimeout(u,10000),r=(js.results||[])[0];
+      const at=r?Object.entries(r.attributes||{}).filter(([k,v])=>v!=null&&v!==''&&!/^(OBJECTID|FID|Shape|SHAPE)/i.test(k)).slice(0,6):[];
+      rows.push(['Penutupan lahan KLHK',r?`<b>${esc(r.value||'')}</b>${at.length?'<br>'+at.map(([k,v])=>`<span style="color:var(--muted)">${esc(k)}:</span> ${esc(v)}`).join('<br>'):''}`:'tidak ada data di titik ini']);
+    }catch(e){rows.push(['Penutupan lahan KLHK','tidak dapat diidentifikasi dari browser — baca dari warna peta']);}
+    pop.setContent(`<div class="pop"><b>Identifikasi tutupan lahan</b>${popRows(rows)}</div>`);
+  }
 }
 function popRows(rows){return '<dl>'+rows.filter(r=>r[1]!=null&&r[1]!=='').map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')+'</dl>';}
 function hsPopup(h){
-  return `<div class="pop"><b>Hotspot (deteksi satelit)</b> ${badge(h.status)} ${berulangBadge(h)}`+popRows([
+  const rk=h.risiko,st=hsSt(h);
+  return `<div class="pop"><b>Hotspot (deteksi satelit)</b> ${badge(st==='luar'?'luar':st)} ${nonVegBadge(h)} ${berulangBadge(h)}`+popRows([
+    ['Skor risiko',rk&&rk.status!=='luar'?`<b>P ${rk.P} × K ${rk.K} = R ${rk.R}</b>`:`di luar radius penilaian (> ${DATA.radius.hotspot.pantau} km)`],
+    ['Faktor',rk&&rk.faktor?.length?rk.faktor.map(x=>`${esc(x.teks)}${x.dasar?'':` <span style="color:var(--muted)">(${x.nilai>0?'+':''}${x.nilai})</span>`}`).join('<br>'):''],
+    ['Tutupan lahan',h.tutupan?lahanTxt(h.tutupan)+' <span style="color:var(--muted)">(ESA WorldCover, radius 500 m)</span>':(h.status!=='luar'?'<span style="color:var(--muted)">belum terklasifikasi</span>':'')],
     ['Satelit',esc(h.sumber)],['Akuisisi',esc(hsTime(h))+(h.waktu_utc?` <span style="color:var(--muted)">(${lalu(h.waktu_utc)})</span>`:'')],['Kepercayaan',esc(h.conf)],
     ['Jarak ke aset',`<b>${fmt(h.jarak_km,2)} km</b>`],['Aset terdekat',`${esc(h.aset)} (${esc(h.area)})`],
     ['Fasilitas terdekat',h.fasilitas?`${esc(h.fasilitas)} (${fmt(h.jarak_fasilitas_km,1)} km)`:''],
     ['Lokasi',esc([h.desa,h.kec,h.kab,h.prov].filter(x=>x&&x!=='-').join(', '))],
     ['Koordinat',`${h.lat}, ${h.lon} · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+h.lat},${+h.lon}">Google Maps</a>`],
     ['Sumber data',esc(DATA.hotspot?.sumber||'')]])+
-    `<div class="warn">Titik panas dari satelit — <b>bukan konfirmasi kebakaran</b>. Wajib verifikasi lapangan.${h.persisten?' Titik ini berulang di lokasi sama; periksa apakah sumber panas tetap (flare/industri) atau kebakaran berkelanjutan.':''}</div></div>`;
+    `<div class="warn">Titik panas dari satelit — <b>bukan konfirmasi kebakaran</b>.${h.risiko?.nonVegetasi?' Lokasi didominasi lahan non-vegetasi: kemungkinan sumber panas industri/kota — cukup konfirmasi, bukan mobilisasi.':' Verifikasi lapangan sesuai status.'}${h.persisten?' Titik ini berulang di lokasi sama; periksa apakah sumber panas tetap (flare/industri) atau kebakaran berkelanjutan.':''}</div></div>`;
 }
 function eqPopup(g){
   const v=eqView(g),age=eqAge(g);
@@ -775,15 +915,17 @@ function focusMap(lat,lon,z,html){
   map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);
 }
 function renderLists(){
-  const hs=hotspots().filter(h=>h.status!=='luar'),rp=DATA.radius.hotspot.pantau;
+  const hs=hotspots().filter(h=>h.status!=='luar').sort((a,b)=>(hsR(b)??0)-(hsR(a)??0)||a.jarak_km-b.jarak_km),rp=DATA.radius.hotspot.pantau;
   const nrep=hs.filter(h=>h.persisten).length;
-  $('#hsNote').textContent=(hs.length?`${hs.length} hotspot dalam radius ${rp} km${isOV()?'':' dari aset '+state.tab}${nrep?` (${nrep} berulang di lokasi sama)`:''} · `:'')+
+  const nnv=hs.filter(h=>h.risiko?.nonVegetasi).length;
+  $('#hsNote').textContent=(hs.length?`${hs.length} hotspot dalam radius ${rp} km${isOV()?'':' dari aset '+state.tab}, urut skor risiko${nnv?` · ${nnv} di lahan non-vegetasi`:''}${nrep?` · ${nrep} berulang di lokasi sama`:''} · `:'')+
     `${DATA.hotspot?.periode_jam||24} jam s.d. ${when(DATA.hotspot?.diperbarui)}`;
   $('#hsList').innerHTML=hs.length?hs.slice(0,40).map((h,i)=>`<div class="item" data-i="${i}">
-      <div style="min-width:64px">${badge(h.status)}</div>
+      <div style="min-width:64px">${badge(hsSt(h))}${hsR(h)!=null?`<div class="m" style="margin-top:2px">R ${hsR(h)}</div>`:''}</div>
       <div><div class="t">${fmt(h.jarak_km,2)} km · ${esc(h.aset)}</div>
       <div class="m">${isOV()?esc(h.area)+' · ':''}${esc([h.desa,h.kab].filter(x=>x&&x!=='-').join(', ')||h.prov)} · ${esc(h.conf)} · ${esc(hsTime(h))}</div>
-      ${h.persisten?`<div style="margin-top:3px">${berulangBadge(h)}</div>`:''}</div></div>`).join('')
+      ${h.tutupan?`<div class="m">${lahanTxt(h.tutupan)}</div>`:''}
+      ${h.persisten||h.risiko?.nonVegetasi?`<div style="margin-top:3px">${nonVegBadge(h)} ${berulangBadge(h)}</div>`:''}</div></div>`).join('')
     :`<div class="empty">✓ Tidak ada hotspot dalam radius ${rp} km dari aset${isOV()?'':' '+state.tab} pada periode ini.</div>`;
   document.querySelectorAll('#hsList .item').forEach(el=>el.onclick=()=>{const h=hs[+el.dataset.i];focusMap(h.lat,h.lon,13,hsPopup(h));});
 
@@ -838,9 +980,9 @@ function renderWeather(){
 function renderHsTable(){
   const hs=hotspots(),keep=25;
   $('#hsTableTitle').textContent=`Daftar hotspot dalam radius ${keep} km dari aset${isOV()?'':' '+state.tab}`;
-  $('#hsTable').innerHTML=`<thead><tr><th>Status</th><th class="num">Jarak (km)</th>${isOV()?'<th>Wilayah</th>':''}<th>Aset terdekat</th><th>Fasilitas terdekat</th><th>Lokasi</th><th>Satelit</th><th>Kepercayaan</th><th>Akuisisi (WIB)</th><th>Berulang</th><th>Koordinat</th></tr></thead><tbody>`+
-    (hs.length?hs.map((h,i)=>`<tr data-i="${i}" style="cursor:pointer"><td>${badge(h.status)}</td><td class="num">${fmt(h.jarak_km,2)}</td>${isOV()?`<td>${esc(h.area)}</td>`:''}<td>${esc(h.aset)}</td><td>${h.fasilitas?`${esc(h.fasilitas)} (${fmt(h.jarak_fasilitas_km,1)} km)`:'–'}</td><td>${esc([h.desa,h.kec,h.kab,h.prov].filter(x=>x&&x!=='-').join(', '))}</td><td>${esc(h.sumber)}</td><td>${esc(h.conf)}</td><td style="white-space:nowrap">${esc(hsTime(h))}</td><td>${h.persisten?`↻ ${h.berulang_hari} hari`:(h.berulang_hari>1?`${h.berulang_hari} hari`:'–')}</td><td>${+h.lat}, ${+h.lon}</td></tr>`).join('')
-    :`<tr><td colspan="11" class="empty">Tidak ada hotspot dalam radius ${keep} km dari aset.</td></tr>`)+'</tbody>';
+  $('#hsTable').innerHTML=`<thead><tr><th>Status</th><th class="num">R</th><th class="num">Jarak (km)</th>${isOV()?'<th>Wilayah</th>':''}<th>Tutupan lahan</th><th>Aset terdekat</th><th>Fasilitas terdekat</th><th>Lokasi</th><th>Satelit</th><th>Kepercayaan</th><th>Akuisisi (WIB)</th><th>Berulang</th><th>Koordinat</th></tr></thead><tbody>`+
+    (hs.length?hs.map((h,i)=>`<tr data-i="${i}" style="cursor:pointer"><td>${badge(hsSt(h))}</td><td class="num">${hsR(h)??'–'}</td><td class="num">${fmt(h.jarak_km,2)}</td>${isOV()?`<td>${esc(h.area)}</td>`:''}<td>${h.tutupan?lahanTxt(h.tutupan):'–'}</td><td>${esc(h.aset)}</td><td>${h.fasilitas?`${esc(h.fasilitas)} (${fmt(h.jarak_fasilitas_km,1)} km)`:'–'}</td><td>${esc([h.desa,h.kec,h.kab,h.prov].filter(x=>x&&x!=='-').join(', '))}</td><td>${esc(h.sumber)}</td><td>${esc(h.conf)}</td><td style="white-space:nowrap">${esc(hsTime(h))}</td><td>${h.persisten?`↻ ${h.berulang_hari} hari`:(h.berulang_hari>1?`${h.berulang_hari} hari`:'–')}</td><td>${+h.lat}, ${+h.lon}</td></tr>`).join('')
+    :`<tr><td colspan="13" class="empty">Tidak ada hotspot dalam radius ${keep} km dari aset.</td></tr>`)+'</tbody>';
   document.querySelectorAll('#hsTable tbody tr[data-i]').forEach(el=>el.onclick=()=>{const h=hs[+el.dataset.i];focusMap(h.lat,h.lon,13,hsPopup(h));});
 }
 
@@ -863,11 +1005,11 @@ function renderCharts(){
         scales:{y:{beginAtZero:true,ticks:{precision:0},grid:{color:css('--grid')}},x:{grid:{display:false}}}}};
   }else{
     const k=state.tab;
-    $('#trendTitle').textContent=`Tren hotspot dekat aset ${k}, per status`;
-    $('#trendNote').textContent=`Jumlah harian hotspot ≤ ${rp} km, dipecah menurut radius (termasuk titik berulang; lihat tooltip)`;
-    const ser=['kritis','waspada','pantau'];
-    cfg={type:'bar',data:{labels,datasets:ser.map(s=>({label:`${STATUS[s].icon} ${STATUS[s].label}`,data:dates.map(d=>{const r=HIST.find(x=>x.tanggal===d&&x.area===k);return r?+r[s]:0}),
-      backgroundColor:css(STATUS[s].v),borderColor:css('--surface'),borderWidth:{top:2},borderRadius:3,borderSkipped:false,barPercentage:.8,categoryPercentage:.9}))},
+    $('#trendTitle').textContent=`Tren hotspot dekat aset ${k}, per jarak`;
+    $('#trendNote').textContent=`Jumlah harian hotspot ≤ ${rp} km, dipecah menurut jarak ke aset — bukan status risiko (termasuk titik berulang; lihat tooltip)`;
+    const ser=['kritis','waspada','pantau'],rr=DATA.radius.hotspot,lblJ={kritis:`≤ ${rr.kritis} km`,waspada:`${rr.kritis}–${rr.waspada} km`,pantau:`${rr.waspada}–${rr.pantau} km`},wJ={kritis:'#0b4ea2',waspada:'#5b8fd1',pantau:'#b9cfeb'};
+    cfg={type:'bar',data:{labels,datasets:ser.map(s=>({label:lblJ[s],data:dates.map(d=>{const r=HIST.find(x=>x.tanggal===d&&x.area===k);return r?+r[s]:0}),
+      backgroundColor:wJ[s],borderColor:css('--surface'),borderWidth:{top:2},borderRadius:3,borderSkipped:false,barPercentage:.8,categoryPercentage:.9}))},
       options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}`,
         footer:it=>{const r=HIST.find(x=>x.tanggal===dates[it[0].dataIndex]&&x.area===k);return r&&r.persisten!==undefined&&r.persisten!==''?`↻ berulang di lokasi sama: ${r.persisten}`:'';}}}},
         scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{precision:0},grid:{color:css('--grid')}}}}};
@@ -1227,7 +1369,7 @@ function vfShow(k){
 }
 
 function render(fit){
-  [['status',renderStatus],['tab',renderTabs],['judul',renderTitle,'#viewTitle'],['kpi',renderKPIs,'#kpis'],['kartu wilayah',renderOverviewAreas,'#ovAreas'],
+  [['status',renderStatus],['tab',renderTabs],['judul',renderTitle,'#viewTitle'],['kpi',renderKPIs,'#kpis'],['status area',renderRisk,'#riskTable'],['kartu wilayah',renderOverviewAreas,'#ovAreas'],
    ['peta',()=>drawMap(fit)],['daftar',renderLists,'#hsList'],['cuaca',renderWeather,'#wxGrid'],['gerakan tanah',renderGT,'#gtBody'],['longsor',renderLS,'#lsBody'],
    ['grafik',renderCharts],['tabel hotspot',renderHsTable,'#hsTable'],['kapal OEJA',renderVessel,'#vfBox'],['sumber data',renderSources,'#srcTable'],['footer',renderFoot]].forEach(([n,f,el])=>safe(n,f,el));
 }
