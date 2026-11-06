@@ -17,8 +17,21 @@
 "fasilitas": "LBCV 22 Cisem",
 "jarak_fasilitas_km": 223.0,
 "status": "kritis",
-"berulang_hari": 2,
-"persisten": false
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.351,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.351,
+"10": 0.288,
+"30": 0.254,
+"50": 0.095
+}
+}
 },
 {
 "lat": -6.07923,
@@ -38,8 +51,21 @@
 "fasilitas": "LBCV 22 Cisem",
 "jarak_fasilitas_km": 223.0,
 "status": "kritis",
-"berulang_hari": 2,
-"persisten": false
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.36,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.36,
+"10": 0.283,
+"30": 0.257,
+"50": 0.089
+}
+}
 },
 {
 "lat": -1.24191,
@@ -60,7 +86,20 @@
 "jarak_fasilitas_km": 6.9,
 "status": "kritis",
 "berulang_hari": 6,
-"persisten": true
+"persisten": true,
+"tutupan": {
+"kode": 80,
+"label": "Badan air",
+"porsi": 0.394,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"80": 0.394,
+"50": 0.374,
+"60": 0.203,
+"30": 0.023
+}
+}
 },
 {
 "lat": -6.31338,
@@ -81,7 +120,20 @@
 "jarak_fasilitas_km": 35.7,
 "status": "kritis",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.894,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.894,
+"50": 0.086,
+"10": 0.017,
+"30": 0.002
+}
+}
 },
 {
 "lat": -6.10835,
@@ -102,7 +154,20 @@
 "jarak_fasilitas_km": 128.1,
 "status": "waspada",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.356,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"50": 0.356,
+"40": 0.354,
+"30": 0.255,
+"10": 0.016
+}
+}
 },
 {
 "lat": -3.24041,
@@ -123,7 +188,20 @@
 "jarak_fasilitas_km": 24.5,
 "status": "waspada",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.982,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.982,
+"30": 0.017,
+"40": 0.001,
+"50": 0.0
+}
+}
 },
 {
 "lat": -7.65722,
@@ -144,7 +222,20 @@
 "jarak_fasilitas_km": 4.7,
 "status": "waspada",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.348,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.348,
+"50": 0.244,
+"10": 0.243,
+"30": 0.165
+}
+}
 },
 {
 "lat": -7.6599,
@@ -165,7 +256,20 @@
 "jarak_fasilitas_km": 5.2,
 "status": "waspada",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.39,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.39,
+"30": 0.335,
+"50": 0.139,
+"10": 0.136
+}
+}
 },
 {
 "lat": -7.65389,
@@ -186,7 +290,20 @@
 "jarak_fasilitas_km": 4.8,
 "status": "waspada",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.486,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.486,
+"10": 0.202,
+"50": 0.177,
+"30": 0.134
+}
+}
 },
 {
 "lat": -3.31534,
@@ -207,7 +324,19 @@
 "jarak_fasilitas_km": 27.4,
 "status": "waspada",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.988,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.988,
+"30": 0.01,
+"40": 0.002
+}
+}
 },
 {
 "lat": -7.65657,
@@ -228,7 +357,20 @@
 "jarak_fasilitas_km": 5.0,
 "status": "waspada",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.707,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.707,
+"30": 0.199,
+"10": 0.066,
+"50": 0.028
+}
+}
 },
 {
 "lat": -6.00983,
@@ -249,7 +391,20 @@
 "jarak_fasilitas_km": 240.7,
 "status": "waspada",
 "berulang_hari": 8,
-"persisten": true
+"persisten": true,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.753,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.753,
+"10": 0.125,
+"40": 0.079,
+"30": 0.027
+}
+}
 },
 {
 "lat": -6.00695,
@@ -270,7 +425,20 @@
 "jarak_fasilitas_km": 241.2,
 "status": "waspada",
 "berulang_hari": 8,
-"persisten": true
+"persisten": true,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.925,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.925,
+"40": 0.035,
+"30": 0.017,
+"60": 0.013
+}
+}
 },
 {
 "lat": 0.09918,
@@ -291,7 +459,18 @@
 "jarak_fasilitas_km": 128.2,
 "status": "pantau",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.985,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.985,
+"30": 0.015
+}
+}
 },
 {
 "lat": -6.01135,
@@ -312,7 +491,20 @@
 "jarak_fasilitas_km": 241.2,
 "status": "pantau",
 "berulang_hari": 8,
-"persisten": true
+"persisten": true,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.774,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.774,
+"10": 0.114,
+"40": 0.072,
+"30": 0.037
+}
+}
 },
 {
 "lat": -2.89013,
@@ -333,7 +525,18 @@
 "jarak_fasilitas_km": 3.9,
 "status": "pantau",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 1.0,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 1.0,
+"30": 0.0
+}
+}
 },
 {
 "lat": -3.38029,
@@ -354,7 +557,20 @@
 "jarak_fasilitas_km": 57.6,
 "status": "pantau",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.975,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.975,
+"30": 0.016,
+"50": 0.009,
+"40": 0.0
+}
+}
 },
 {
 "lat": -3.37833,
@@ -375,7 +591,19 @@
 "jarak_fasilitas_km": 57.5,
 "status": "pantau",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.96,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.96,
+"50": 0.024,
+"30": 0.016
+}
+}
 },
 {
 "lat": -1.05135,
@@ -396,7 +624,19 @@
 "jarak_fasilitas_km": 4.4,
 "status": "pantau",
 "berulang_hari": 5,
-"persisten": true
+"persisten": true,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.994,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.994,
+"30": 0.006,
+"50": 0.0
+}
+}
 },
 {
 "lat": -3.37699,
@@ -417,7 +657,19 @@
 "jarak_fasilitas_km": 57.5,
 "status": "pantau",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.949,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.949,
+"50": 0.03,
+"30": 0.02
+}
+}
 },
 {
 "lat": -3.37728,
@@ -438,7 +690,18 @@
 "jarak_fasilitas_km": 56.9,
 "status": "pantau",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.994,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.994,
+"30": 0.006
+}
+}
 },
 {
 "lat": -3.41146,
@@ -459,7 +722,18 @@
 "jarak_fasilitas_km": 43.6,
 "status": "pantau",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.991,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.991,
+"30": 0.009
+}
+}
 },
 {
 "lat": 0.84597,
@@ -480,7 +754,20 @@
 "jarak_fasilitas_km": 5.5,
 "status": "pantau",
 "berulang_hari": 3,
-"persisten": true
+"persisten": true,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.782,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.782,
+"50": 0.121,
+"30": 0.071,
+"60": 0.027
+}
+}
 },
 {
 "lat": -6.35343,
@@ -501,6 +788,19 @@
 "jarak_fasilitas_km": 114.6,
 "status": "pantau",
 "berulang_hari": 1,
-"persisten": false
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.368,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"10": 0.368,
+"50": 0.323,
+"40": 0.172,
+"30": 0.136
+}
+}
 }
 ]
