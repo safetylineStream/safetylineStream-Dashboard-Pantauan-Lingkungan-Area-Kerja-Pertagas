@@ -1,5 +1,39 @@
 [
 {
+"lat": 1.67254,
+"lon": 101.47505,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-09T19:12:00.000000Z",
+"waktu": "Selasa, 10 November 2026 02:12:00",
+"prov": "Riau",
+"kab": "Kota Dumai",
+"kec": "Dumai Timur",
+"desa": "Kelurahan Tanjung Palas",
+"jarak_km": 0.05,
+"area": "ODA",
+"aset": "1. Pipeline PGDD",
+"jenis_aset": "pipa",
+"fasilitas": "Metering Station Dumai",
+"jarak_fasilitas_km": 0.1,
+"status": "kritis",
+"berulang_hari": 2,
+"persisten": false,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.52,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.52,
+"10": 0.237,
+"30": 0.227,
+"60": 0.01
+}
+}
+},
+{
 "lat": -0.07071,
 "lon": 117.40666,
 "conf": "medium",
@@ -67,6 +101,40 @@
 }
 },
 {
+"lat": -3.09738,
+"lon": 104.70235,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-09T19:14:00.000000Z",
+"waktu": "Selasa, 10 November 2026 02:14:00",
+"prov": "Sumatera Selatan",
+"kab": "Ogan Ilir",
+"kec": "Indralaya Utara",
+"desa": "Soak Batok",
+"jarak_km": 0.2,
+"area": "OSSA",
+"aset": "[SBS] SIMPANGY - SRIMULYO",
+"jenis_aset": "pipa",
+"fasilitas": "Meter Feed & Lean OBP",
+"jarak_fasilitas_km": 0.5,
+"status": "kritis",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 30,
+"label": "Padang rumput/alang-alang",
+"porsi": 0.768,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"30": 0.768,
+"10": 0.159,
+"50": 0.047,
+"60": 0.025
+}
+}
+},
+{
 "lat": -7.24761,
 "lon": 112.69183,
 "conf": "low",
@@ -101,6 +169,74 @@
 }
 },
 {
+"lat": -7.41161,
+"lon": 112.69067,
+"conf": "medium",
+"sumber": "NASA-MODIS",
+"waktu_utc": "2026-11-09T20:04:00.000000Z",
+"waktu": "Selasa, 10 November 2026 03:04:00",
+"prov": "Jawa Timur",
+"kab": "Sidoarjo",
+"kec": "Sukodono",
+"desa": "Jumputrejo",
+"jarak_km": 0.47,
+"area": "OEJA",
+"aset": "Pipa OEJA 28\"",
+"jenis_aset": "pipa",
+"fasilitas": "Wunut Station",
+"jarak_fasilitas_km": 11.8,
+"status": "kritis",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.389,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"50": 0.389,
+"10": 0.222,
+"40": 0.218,
+"30": 0.157
+}
+}
+},
+{
+"lat": -6.47722,
+"lon": 106.89519,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-09T17:34:00.000000Z",
+"waktu": "Selasa, 10 November 2026 00:34:00",
+"prov": "Jawa Barat",
+"kab": "Bogor",
+"kec": "Citeureup",
+"desa": "Citeureup",
+"jarak_km": 0.52,
+"area": "OWJA",
+"aset": "Jalur Pipa OWJA #7",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 22 Cisem",
+"jarak_fasilitas_km": 136.5,
+"status": "kritis",
+"berulang_hari": 2,
+"persisten": false,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.795,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.795,
+"10": 0.201,
+"30": 0.002,
+"40": 0.001
+}
+}
+},
+{
 "lat": -7.24822,
 "lon": 112.68745,
 "conf": "low",
@@ -130,6 +266,39 @@
 "50": 0.978,
 "30": 0.015,
 "10": 0.007
+}
+}
+},
+{
+"lat": -0.02511,
+"lon": 117.4162,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-09T17:32:00.000000Z",
+"waktu": "Selasa, 10 November 2026 00:32:00",
+"prov": "Kalimantan Timur",
+"kab": "Kutai Kartanegara",
+"kec": "Marang Kayu",
+"desa": "Santan Ulu",
+"jarak_km": 0.81,
+"area": "OKA",
+"aset": "Jalur Pipa OKA #19",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 1 SENBAL",
+"jarak_fasilitas_km": 116.1,
+"status": "kritis",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.822,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.822,
+"30": 0.177,
+"20": 0.001
 }
 }
 },
@@ -303,6 +472,73 @@
 }
 },
 {
+"lat": 0.00837,
+"lon": 117.40942,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-09T17:32:00.000000Z",
+"waktu": "Selasa, 10 November 2026 00:32:00",
+"prov": "Kalimantan Timur",
+"kab": "Kutai Kartanegara",
+"kec": "Marang Kayu",
+"desa": "Santan Ulu",
+"jarak_km": 1.54,
+"area": "OKA",
+"aset": "Jalur Pipa OKA #19",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 1 SENBAL",
+"jarak_fasilitas_km": 119.4,
+"status": "waspada",
+"berulang_hari": 4,
+"persisten": true,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.82,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.82,
+"30": 0.177,
+"20": 0.003
+}
+}
+},
+{
+"lat": -7.40999,
+"lon": 112.68029,
+"conf": "medium",
+"sumber": "NASA-MODIS",
+"waktu_utc": "2026-11-09T20:04:00.000000Z",
+"waktu": "Selasa, 10 November 2026 03:04:00",
+"prov": "Jawa Timur",
+"kab": "Sidoarjo",
+"kec": "Sukodono",
+"desa": "Suruh",
+"jarak_km": 1.59,
+"area": "OEJA",
+"aset": "Pipa OEJA 28\"",
+"jenis_aset": "pipa",
+"fasilitas": "Wunut Station",
+"jarak_fasilitas_km": 12.2,
+"status": "waspada",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.422,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.422,
+"50": 0.378,
+"10": 0.163,
+"30": 0.037
+}
+}
+},
+{
 "lat": 0.00506,
 "lon": 117.41205,
 "conf": "medium",
@@ -320,7 +556,7 @@
 "fasilitas": "LBCV 1 SENBAL",
 "jarak_fasilitas_km": 119.2,
 "status": "waspada",
-"berulang_hari": 3,
+"berulang_hari": 4,
 "persisten": true,
 "tutupan": {
 "kode": 10,
@@ -387,7 +623,7 @@
 "fasilitas": "LBCV 1 SENBAL",
 "jarak_fasilitas_km": 118.9,
 "status": "waspada",
-"berulang_hari": 3,
+"berulang_hari": 4,
 "persisten": true,
 "tutupan": {
 "kode": 10,
@@ -420,7 +656,7 @@
 "fasilitas": "LBCV 1 SENBAL",
 "jarak_fasilitas_km": 119.5,
 "status": "waspada",
-"berulang_hari": 3,
+"berulang_hari": 4,
 "persisten": true,
 "tutupan": {
 "kode": 10,
@@ -431,6 +667,39 @@
 "persen": {
 "10": 0.89,
 "30": 0.107,
+"20": 0.003
+}
+}
+},
+{
+"lat": 0.00775,
+"lon": 117.41333,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-09T17:32:00.000000Z",
+"waktu": "Selasa, 10 November 2026 00:32:00",
+"prov": "Kalimantan Timur",
+"kab": "Kutai Kartanegara",
+"kec": "Marang Kayu",
+"desa": "Santan Ulu",
+"jarak_km": 1.9,
+"area": "OKA",
+"aset": "Jalur Pipa OKA #19",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 1 SENBAL",
+"jarak_fasilitas_km": 119.5,
+"status": "waspada",
+"berulang_hari": 4,
+"persisten": true,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.9,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.9,
+"30": 0.097,
 "20": 0.003
 }
 }
@@ -453,7 +722,7 @@
 "fasilitas": "LBCV 1 SENBAL",
 "jarak_fasilitas_km": 119.9,
 "status": "waspada",
-"berulang_hari": 3,
+"berulang_hari": 4,
 "persisten": true,
 "tutupan": {
 "kode": 10,
@@ -486,7 +755,7 @@
 "fasilitas": "LBCV 1 SENBAL",
 "jarak_fasilitas_km": 119.7,
 "status": "waspada",
-"berulang_hari": 3,
+"berulang_hari": 4,
 "persisten": true,
 "tutupan": {
 "kode": 10,
@@ -666,6 +935,39 @@
 "10": 0.149,
 "30": 0.118,
 "40": 0.023
+}
+}
+},
+{
+"lat": -1.05181,
+"lon": 116.90209,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-09T17:32:00.000000Z",
+"waktu": "Selasa, 10 November 2026 00:32:00",
+"prov": "Ikn",
+"kab": "Kutai Kartanegara",
+"kec": "Samboja",
+"desa": "Kelurahan Karya Merdeka",
+"jarak_km": 4.01,
+"area": "OKA",
+"aset": "Pipa Senipah-Balikpapan #28",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 3 SENBAL",
+"jarak_fasilitas_km": 4.3,
+"status": "pantau",
+"berulang_hari": 7,
+"persisten": true,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.993,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.993,
+"30": 0.007,
+"50": 0.0
 }
 }
 },
