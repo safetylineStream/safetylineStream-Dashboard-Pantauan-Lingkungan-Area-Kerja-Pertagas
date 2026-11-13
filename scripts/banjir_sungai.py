@@ -57,7 +57,7 @@ def sidik_aset():
 
 def minta(lat, lon, **params):
     r = ambil(CFG["url"], params={"latitude": ",".join(f"{y:.4f}" for y in lat), "longitude": ",".join(f"{x:.4f}" for x in lon), **params},
-              timeout=(20, 120))
+              timeout=(45, 180), coba=4, jeda=8)
     js = r.json()
     return js if isinstance(js, list) else [js]
 
@@ -67,8 +67,15 @@ def angka(arr):
 
 
 # ------------------------------------------------------------------ tahap 1
-def saring(garis, lama):
-    """Petakan jalur pipa ke sel GloFAS. → dict sel {kunci: {lat, lon, saring_maks, aset: {"AREA|aset": km}, hist}}."""
+class BelumSelesai(RuntimeError):
+    pass
+
+
+def saring(garis, statis, sidik, batas_detik=540):
+    """Petakan jalur pipa ke sel GloFAS. → dict sel {kunci: {lat, lon, saring_maks, aset: {"AREA|aset": km}, hist}}.
+
+    Dapat dilanjutkan: jawaban API per titik disimpan di statis["saring_cache"]; bila API gagal/lambat atau waktu habis,
+    cache ditulis dan run berikutnya hanya menanyakan titik yang belum terjawab."""
     langkah, tanya, milik = CFG["langkah_titik"], [], []
     for gi, g in enumerate(garis):
         pts = densify(g["coords"], CFG["interval_m"])
@@ -83,29 +90,45 @@ def saring(garis, lama):
             if abs(idx[-1] - i) < abs(idx[j] - i):
                 j = len(idx) - 1
             milik.append((awal + j, gi, km_titik))
-    log(f"Saring: {len(tanya)} titik pertanyaan dari {len(garis)} ruas pipa ...")
-    sel_titik = [None] * len(tanya)
-    sel = {}
-    for i in range(0, len(tanya), 100):
-        part = tanya[i:i + 100]
-        js = minta([p[1] for p in part], [p[0] for p in part], daily="river_discharge", past_days=7, forecast_days=7)
-        for k, j in enumerate(js):
+    cache = statis.get("saring_cache") if statis.get("saring_cache_sidik") == sidik else None
+    cache = cache or {}
+    pk = [f"{p[0]:.4f},{p[1]:.4f}" for p in tanya]
+    kurang = [i for i in dict.fromkeys(i for i in range(len(tanya)) if pk[i] not in cache)]
+    log(f"Saring: {len(tanya)} titik pertanyaan dari {len(garis)} ruas pipa; {len(kurang)} belum terjawab ...")
+    t0, galat = time.time(), None
+    for n in range(0, len(kurang), 50):
+        part = kurang[n:n + 50]
+        if time.time() - t0 > batas_detik:
+            galat = "batas waktu run tercapai"
+            break
+        try:
+            js = minta([tanya[i][1] for i in part], [tanya[i][0] for i in part], daily="river_discharge", past_days=7, forecast_days=7)
+        except Exception as e:  # noqa: BLE001
+            galat = str(e)[:140]
+            break
+        for i, j in zip(part, js):
             v = angka((j.get("daily") or {}).get("river_discharge"))
-            key = kunci(j["latitude"], j["longitude"])
-            s = sel.setdefault(key, {"lat": round(float(j["latitude"]), 4), "lon": round(float(j["longitude"]), 4), "saring_maks": None, "aset": {}})
-            if v:
-                s["saring_maks"] = round(max(v + ([s["saring_maks"]] if s["saring_maks"] is not None else [])), 2)
-            sel_titik[i + k] = key
-        time.sleep(1.2)
+            cache[pk[i]] = [round(float(j["latitude"]), 4), round(float(j["longitude"]), 4), round(max(v), 2) if v else None]
+        time.sleep(1.5)
+    sisa = sum(1 for k in pk if k not in cache)
+    if sisa:
+        statis.update({"saring_cache": cache, "saring_cache_sidik": sidik})
+        tulis_json(STATIS, statis)
+        raise BelumSelesai(f"Pemetaan sel sungai belum selesai ({len(pk) - sisa} dari {len(pk)} titik terjawab) — dilanjutkan otomatis pada run berikutnya. Penyebab: {galat}")
+    lama, sel = statis.get("sel") or {}, {}
+    for i, k in enumerate(pk):
+        lat, lon, maks = cache[k]
+        s = sel.setdefault(kunci(lat, lon), {"lat": lat, "lon": lon, "saring_maks": None, "aset": {}})
+        if maks is not None:
+            s["saring_maks"] = maks if s["saring_maks"] is None else max(s["saring_maks"], maks)
     for q, gi, km in milik:
-        key = sel_titik[q]
-        if key is None:
-            continue
+        lat, lon, _ = cache[pk[q]]
+        s = sel[kunci(lat, lon)]
         nama = f"{garis[gi]['area']}|{garis[gi]['aset']}"
-        sel[key]["aset"][nama] = sel[key]["aset"].get(nama, 0.0) + km
+        s["aset"][nama] = s["aset"].get(nama, 0.0) + km
     for key, s in sel.items():
         s["aset"] = {k: round(v, 2) for k, v in s["aset"].items()}
-        s["hist"] = ((lama or {}).get(key) or {}).get("hist")
+        s["hist"] = (lama.get(key) or {}).get("hist")
     log(f"Saring: {len(sel)} sel GloFAS unik; {sum(1 for s in sel.values() if (s['saring_maks'] or 0) >= CFG['saring_min_m3s'])} sel berdebit ≥ {CFG['saring_min_m3s']} m³/s")
     return sel
 
@@ -222,7 +245,7 @@ def main():
         from umum import umur_menit
         um = umur_menit(statis.get("saring_pada"))
         if statis.get("sidik_aset") != sidik or not statis.get("sel") or um is None or um > CFG["saring_ulang_hari"] * 1440:
-            statis = {"sidik_aset": sidik, "saring_pada": iso(), "sel": saring(garis, statis.get("sel"))}
+            statis = {"sidik_aset": sidik, "saring_pada": iso(), "sel": saring(garis, statis, sidik)}
             tulis_json(STATIS, statis)
         jatah = int(os.environ.get("BANJIR_SEL_PER_RUN") or CFG["sel_per_run"])
         if lengkapi_ambang(statis["sel"], jatah):
@@ -246,7 +269,7 @@ def main():
         log(f"Selesai: {sum(1 for s in hasil if s['level'])} sel berindikasi dari {len(hasil)} sel sungai.")
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()
-        lama["status"] = {"ok": False, "pesan": str(e)[:200], "diperiksa": iso()}
+        lama["status"] = {"ok": False, "pesan": str(e)[:300], "diperiksa": iso(), "bertahap": isinstance(e, BelumSelesai)}
         lama.setdefault("sel", [])
         lama.setdefault("per_area", {})
         tulis_json(OUT / "banjir.json", lama)

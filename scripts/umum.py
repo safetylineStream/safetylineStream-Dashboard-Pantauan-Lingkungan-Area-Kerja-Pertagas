@@ -19,6 +19,7 @@ DATA = ROOT / "data"
 CFG_ALL = json.loads((ROOT / "config" / "monitoring.json").read_text(encoding="utf-8"))
 WIB = timezone(timedelta(hours=7))
 UA = {"User-Agent": "Pertagas-QMHSE-EnvDashboard/1.0 (+github actions; monitoring aset pipa)"}
+SESI = requests.Session()  # koneksi dipakai ulang (keep-alive) — menghindari jabat tangan TLS berulang ke server yang lambat
 
 
 def log(*a):
@@ -43,7 +44,7 @@ def ambil(url, params=None, timeout=(15, 60), coba=3, jeda=6, headers=None):
     akhir = None
     for i in range(coba):
         try:
-            r = requests.get(url, params=params, headers={**UA, **(headers or {})}, timeout=timeout)
+            r = SESI.get(url, params=params, headers={**UA, **(headers or {})}, timeout=timeout)
             if r.status_code == 429:
                 raise RuntimeError("HTTP 429 — batas laju penyedia data tercapai")
             r.raise_for_status()
