@@ -213,7 +213,7 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 Sejak November 2026 status Kritis / Waspada / Pantau / Normal **tidak lagi ditentukan oleh jarak satu hotspot**.
 Status dihitung di `klasifikasi.js` dengan skor risiko **R = P × K** (peluang × konsekuensi, 1–5):
 Kritis R 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2. Status **per area** = skor tertinggi di area itu dari
-hotspot, gempa/tsunami, gerakan tanah PVMBG + model longsor LHASA, cuaca & kualitas udara, dan kapal offshore.
+hotspot, gempa/tsunami, gerakan tanah PVMBG + model longsor LHASA, serta cuaca & kualitas udara.
 Status satu area tidak memengaruhi area lain. Penjelasan lengkap ada di dashboard ("Cara status dihitung").
 
 * **Hotspot** hanya dianggap titik api lahan bila berada di lahan bervegetasi. Tutupan lahan diambil dari
@@ -236,16 +236,3 @@ Status satu area tidak memengaruhi area lain. Penjelasan lengkap ada di dashboar
 - **PVMBG – Badan Geologi**: *Prakiraan Potensi Gerakan Tanah Bulanan* diambil dari **Portal MBG** PVMBG — `https://vsi.esdm.go.id/portalmbg/api/download-asset-forecast/gertan/forecast/vector/{tahun}/{bulan}/{kode_provinsi}` (shapefile ZIP per provinsi, kode provinsi BPS; diatur di `config/monitoring.json` → `gerakan_tanah.portalmbg`). Atribut `Zona_Perki` = zona prakiraan bulan itu (Tinggi, Menengah, Rendah, Berpotensi banjir bandang/aliran bahan rombakan); atribut `Unsur` = zona kerentanan gerakan tanah dasar. Bila bulan berjalan belum terbit, dipakai bulan sebelumnya dan dashboard menandainya. Hasil per provinsi disimpan di `data/gerakan_tanah/cache_portal/` dan hanya diunduh ulang bila tanggal terbitnya berubah. Layanan GIS ESDM One Map tetap dipakai sebagai cadangan bila Portal MBG gagal.
 - **Potensi longsor**: algoritma NASA LHASA 1.1 (github.com/nasa/LHASA, tag v1.1.1) dihitung internal; ambang ARI95 NASA, hujan Open-Meteo, kerentanan dari peta global NASA atau Copernicus DEM GLO-90 (© DLR/Airbus, ESA). Bersifat indikatif, bukan pengganti informasi resmi PVMBG.
 - Jarak dihitung dari titik hotspot/episentrum ke **jalur pipa atau fasilitas terdekat** pada `data/assets.geojson` secara geodesik (Haversine; diuji terhadap perhitungan WGS84 independen, selisih < 20 m). Geometri pipa telah disederhanakan (±30 m) supaya halaman ringan. Lokasi hotspot sendiri punya ketidakpastian sebesar pikselnya (VIIRS ±375 m, MODIS ±1 km).
-
-
-## Lalu lintas kapal OEJA (AIS)
-Khusus tab **OEJA** (pipa offshore 28" Pagerungan – Porong, ±378 km di laut). Kartu ini punya dua tampilan:
-
-1. **Kapal × pipa offshore** — peta dashboard sendiri berisi ruas pipa offshore, koridor 500 m, dan posisi kapal AIS. Tiap kapal diberi status dari jarak tegak lurus ke pipa offshore:
-   kritis = diam/berlabuh (SOG < 0,5 kn atau status berlabuh/tambat/NUC/kandas) ≤ 0,5 km · waspada = melintas ≤ 0,5 km atau diam ≤ 1 km · pantau ≤ 2 km. Ambang di `config/monitoring.json` → `kapal`.
-   - Ruas offshore diturunkan dari `assets.geojson` dikurangi daratan Natural Earth 1:10m: `python tools/pipa_offshore.py` → `data/kapal/pipa_offshore.geojson` (jalankan ulang bila aset berubah).
-   - Posisi kapal: `scripts/kapal.py` via workflow **Update Kapal AIS** (tiap 30 menit) dari **AISStream.io** → `data/kapal/oeja.json`. Posisi lama ≤ 90 menit dibawa ke run berikutnya (kapal berlabuh jarang memancar); waktu yang ditampilkan selalu waktu pesan AIS.
-   - **Aktivasi:** daftar gratis di https://aisstream.io (login GitHub) → buat API key → GitHub repo *Settings → Secrets and variables → Actions → New repository secret* bernama `AISSTREAM_API_KEY`. Tanpa secret, workflow selesai tanpa mengubah data dan kartu menampilkan "Belum aktif".
-2. **Peta live VesselFinder** — widget peta resmi VesselFinder (`aismap.js`), real-time. Peta pihak ketiga ini tidak bisa diberi overlay pipa. Dashboard tidak melakukan scraping VesselFinder (dilarang ketentuan mereka).
-
-Keterbatasan: AIS terestrial tidak menjangkau semua perairan; kapal kecil/nelayan sering tidak memancarkan AIS. Modul ini pendukung keputusan, bukan pengganti patroli ROW laut atau koordinasi dengan KSOP/Distrik Navigasi.

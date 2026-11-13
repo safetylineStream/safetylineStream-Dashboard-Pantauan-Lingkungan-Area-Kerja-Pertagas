@@ -353,29 +353,6 @@
       "adm4": ""
     }
   ],
-  "kapal": {
-    "_petunjuk": "Modul lalu lintas kapal (AIS) di atas pipa offshore. Butuh secret GitHub AISSTREAM_API_KEY (gratis, aisstream.io). Tanpa key modul tidak berjalan dan tidak membuat data.",
-    "aktif": true,
-    "area": [
-      "OEJA"
-    ],
-    "bbox": [
-      112.4,
-      -8.0,
-      116.3,
-      -6.4
-    ],
-    "jendela_detik": 180,
-    "simpan_menit": 90,
-    "radius_km": {
-      "kritis": 0.5,
-      "waspada": 1.0,
-      "pantau": 2.0
-    },
-    "sog_diam_knot": 0.5,
-    "min_ruas_km": 0.2,
-    "maks_kapal_simpan": 1500
-  },
   "tutupan_lahan": {
     "_petunjuk": "Tutupan lahan ESA WorldCover 10 m untuk klasifikasi hotspot & lapisan peta. Hotspot di lahan non-vegetasi (terbangun ≥ ambang_terbangun atau vegetasi < ambang_vegetasi_min dalam radius_hotspot_m) dianggap sumber panas non-vegetasi. Koridor pipa dihitung ulang otomatis bila aset/parameter berubah (workflow Update Tutupan Lahan).",
     "radius_hotspot_m": 500,

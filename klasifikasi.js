@@ -38,7 +38,6 @@
     gempa: { magMin: 5, jam: 72, K: 3 },
     gerakanTanah: { K: { pipa: 3, fasilitas: 4 }, hujanPemicuMm: 50 },
     cuaca: { K: 2 },
-    kapal: { K: 4, P: { kritis: 5, waspada: 3, pantau: 2 } },
     gabungan: { radiusKm: 5 },
   };
   const URUT = { normal: 0, pantau: 1, waspada: 2, kritis: 3 };
@@ -131,7 +130,7 @@
   }
 
   /* ------------------------------------------------------------ utama */
-  function hitung({ data, lhasa, ruasLhasa, kapal, dikenal, now }) {
+  function hitung({ data, lhasa, ruasLhasa, dikenal, now }) {
     data = data || {};
     now = now instanceof Date ? now.getTime() : (now || Date.now());
     const hs = (data.hotspot && data.hotspot.dekat_aset) || [];
@@ -213,12 +212,6 @@
         for (const x of c) if (!best || x[0] > best.P || (x[0] === best.P && aqi > best.aqi)) best = { P: x[0], teks: x[1], aqi, lokasi: [[+w.lat, +w.lon]] };
       }
       if (best) tambah(a, { jenis: 'cuaca', P: best.P, K: ATURAN.cuaca.K, lokasi: null, teks: best.teks });
-    }
-    // E. Kapal di atas pipa offshore
-    for (const v of (kapal && kapal.kapal) || []) {
-      const P = ATURAN.kapal.P[v.status];
-      if (P) tambah(kapal.area || 'OEJA', { jenis: 'kapal', P, K: ATURAN.kapal.K, lokasi: num(v.lat) != null ? [[+v.lat, +v.lon]] : null,
-        teks: `Kapal ${v.nama || v.mmsi || ''} ${v.diam ? 'diam/berlabuh' : 'melintas'} ${f(num(v.jarak_km) || 0, 2)} km dari pipa offshore` });
     }
 
     // Status area
