@@ -1,39 +1,5 @@
 [
 {
-"lat": -3.10075,
-"lon": 104.70381,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:36:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:36:00",
-"prov": "Sumatera Selatan",
-"kab": "Ogan Ilir",
-"kec": "Indralaya Utara",
-"desa": "Soak Batok",
-"jarak_km": 0.08,
-"area": "OSSA",
-"aset": "[SBS] SIMPANG Y - PULAU LAYANG",
-"jenis_aset": "pipa",
-"fasilitas": "Kantor Distrik Palembang",
-"jarak_fasilitas_km": 0.2,
-"status": "kritis",
-"berulang_hari": 2,
-"persisten": false,
-"tutupan": {
-"kode": 30,
-"label": "Padang rumput/alang-alang",
-"porsi": 0.655,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"30": 0.655,
-"10": 0.154,
-"50": 0.143,
-"40": 0.025
-}
-}
-},
-{
 "lat": 5.22409,
 "lon": 97.07471,
 "conf": "medium",
@@ -64,40 +30,6 @@
 "30": 0.232,
 "50": 0.172,
 "80": 0.024
-}
-}
-},
-{
-"lat": -6.18307,
-"lon": 106.35272,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:38:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:38:00",
-"prov": "Banten",
-"kab": "Serang",
-"kec": "Cikande",
-"desa": "Bakung",
-"jarak_km": 0.89,
-"area": "OWJA",
-"aset": "Jalur Pipa OWJA #26",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 22 Cisem",
-"jarak_fasilitas_km": 197.7,
-"status": "kritis",
-"berulang_hari": 3,
-"persisten": true,
-"tutupan": {
-"kode": 40,
-"label": "Lahan pertanian (sawah/tegalan)",
-"porsi": 0.818,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"40": 0.818,
-"10": 0.101,
-"30": 0.064,
-"50": 0.016
 }
 }
 },
@@ -136,40 +68,6 @@
 }
 },
 {
-"lat": -5.9942,
-"lon": 105.99484,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:38:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:38:00",
-"prov": "Banten",
-"kab": "Kota Cilegon",
-"kec": "Citangkil",
-"desa": "Warnasari",
-"jarak_km": 1.08,
-"area": "OWJA",
-"aset": "Jalur Pipa OWJA #26",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 22 Cisem",
-"jarak_fasilitas_km": 240.1,
-"status": "waspada",
-"berulang_hari": 3,
-"persisten": true,
-"tutupan": {
-"kode": 50,
-"label": "Lahan terbangun (permukiman/industri)",
-"porsi": 0.376,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"50": 0.376,
-"10": 0.249,
-"40": 0.124,
-"30": 0.113
-}
-}
-},
-{
 "lat": 0.00695,
 "lon": 117.40559,
 "conf": "medium",
@@ -204,40 +102,6 @@
 }
 },
 {
-"lat": -6.18439,
-"lon": 106.35553,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:38:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:38:00",
-"prov": "Banten",
-"kab": "Serang",
-"kec": "Cikande",
-"desa": "Bakung",
-"jarak_km": 1.11,
-"area": "OWJA",
-"aset": "Jalur Pipa OWJA #26",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 22 Cisem",
-"jarak_fasilitas_km": 197.3,
-"status": "waspada",
-"berulang_hari": 3,
-"persisten": true,
-"tutupan": {
-"kode": 40,
-"label": "Lahan pertanian (sawah/tegalan)",
-"porsi": 0.696,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"40": 0.696,
-"10": 0.156,
-"30": 0.061,
-"80": 0.06
-}
-}
-},
-{
 "lat": 0.00701,
 "lon": 117.40606,
 "conf": "medium",
@@ -268,40 +132,6 @@
 "30": 0.354,
 "20": 0.002,
 "40": 0.001
-}
-}
-},
-{
-"lat": -6.37122,
-"lon": 108.3577,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:38:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:38:00",
-"prov": "Jawa Barat",
-"kab": "Indramayu",
-"kec": "Balongan",
-"desa": "Rawadalem",
-"jarak_km": 1.26,
-"area": "OWJA",
-"aset": "Jalur Pipa OWJA #23",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 21 Cisem",
-"jarak_fasilitas_km": 10.3,
-"status": "waspada",
-"berulang_hari": 3,
-"persisten": true,
-"tutupan": {
-"kode": 40,
-"label": "Lahan pertanian (sawah/tegalan)",
-"porsi": 0.901,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"40": 0.901,
-"50": 0.048,
-"10": 0.022,
-"30": 0.016
 }
 }
 },
@@ -505,73 +335,6 @@
 }
 },
 {
-"lat": -6.29715,
-"lon": 107.95631,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:38:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:38:00",
-"prov": "Jawa Barat",
-"kab": "Indramayu",
-"kec": "Sukra",
-"desa": "Karanglayung",
-"jarak_km": 3.0,
-"area": "OWJA",
-"aset": "Jalur Pipa OWJA #22",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 22 Cisem",
-"jarak_fasilitas_km": 22.1,
-"status": "pantau",
-"berulang_hari": 2,
-"persisten": false,
-"tutupan": {
-"kode": 40,
-"label": "Lahan pertanian (sawah/tegalan)",
-"porsi": 0.917,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"40": 0.917,
-"30": 0.028,
-"50": 0.024,
-"90": 0.016
-}
-}
-},
-{
-"lat": -6.48495,
-"lon": 108.34482,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:38:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:38:00",
-"prov": "Jawa Barat",
-"kab": "Indramayu",
-"kec": "Sliyeg",
-"desa": "Tambi",
-"jarak_km": 3.03,
-"area": "OEJA",
-"aset": "Pipa Cirebon-Semarang (Cisem)",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 20 Cisem",
-"jarak_fasilitas_km": 3.4,
-"status": "pantau",
-"berulang_hari": 2,
-"persisten": false,
-"tutupan": {
-"kode": 40,
-"label": "Lahan pertanian (sawah/tegalan)",
-"porsi": 0.836,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"40": 0.836,
-"10": 0.154,
-"50": 0.01
-}
-}
-},
-{
 "lat": 0.00975,
 "lon": 117.42365,
 "conf": "medium",
@@ -605,6 +368,40 @@
 }
 },
 {
+"lat": -7.26924,
+"lon": 112.67976,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-12T18:17:00.000000Z",
+"waktu": "Jumat, 13 November 2026 01:17:00",
+"prov": "Jawa Timur",
+"kab": "Kota Surabaya",
+"kec": "Tandes",
+"desa": "Karang Poh",
+"jarak_km": 3.04,
+"area": "OEJA",
+"aset": "Pipa OEJA 28\"",
+"jenis_aset": "pipa",
+"fasilitas": "GRE Station (Gresik)",
+"jarak_fasilitas_km": 9.1,
+"status": "pantau",
+"berulang_hari": 2,
+"persisten": false,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.714,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.714,
+"30": 0.124,
+"10": 0.117,
+"40": 0.024
+}
+}
+},
+{
 "lat": 0.0098,
 "lon": 117.42442,
 "conf": "medium",
@@ -633,38 +430,6 @@
 "persen": {
 "10": 0.985,
 "30": 0.015
-}
-}
-},
-{
-"lat": -3.31579,
-"lon": 104.32443,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:36:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:36:00",
-"prov": "Sumatera Selatan",
-"kab": "Muara Enim",
-"kec": "Gelumbang",
-"desa": "Gaung Telang",
-"jarak_km": 3.22,
-"area": "OSSA",
-"aset": "[SBS] CAMBAI - SIMPANG Y",
-"jenis_aset": "pipa",
-"fasilitas": "Meter Arwana Keramik",
-"jarak_fasilitas_km": 36.5,
-"status": "pantau",
-"berulang_hari": 1,
-"persisten": false,
-"tutupan": {
-"kode": 10,
-"label": "Tutupan pohon (hutan/kebun berkayu)",
-"porsi": 0.989,
-"kategori": "vegetasi_lebat",
-"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
-"persen": {
-"10": 0.989,
-"30": 0.011
 }
 }
 },
@@ -731,40 +496,6 @@
 "30": 0.176,
 "10": 0.119,
 "80": 0.104
-}
-}
-},
-{
-"lat": -6.00967,
-"lon": 105.97547,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:38:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:38:00",
-"prov": "Banten",
-"kab": "Kota Cilegon",
-"kec": "Ciwandan",
-"desa": "Kubangsari",
-"jarak_km": 3.58,
-"area": "OWJA",
-"aset": "Jalur Pipa OWJA #26",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 22 Cisem",
-"jarak_fasilitas_km": 241.8,
-"status": "pantau",
-"berulang_hari": 5,
-"persisten": true,
-"tutupan": {
-"kode": 50,
-"label": "Lahan terbangun (permukiman/industri)",
-"porsi": 0.743,
-"kategori": "non_vegetasi",
-"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
-"persen": {
-"50": 0.743,
-"30": 0.056,
-"10": 0.055,
-"80": 0.055
 }
 }
 },
@@ -837,68 +568,35 @@
 }
 },
 {
-"lat": -2.69415,
-"lon": 104.02438,
+"lat": -1.05098,
+"lon": 116.90353,
 "conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:36:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:36:00",
-"prov": "Sumatera Selatan",
-"kab": "Musi Banyuasin",
-"kec": "Babat Supat",
-"desa": "Supat",
-"jarak_km": 3.73,
-"area": "OSSA",
-"aset": "20 Grisik - Pusri",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-12T17:19:00.000000Z",
+"waktu": "Jumat, 13 November 2026 00:19:00",
+"prov": "Ikn",
+"kab": "Kutai Kartanegara",
+"kec": "Samboja",
+"desa": "Kelurahan Karya Merdeka",
+"jarak_km": 4.01,
+"area": "OKA",
+"aset": "Pipa Senipah-Balikpapan #28",
 "jenis_aset": "pipa",
-"fasilitas": "LBCV 4",
-"jarak_fasilitas_km": 7.2,
+"fasilitas": "LBCV 3 SENBAL",
+"jarak_fasilitas_km": 4.4,
 "status": "pantau",
-"berulang_hari": 1,
-"persisten": false,
+"berulang_hari": 7,
+"persisten": true,
 "tutupan": {
 "kode": 10,
 "label": "Tutupan pohon (hutan/kebun berkayu)",
-"porsi": 0.976,
+"porsi": 0.993,
 "kategori": "vegetasi_lebat",
 "kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
 "persen": {
-"10": 0.976,
-"30": 0.024
-}
-}
-},
-{
-"lat": -2.69084,
-"lon": 104.02489,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:36:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:36:00",
-"prov": "Sumatera Selatan",
-"kab": "Musi Banyuasin",
-"kec": "Babat Supat",
-"desa": "Supat",
-"jarak_km": 3.75,
-"area": "OSSA",
-"aset": "20 Grisik - Pusri",
-"jenis_aset": "pipa",
-"fasilitas": "LBCV 4",
-"jarak_fasilitas_km": 7.0,
-"status": "pantau",
-"berulang_hari": 1,
-"persisten": false,
-"tutupan": {
-"kode": 10,
-"label": "Tutupan pohon (hutan/kebun berkayu)",
-"porsi": 0.928,
-"kategori": "vegetasi_lebat",
-"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
-"persen": {
-"10": 0.928,
-"30": 0.053,
-"50": 0.016,
-"60": 0.003
+"10": 0.993,
+"30": 0.007,
+"50": 0.0
 }
 }
 },
@@ -933,74 +631,6 @@
 "30": 0.18,
 "40": 0.003,
 "20": 0.0
-}
-}
-},
-{
-"lat": -3.1651,
-"lon": 104.57432,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:36:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:36:00",
-"prov": "Sumatera Selatan",
-"kab": "Ogan Ilir",
-"kec": "Indralaya Utara",
-"desa": "Pulau Kabai",
-"jarak_km": 4.58,
-"area": "OSSA",
-"aset": "[SBS] CAMBAI - SIMPANG Y",
-"jenis_aset": "pipa",
-"fasilitas": "Meter Arwana Keramik",
-"jarak_fasilitas_km": 8.3,
-"status": "pantau",
-"berulang_hari": 2,
-"persisten": false,
-"tutupan": {
-"kode": 30,
-"label": "Padang rumput/alang-alang",
-"porsi": 0.793,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"30": 0.793,
-"10": 0.154,
-"90": 0.047,
-"20": 0.005
-}
-}
-},
-{
-"lat": -3.16455,
-"lon": 104.5708,
-"conf": "medium",
-"sumber": "NASA-NOAA20",
-"waktu_utc": "2026-11-11T18:36:00.000000Z",
-"waktu": "Kamis, 12 November 2026 01:36:00",
-"prov": "Sumatera Selatan",
-"kab": "Ogan Ilir",
-"kec": "Indralaya Utara",
-"desa": "Pulau Kabai",
-"jarak_km": 4.77,
-"area": "OSSA",
-"aset": "[SBS] CAMBAI - SIMPANG Y",
-"jenis_aset": "pipa",
-"fasilitas": "Meter Arwana Keramik",
-"jarak_fasilitas_km": 8.6,
-"status": "pantau",
-"berulang_hari": 2,
-"persisten": false,
-"tutupan": {
-"kode": 30,
-"label": "Padang rumput/alang-alang",
-"porsi": 0.798,
-"kategori": "vegetasi_rendah",
-"kategori_label": "Vegetasi rendah (pertanian, rumput)",
-"persen": {
-"30": 0.798,
-"10": 0.157,
-"90": 0.035,
-"20": 0.009
 }
 }
 }
