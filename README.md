@@ -191,6 +191,27 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 
 ---
 
+### B8b. Modul tambahan berbasis lokasi aset (tanpa API key)
+Empat modul ini hanya menampilkan data yang **mengenai atau mendekati jalur pipa/fasilitas**; data yang tidak bisa ditumpangkan ke aset tidak diambil.
+
+| Modul | Sumber | Cara ditumpangkan ke aset | Jadwal | Berkas |
+|---|---|---|---|---|
+| **Peringatan dini cuaca ekstrem** | BMKG nowcasting (RSS + CAP) — peringatan resmi, berlaku ±1–3 jam | Poligon wilayah peringatan diiris dengan jalur pipa (km pipa) dan fasilitas di dalamnya | tiap ±15 menit (workflow **Update Peringatan Dini Cuaca (BMKG)**) | `data/peringatan_cuaca/` |
+| **Potensi petir (model)** | Open-Meteo Forecast: CAPE, kode cuaca, hujan per jam — **prakiraan, bukan deteksi sambaran** | Grid 0,1° (±11 km); hanya sel yang dilalui pipa/memuat fasilitas | 4× sehari | `data/petir_model/` |
+| **Potensi banjir sungai (model)** | Open-Meteo Flood API — GloFAS v4 (Copernicus/ECMWF), grid ±5 km | Hanya **sel sungai yang dilalui jalur pipa** (median debit 5 tahun ≥ 10 m³/s) | 4× sehari | `data/banjir/` |
+| **Siklon tropis & bencana besar** | GDACS (PBB & Komisi Eropa): siklon tropis, banjir besar, erupsi | Jarak geodesik ke aset; zona angin & kerucut lintasan siklon diiris dengan aset | 4× sehari | `data/gdacs/` |
+
+Tiga modul terakhir dijalankan workflow **Update Bahaya Tambahan (petir, banjir sungai, GDACS)** pukul 05:40, 11:40, 17:40 dan 23:40 WIB.
+
+- **Peringatan BMKG:** berkas hanya ditulis ulang bila daftar peringatan di sekitar aset berubah atau sudah 60 menit, jadi commit tidak terjadi tiap 15 menit. Peringatan yang sudah berakhir disembunyikan otomatis oleh dashboard. Wajib mencantumkan BMKG sebagai sumber.
+- **Potensi petir:** tingkat per jam — *Tinggi* = model memprakirakan badai petir dan CAPE ≥ 2.500 J/kg; *Sedang* = model memprakirakan badai petir, atau CAPE ≥ 2.500 J/kg dengan hujan ≥ 1 mm/jam; *Rendah* = CAPE ≥ 1.000 J/kg dengan hujan ≥ 0,5 mm/jam. Ambang ini pendekatan umum meteorologi, **bukan prosedur resmi Pertagas** — ubah di `config/monitoring.json` → `petir_model`. Modul ini tidak bisa menyatakan kapan/di mana petir menyambar.
+- **Banjir sungai:** bekerja tiga tahap otomatis. (1) *Saring*: jalur pipa dipetakan ke sel GloFAS. (2) *Ambang*: riwayat debit 5 tahun tiap sel berdebit diunduh sekali dan diringkas (median, persentil 98, persentil 99,5, maksimum) — **dicicil 30 sel per run**, sungai terbesar lebih dulu, sehingga daftar sel sungai baru lengkap setelah beberapa hari; kartu menampilkan berapa sel yang masih menunggu. (3) *Prakiraan*: puncak debit 7 hari dibanding ambang sel itu sendiri — *Tinggi* ≥ maksimum 5 tahun, *Sedang* ≥ persentil 99,5, *Rendah* ≥ persentil 98. Ini keluaran model, bukan pos duga air; sungai kecil dan genangan lokal tidak terwakili. Untuk mempercepat tahap 2: **Run workflow** dan isi `sel_per_run` (mis. 60). Hapus `data/banjir/sel_statis.json` untuk membangun ulang.
+- **GDACS:** level Green/Orange/Red adalah perkiraan dampak kemanusiaan, bukan peringatan resmi BMKG/BNPB. Lokasi banjir GDACS berupa titik perkiraan. Gempa dan kebakaran tidak diambil dari GDACS karena sudah dipantau dari BMKG dan SiPongi.
+- **Lisensi Open-Meteo:** layanan gratisnya untuk pemakaian non-komersial. Bila dashboard dinilai pemakaian komersial, gunakan paket berbayar/API key atau server sendiri.
+- **Pengaruh ke status area:** lihat "Cara status dihitung" di dashboard — keempat modul bernilai konservatif dan tidak ikut aturan kenaikan gabungan.
+
+---
+
 ### B9. Waktu, cek langsung & uji otomatis
 - Semua waktu di dashboard ditampilkan dalam **WIB**, juga bila komputer pengguna memakai WITA/WIT.
 - Browser pengguna mengecek langsung **gempa terbaru BMKG** tiap 10 menit dan **cuaca/kualitas udara** titik pantau saat tab wilayah dibuka. Bila cek langsung gagal (mis. jaringan kantor memblokir), dashboard otomatis memakai data terjadwal dan menuliskannya.

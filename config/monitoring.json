@@ -110,6 +110,54 @@
     ],
     "maks_ruas_per_wilayah": 40
   },
+  "peringatan_cuaca": {
+    "_petunjuk": "Peringatan dini cuaca ekstrem BMKG (nowcasting). Poligon wilayah peringatan ditumpangkan ke jalur pipa & fasilitas. radius_tampil_km = peringatan di sekitar aset yang tetap ditampilkan di peta walau tidak mengenai aset. heartbeat_menit = selang maksimum penulisan ulang berkas bila tidak ada perubahan.",
+    "rss_url": "https://www.bmkg.go.id/alerts/nowcast/id",
+    "radius_tampil_km": 25,
+    "heartbeat_menit": 60,
+    "maks_peringatan": 40
+  },
+  "petir_model": {
+    "_petunjuk": "Potensi petir dari model cuaca Open-Meteo (BUKAN deteksi sambaran). Tinggi = model memprakirakan badai petir & CAPE >= cape_tinggi; Sedang = model memprakirakan badai petir, atau CAPE >= cape_tinggi dengan hujan >= hujan_sedang_mm per jam; Rendah = CAPE >= cape_rendah dengan hujan >= hujan_rendah_mm per jam. Ambang CAPE mengikuti kategori umum meteorologi, bukan prosedur resmi.",
+    "cape_rendah": 1000,
+    "cape_tinggi": 2500,
+    "hujan_rendah_mm": 0.5,
+    "hujan_sedang_mm": 1.0
+  },
+  "banjir_sungai": {
+    "_petunjuk": "Potensi banjir sungai model GloFAS v4 (Open-Meteo Flood API), hanya di sel sungai 5 km yang dilalui jalur pipa. Sel dianggap sungai bila median debit 5 tahun >= sungai_min_median_m3s. Tingkat: Tinggi = puncak prakiraan >= maksimum riwayat; Sedang >= persentil_sedang; Rendah >= persentil_rendah. sel_per_run = jumlah sel yang riwayatnya diunduh tiap run (dicicil untuk menghemat kuota API). Hapus data/banjir/sel_statis.json untuk membangun ulang dari awal.",
+    "saring_min_m3s": 5,
+    "sungai_min_median_m3s": 10,
+    "tahun_riwayat": 5,
+    "sel_per_run": 30,
+    "horizon_hari": 7,
+    "persentil_rendah": 0.98,
+    "persentil_sedang": 0.995
+  },
+  "gdacs": {
+    "_petunjuk": "Siklon tropis (TC), banjir besar (FL) dan erupsi gunung api (VO) dari GDACS. radius_tampil_km = jarak maksimum kejadian ke aset agar ditampilkan. Gempa (EQ) dan kebakaran (WF) sengaja tidak diambil karena sudah dipantau dari BMKG dan SiPongi.",
+    "jenis": [
+      "TC",
+      "FL",
+      "VO"
+    ],
+    "hari_ke_belakang": 10,
+    "kejadian_aktif_hari": 3,
+    "radius_tampil_km": {
+      "TC": 1500,
+      "FL": 150,
+      "VO": 150
+    },
+    "tc_pantau_km": 500,
+    "dekat_km": {
+      "FL": 25,
+      "VO": 30
+    },
+    "pantau_km": {
+      "FL": 100,
+      "VO": 100
+    }
+  },
   "provinsi_pantauan": [
     "Aceh",
     "Sumatera Utara",
