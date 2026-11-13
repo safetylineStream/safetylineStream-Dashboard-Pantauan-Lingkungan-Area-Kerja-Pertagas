@@ -4,8 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PERTAGAS WASPADA</title>
-<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+<link rel="alternate icon" type="image/png" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/icon-waspada-180.png">
+<meta name="theme-color" content="#0b3a6e">
 <meta name="description" content="PERTAGAS WASPADA — Watch &amp; Analytics for Spatial Pipeline Anomaly &amp; Disaster Awareness. Dashboard pemantauan hotspot karhutla, gempa bumi & tsunami, potensi longsor harian (model LHASA), cuaca dan kualitas udara per wilayah kerja PT Pertamina Gas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -221,22 +227,215 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
 .pop .warn{margin-top:6px;font-size:12px;padding:5px 7px;border-radius:6px;background:var(--surface-2);color:var(--ink-2)}
 @media (max-width:1100px){.gt-cols,.ls-cols{grid-template-columns:1fr}.gt-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-main{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
 @media (max-width:560px){.wrap{padding:12px 16px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#map{height:400px}.kpi .val{font-size:24px}.tab{padding:9px 10px 10px}}
+
+/* ================= UI v2 — tampilan dirapikan (Nov 2026) =================
+   Palet mengikuti logo PERTAGAS WASPADA: biru #006CB7, hijau #ADC32B, merah #ED3237, navy #0B3A6E. */
+:root{
+  --page:#f3f5f9; --surface:#ffffff; --surface-2:#eef2f7;
+  --ink:#0d1b2e; --ink-2:#46546a; --muted:#6b778a;
+  --grid:#e3e8ef; --axis:#c5cedb; --border:rgba(13,27,46,.10);
+  --brand:#006cb7; --navy:#0b3a6e; --tab-on:#0b3a6e;
+  --shadow:0 1px 2px rgba(13,27,46,.05),0 6px 18px rgba(13,27,46,.05);
+  --font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#0a111d; --surface:#121b2b; --surface-2:#1a2538;
+    --ink:#f2f5fa; --ink-2:#b6c1d1; --muted:#8291a6;
+    --grid:#223049; --axis:#33435e; --border:rgba(255,255,255,.09);
+    --brand:#4aa3ea; --tab-on:#1d5fa8; --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --page:#0a111d; --surface:#121b2b; --surface-2:#1a2538;
+  --ink:#f2f5fa; --ink-2:#b6c1d1; --muted:#8291a6;
+  --grid:#223049; --axis:#33435e; --border:rgba(255,255,255,.09);
+  --brand:#4aa3ea; --tab-on:#1d5fa8; --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+html,body{font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{padding:16px 20px}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* Header merek */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 24px;align-items:center;position:relative;overflow:hidden;
+  margin-bottom:10px;padding:20px 24px 24px;border-radius:18px;color:#fff;
+  background:linear-gradient(115deg,#0b3a6e 0%,#0a4f94 58%,#006cb7 100%);box-shadow:0 8px 24px rgba(11,58,110,.18)}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#006cb7 0 34%,#adc32b 34% 67%,#ed3237 67% 100%)}
+.hero-brand{display:flex;align-items:center;gap:18px;min-width:0}
+.mark{height:62px;width:auto;flex:none}
+.hero h1{display:flex;flex-direction:column;margin:0;line-height:1;letter-spacing:0}
+.h1-a{font-size:13px;font-weight:700;letter-spacing:.32em;opacity:.92}
+.h1-b{font-size:34px;font-weight:800;letter-spacing:.01em;margin-top:3px}
+.hero .expand{color:rgba(255,255,255,.78);font-size:12.5px;margin:6px 0 0}
+.hero .expand b{color:#fff}
+.hero-side{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.hero .brand-logo{height:40px;background:#fff;border-radius:10px;padding:7px 12px;box-shadow:none}
+.hero .byline{color:rgba(255,255,255,.75);font-size:12px;margin:0}
+.hero .byline b{color:#fff}
+.hero-tags{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.hero-tags li{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);white-space:nowrap}
+.hero-tags small{font-weight:500;font-size:11px;opacity:.72;margin-left:3px}
+
+/* Status data ringkas */
+.statusbar{margin-bottom:10px}
+.src-sum{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow)}
+.src-sum>summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:8px 12px;cursor:pointer;font-size:12.5px;color:var(--ink-2)}
+.src-sum>summary::-webkit-details-marker{display:none}
+.src-when b{color:var(--ink)}
+.src-counts{display:inline-flex;flex-wrap:wrap;gap:4px 12px}
+.src-more{margin-left:auto;color:var(--brand);font-weight:600;font-size:12px}
+.src-sum .chips{padding:2px 12px 12px}
+.chip-link{color:var(--brand);font-weight:600;text-decoration:none}
+.chip-link:hover{background:var(--surface-2)}
+.banner{display:flex;gap:10px;border-radius:12px;padding:10px 14px}
+.banner::before{content:"!";flex:none;width:20px;height:20px;border-radius:50%;background:#d99a00;color:#fff;font-weight:800;font-size:13px;display:grid;place-items:center;margin-top:1px}
+.banner{display:block;position:relative;padding-left:44px}
+.banner::before{position:absolute;left:14px;top:10px}
+
+/* Tab wilayah */
+.tabbar{padding:8px 0;margin-bottom:10px;border-bottom:0;background:color-mix(in srgb,var(--page) 86%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.tabs-row{gap:4px;padding:5px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);scrollbar-width:none}
+.tabs-row::-webkit-scrollbar{display:none}
+.tab{border-bottom:0;border-radius:10px;padding:8px 13px;font-size:13.5px;font-weight:600}
+.tab[aria-selected="true"]{background:var(--tab-on);color:#fff;font-weight:700}
+.tab[aria-selected="true"]:hover{background:var(--tab-on);color:#fff}
+.tab[aria-selected="true"] .sw{box-shadow:0 0 0 2px rgba(255,255,255,.75)}
+.tab .cnt.ok{background:color-mix(in srgb,var(--good) 14%,transparent)}
+.tab[aria-selected="true"] .cnt.ok{background:rgba(255,255,255,.2);color:#fff}
+
+.area-head{margin:14px 0 12px}
+.area-head h2{font-size:20px;font-weight:800;letter-spacing:-.01em;flex-wrap:wrap}
+select,button{border-radius:10px;padding:7px 12px;font-family:var(--font)}
+.tools button{font-weight:600}
+
+/* Kartu & bagian buka/tutup */
+.card{border-radius:14px}
+.sec,.kpis,.areas,.grid-main,.grid-2{margin-bottom:14px}
+.kpis,.areas,.grid-main,.grid-2,.side{gap:14px}
+.grid-main,.grid-2{align-items:start}
+details.fold>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:13px 14px 13px 16px;cursor:pointer;user-select:none;border-radius:14px}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold.card>summary::before{content:"";flex:none;width:4px;height:18px;border-radius:2px;background:var(--brand)}
+details.fold>summary:hover .chev{background:var(--grid)}
+details.fold>summary h3{flex:1;min-width:0;padding:0;font-size:15px;font-weight:700;letter-spacing:-.005em}
+details.fold.card[open]>summary{border-bottom:1px solid var(--grid);border-radius:14px 14px 0 0}
+.chev{flex:none;width:26px;height:26px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;transition:transform .2s,background .15s}
+.chev::before{content:"";width:7px;height:7px;border-right:2px solid var(--ink-2);border-bottom:2px solid var(--ink-2);transform:translateY(-2px) rotate(45deg)}
+details[open]>summary .chev{transform:rotate(180deg)}
+.fold-body{padding-top:10px}
+.fold-body>.note{padding:0 16px;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.note.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.note-more{appearance:none;border:0;background:none;box-shadow:none;padding:2px 16px 0;font-size:12px;font-weight:700;color:var(--brand);cursor:pointer}
+.note-more:hover{background:none;text-decoration:underline}
+.fold-body>.tbl{margin-top:10px}
+details.fold.sub{margin:0 14px 10px;border:1px solid var(--grid);border-radius:10px;background:var(--surface-2)}
+details.fold.sub>summary{padding:7px 8px 7px 12px;border-radius:10px}
+details.fold.sub .sub-t{flex:1;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+details.fold.sub .chev{width:22px;height:22px;background:var(--surface)}
+details.fold.sub .note{padding:0 12px;font-size:12.5px;color:var(--ink-2)}
+details.fold.sub .legend{padding:8px 12px 10px}
+.klas-info{margin:10px 14px 14px;padding:0;border:1px solid var(--grid);border-radius:10px;background:var(--surface-2)}
+.klas-info summary{padding:8px 12px;font-weight:700;font-size:12.5px;color:var(--ink-2)}
+.klas-info ul{margin:0 12px 12px 30px}
+.klas-info li{margin:4px 0}
+#map{border-radius:0 0 14px 14px}
+.maptools{padding:2px 14px 10px}
+.maptools button{font-weight:600}
+.sub-tabs{padding:10px 16px 0}
+.sub-tabs button{padding:5px 12px;font-weight:600}
+.sub-tabs button.on{background:var(--tab-on);color:#fff;border-color:var(--tab-on)}
+.list{padding:8px 8px 10px}
+.item{border-radius:10px}
+.gt-body{padding:12px 16px 16px}
+.wx-grid{padding:12px 16px 16px}
+.wx{border-radius:12px;padding:12px 14px;background:var(--surface)}
+.disclaimer{padding:12px 16px 16px;margin-top:10px}
+
+/* KPI */
+.kpi{position:relative;overflow:hidden;padding:14px 14px 14px 18px}
+.kpi::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--kc,var(--axis))}
+.kpi .lbl{font-weight:600;font-size:12px;letter-spacing:.01em}
+.kpi .val{font-size:26px;font-weight:800;letter-spacing:-.01em;margin-top:4px}
+.kpi .hint{margin-top:6px;line-height:1.45}
+
+/* Kartu wilayah (Ringkasan) */
+.areas{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.area{padding:14px 16px;border-top:4px solid var(--st,var(--good));transition:transform .12s,box-shadow .12s,border-color .12s}
+.area:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(13,27,46,.10)}
+.area.st-kritis{--st:var(--critical)} .area.st-waspada{--st:var(--serious)} .area.st-pantau{--st:var(--warning)} .area.st-normal{--st:var(--good)}
+.area-h b{font-size:16px;font-weight:800}
+.area .foot{padding:6px 0;border-top:1px solid var(--grid);line-height:1.45;align-items:center}
+.area .area-h+.foot{border-top:0;padding-top:8px}
+.area .counts{margin:8px 0 6px}
+.area .counts .n{font-weight:800}
+.area .counts .k{white-space:normal;line-height:1.25}
+
+/* Tabel */
+th,td{padding:9px 12px}
+th{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--surface);border-bottom:1px solid var(--axis)}
+tbody tr:hover td{background:color-mix(in srgb,var(--surface-2) 70%,transparent)}
+tbody tr:last-child td{border-bottom:0}
+.badge{padding:2px 8px;font-weight:700}
+.info{border-radius:10px;padding:10px 14px;border-left:3px solid var(--brand)}
+.gt-stats>div{padding:10px 12px}
+.gt-stats .n{font-weight:800}
+footer{padding:10px 4px 28px;line-height:1.6}
+
+.area{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
+.area>.foot:last-child{margin-top:auto}
+.item>div:first-child{flex:none;min-width:78px!important}
+.item>div:last-child{min-width:0}
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr;padding:18px 18px 22px}
+  .hero-side{flex-direction:row;align-items:center;flex-wrap:wrap;gap:10px}
+  .hero .brand-logo{height:34px}
+  .src-more{margin-left:0}
+}
+@media (max-width:560px){
+  .wrap{padding:12px}
+  .mark{height:46px}.h1-b{font-size:26px}.h1-a{font-size:11px}
+  .hero-brand{gap:12px}
+  .area-head h2{font-size:17px}
+  .tools{width:100%}
+  details.fold>summary h3{font-size:14px}
+  .hero-tags{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:-18px;padding-right:18px}
+  .hero-tags::-webkit-scrollbar{display:none}
+  .tbl>table{min-width:620px}
+  .tbl{overflow-x:auto}
+}
+@media print{.tabbar,.tools,.maptools,.chev,.note-more{display:none!important}.note.clamp{display:block}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="brand">
-      <img class="brand-logo" src="img/logo-pertamina-gas.png" alt="Pertamina Gas" width="168" height="32">
-      <div>
-      <h1>PERTAGAS <span class="brand-accent">WASPADA</span></h1>
-      <div class="expand"><b>W</b>atch &amp; <b>A</b>nalytics for <b>S</b>patial <b>P</b>ipeline <b>A</b>nomaly &amp; <b>D</b>isaster <b>A</b>wareness</div>
-      <div class="sub">Hotspot karhutla (deteksi satelit) · Gempa bumi &amp; tsunami (BMKG) · Gerakan tanah (PVMBG) · Indikasi potensi longsor harian (model LHASA) · Cuaca, kelembapan &amp; kualitas udara (model) per wilayah kerja</div>
-      <div class="byline">Dashboard by <b>Fungsi HSSE Pertamina Gas</b></div>
+  <header class="hero">
+    <div class="hero-brand">
+      <svg class="mark" viewBox="0 0 330 190" role="img" aria-label="Logo PERTAGAS WASPADA: huruf W dari gelombang seismik di atas jalur pipa">
+        <polygon points="20,40 50,40 90,150 60,150" fill="#fff"/>
+        <polygon points="96,150 128,62 158,62 126,150" fill="#3fa0e6"/>
+        <polygon points="164,62 194,62 226,150 196,150" fill="#adc32b"/>
+        <polygon points="232,150 279,20 309,20 262,150" fill="#ed3237"/>
+        <rect x="20" y="168" width="290" height="10" rx="5" fill="#fff"/>
+        <rect x="108" y="165" width="5" height="16" rx="2" fill="#fff"/><rect x="217" y="165" width="5" height="16" rx="2" fill="#fff"/>
+      </svg>
+      <div class="hero-text">
+        <h1 aria-label="PERTAGAS WASPADA"><span class="h1-a">PERTAGAS</span><span class="h1-b">WASPADA</span></h1>
+        <div class="expand"><b>W</b>atch &amp; <b>A</b>nalytics for <b>S</b>patial <b>P</b>ipeline <b>A</b>nomaly &amp; <b>D</b>isaster <b>A</b>wareness</div>
       </div>
     </div>
-    <div class="chips" id="status"></div>
+    <div class="hero-side">
+      <img class="brand-logo" src="img/logo-pertamina-gas.png" alt="Pertamina Gas" width="168" height="32">
+      <div class="byline">Dashboard by <b>Fungsi HSSE Pertamina Gas</b></div>
+    </div>
+    <ul class="hero-tags" aria-label="Cakupan pemantauan">
+      <li>Hotspot karhutla <small>satelit</small></li>
+      <li>Gempa bumi &amp; tsunami <small>BMKG</small></li>
+      <li>Gerakan tanah <small>PVMBG</small></li>
+      <li>Potensi longsor harian <small>model LHASA</small></li>
+      <li>Cuaca &amp; kualitas udara <small>model</small></li>
+    </ul>
   </header>
+  <div class="statusbar" id="status"></div>
   <div id="banner"></div>
 
   <nav class="tabbar" aria-label="Wilayah kerja">
@@ -252,14 +451,16 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
         <option value="mh">Sedang &amp; tinggi</option>
         <option value="h">Tinggi saja</option>
       </select>
+      <button id="btnFold" type="button" title="Buka atau tutup semua bagian di halaman ini">Tutup semua</button>
       <button id="btnTheme" type="button" title="Ganti tema terang/gelap">◐ Tema</button>
     </div>
   </div>
 
   <section class="kpis" id="kpis"></section>
 
-  <section class="card sec" id="riskCard">
-    <h3 id="riskTitle">Status area operasi — klasifikasi multi-bahaya</h3>
+  <details class="card sec fold" id="riskCard" open>
+    <summary><h3 id="riskTitle">Status area operasi — klasifikasi multi-bahaya</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
     <div class="note" id="riskNote"></div>
     <div class="tbl" style="max-height:none"><table id="riskTable"></table></div>
     <details class="klas-info"><summary>Cara status dihitung</summary>
@@ -273,91 +474,117 @@ tr.link{cursor:pointer} tr.link:hover td{background:var(--surface-2)}
         <li><b>Tindakan:</b> Kritis = verifikasi lapangan ≤ 6 jam · Waspada = patroli/pengecekan ≤ 24 jam · Pantau = pantau di dashboard.</li>
       </ul>
     </details>
-  </section>
+    </div>
+  </details>
 
   <!-- khusus tab Ringkasan -->
   <section class="areas" id="ovAreas"></section>
 
   <section class="grid-main">
-    <div class="card">
-      <h3 id="mapTitle">Peta sebaran hotspot &amp; gempa terhadap aset</h3>
-      <div class="note" id="mapNote"></div>
+    <details class="card fold" id="mapCard" open>
+      <summary><h3 id="mapTitle">Peta sebaran hotspot &amp; gempa terhadap aset</h3><span class="chev" aria-hidden="true"></span></summary>
+      <div class="fold-body">
       <div class="maptools" id="mapTools" role="toolbar" aria-label="Kontrol peta"></div>
-      <div class="legend" id="legend"></div>
+      <details class="fold sub" id="mapLegend">
+        <summary><span class="sub-t">Legenda &amp; cara membaca peta</span><span class="chev" aria-hidden="true"></span></summary>
+        <div class="note" id="mapNote"></div>
+        <div class="legend" id="legend"></div>
+      </details>
       <div id="map"></div>
-    </div>
+      </div>
+    </details>
     <div class="side">
-      <div class="card">
-        <h3>Hotspot terdekat dengan aset</h3>
+      <details class="card fold" id="hsListCard" open>
+        <summary><h3>Hotspot terdekat dengan aset</h3><span class="chev" aria-hidden="true"></span></summary>
+        <div class="fold-body">
         <div class="note" id="hsNote"></div>
         <div class="list" id="hsList"></div>
-      </div>
-      <div class="card">
-        <h3>Gempa bumi &amp; tsunami (BMKG)</h3>
+        </div>
+      </details>
+      <details class="card fold" id="eqCard" open>
+        <summary><h3>Gempa bumi &amp; tsunami (BMKG)</h3><span class="chev" aria-hidden="true"></span></summary>
+        <div class="fold-body">
         <div class="note" id="eqNote"></div>
         <div class="sub-tabs" id="eqTabs">
           <button type="button" data-k="terkini" class="on">M 5.0+ terkini</button>
           <button type="button" data-k="dirasakan">Dirasakan</button>
         </div>
         <div class="list" id="eqList"></div>
-      </div>
+        </div>
+      </details>
     </div>
   </section>
 
   <!-- khusus tab wilayah -->
-  <section class="card sec" id="wxCard">
-    <h3>Cuaca, kelembapan &amp; kualitas udara</h3>
+  <details class="card sec fold" id="wxCard" open>
+    <summary><h3>Cuaca, kelembapan &amp; kualitas udara</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
     <div class="note" id="wxNote">Data model cuaca & kualitas udara per titik pantau di wilayah ini, plus prakiraan 3 hari</div>
     <div class="wx-grid" id="wxGrid"></div>
-  </section>
+    </div>
+  </details>
 
-  <section class="card sec" id="gtCard">
-    <h3 id="gtTitle">Gerakan tanah &amp; pergeseran tanah (PVMBG)</h3>
+  <details class="card sec fold" id="gtCard" open>
+    <summary><h3 id="gtTitle">Gerakan tanah &amp; pergeseran tanah (PVMBG)</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
     <div class="note" id="gtNote"></div>
     <div class="gt-body" id="gtBody"></div>
-  </section>
+    </div>
+  </details>
 
-  <section class="card sec" id="lsCard">
-    <h3 id="lsTitle">Indikasi potensi bahaya longsor harian terhadap jalur pipa (model LHASA)</h3>
+  <details class="card sec fold" id="lsCard" open>
+    <summary><h3 id="lsTitle">Indikasi potensi bahaya longsor harian terhadap jalur pipa (model LHASA)</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
     <div class="note" id="lsNote"></div>
     <div class="sub-tabs" id="lsTabs">
       <button type="button" data-k="hari_ini" class="on">Hari ini</button>
       <button type="button" data-k="besok">Besok</button>
     </div>
     <div class="gt-body" id="lsBody"></div>
-  </section>
+    </div>
+  </details>
 
   <section class="grid-2">
-    <div class="card">
-      <h3 id="trendTitle">Tren hotspot dekat aset (harian)</h3>
+    <details class="card fold" id="trendCard" open>
+      <summary><h3 id="trendTitle">Tren hotspot dekat aset (harian)</h3><span class="chev" aria-hidden="true"></span></summary>
+      <div class="fold-body">
       <div class="note" id="trendNote"></div>
       <div class="chart-box"><canvas id="trend"></canvas></div>
-    </div>
-    <div class="card">
-      <h3 id="provTitle">Hotspot per provinsi</h3>
+      </div>
+    </details>
+    <details class="card fold" id="provCard" open>
+      <summary><h3 id="provTitle">Hotspot per provinsi</h3><span class="chev" aria-hidden="true"></span></summary>
+      <div class="fold-body">
       <div class="note" id="provNote"></div>
       <div class="chart-box"><canvas id="prov"></canvas></div>
-    </div>
+      </div>
+    </details>
   </section>
 
-  <section class="card sec" id="wxTableCard">
-    <h3>Cuaca semua titik pantau</h3>
+  <details class="card sec fold" id="wxTableCard">
+    <summary><h3>Cuaca semua titik pantau</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
     <div class="note" id="wxTableNote">Suhu, kelembapan relatif (RH), angin dan PM2.5 dari model cuaca untuk seluruh wilayah</div>
     <div class="tbl"><table id="wxTable"></table></div>
-  </section>
+    </div>
+  </details>
 
-  <section class="card sec">
-    <h3 id="hsTableTitle">Daftar hotspot dalam radius 25 km dari aset</h3>
+  <details class="card sec fold" id="hsTableCard">
+    <summary><h3 id="hsTableTitle">Daftar hotspot dalam radius 25 km dari aset</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
     <div class="note">Urut dari yang paling dekat. Klik baris untuk menuju lokasi di peta.</div>
     <div class="tbl"><table id="hsTable"></table></div>
-  </section>
+    </div>
+  </details>
 
-  <section class="card sec" id="srcCard">
-    <h3>Sumber &amp; status data</h3>
+  <details class="card sec fold" id="srcCard">
+    <summary><h3>Sumber &amp; status data</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
     <div class="note">Waktu data = waktu pengamatan/model dari sumber · Pengambilan berhasil = kapan dashboard terakhir berhasil mengambil data. Bila pengambilan gagal, data terakhir yang berhasil tetap ditampilkan dengan tanda.</div>
     <div class="tbl" style="max-height:none"><table id="srcTable"></table></div>
     <div class="disclaimer"><b>Penafian.</b> Informasi pada dashboard ini digunakan sebagai sistem pemantauan dan pendukung keputusan (<i>decision support</i>). Data tidak menggantikan informasi/peringatan resmi dari instansi berwenang (BMKG, PVMBG–Badan Geologi, BNPB/BPBD, Kemenhut). Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran; indikasi longsor adalah keluaran model, bukan kepastian kejadian. Selalu verifikasi di lapangan.</div>
-  </section>
+    </div>
+  </details>
 
   <footer id="foot"></footer>
 </div>
@@ -570,15 +797,19 @@ $('#tabs').addEventListener('keydown',e=>{
 function renderStatus(){
   const rows=sources();
   const short={hotspot:'Hotspot',gempa:'Gempa',cuaca:'Cuaca',udara:'Udara',pvmbg_prakiraan:'PVMBG prakiraan',pvmbg_zkgt:'PVMBG zona',lhasa:'Model longsor'};
-  let h=`<span class="chip" title="Waktu GitHub Actions terakhir memproses data utama">Pemrosesan terakhir: <b>${when(DATA.generated_at)}</b></span>`;
+  const n={fresh:0,delayed:0,stale:0,none:0};rows.forEach(r=>n[r.st]++);
+  const wasOpen=$('#status details')?.open;
+  const sum=['fresh','delayed','stale','none'].filter(k=>n[k]).map(k=>frBadge(k,`${n[k]} ${FR_LBL[k].toLowerCase()}`)).join('');
+  let h=`<details class="src-sum"${wasOpen?' open':''}><summary><span class="src-when" title="Waktu GitHub Actions terakhir memproses data utama">Pemrosesan terakhir <b>${when(DATA.generated_at)}</b></span><span class="src-counts">${sum}</span><span class="src-more">Status per sumber</span><span class="chev" aria-hidden="true"></span></summary><div class="chips">`;
   rows.forEach(r=>{
     h+=`<span class="chip" title="${esc(r.nama)}: ${FR_LBL[r.st]}${r.ok?' · berhasil diambil '+when(r.ok):''}${r.pesan?' · '+esc(r.pesan):''}">${frBadge(r.st,short[r.id]||r.nama)}</span>`;});
+  h+=`<a class="chip chip-link" href="#srcCard">Rincian sumber data ›</a></div></details>`;
   $('#status').innerHTML=h;
   let b='';
   for(const [k,v] of Object.entries(LOADERR))b+=`<div class="banner"><b>${esc(k)} gagal dimuat</b> (${esc(v)}). Bagian terkait ditampilkan kosong; bagian lain tetap berjalan. Muat ulang halaman beberapa saat lagi.</div>`;
   if(DATA.demo)b+=`<div class="banner"><b>DEMO / DATA CONTOH — BUKAN DATA NYATA.</b> Angka di halaman ini masih data simulasi untuk pratinjau tampilan. Data asli terisi otomatis setelah GitHub Actions menjalankan workflow <i>Update Data Harian</i>.</div>`;
   const bad=rows.filter(r=>r.st==='stale'&&r.id!=='pvmbg_zkgt');
-  if(bad.length)b+=`<div class="banner"><b>Data tidak refresh:</b> ${bad.map(r=>`${esc(r.nama)} (terakhir berhasil ${r.ok?when(r.ok)+', '+lalu(r.ok):'tidak diketahui'})`).join(' · ')}. Yang ditampilkan adalah data terakhir yang berhasil diterima — lihat tabel <a href="#srcCard" onclick="document.getElementById('srcCard').scrollIntoView({behavior:'smooth'});return false">Sumber &amp; status data</a>.</div>`;
+  if(bad.length)b+=`<div class="banner"><b>Data tidak refresh:</b> ${bad.map(r=>`${esc(r.nama)} (terakhir berhasil ${r.ok?when(r.ok)+', '+lalu(r.ok):'tidak diketahui'})`).join(' · ')}. Yang ditampilkan adalah data terakhir yang berhasil diterima — lihat tabel <a href="#srcCard">Sumber &amp; status data</a>.</div>`;
   $('#banner').innerHTML=b;
 }
 function renderTitle(){
@@ -590,7 +821,7 @@ function renderTitle(){
 /* ---------- Status saat ini + daftar yang perlu perhatian ---------- */
 const AQI_KAT=v=>v==null?null:v<=50?'Baik':v<=100?'Sedang':v<=150?'Tidak sehat bagi kelompok sensitif':v<=200?'Tidak sehat':v<=300?'Sangat tidak sehat':'Berbahaya';
 /* ---------- KPI ---------- */
-function kpi(lbl,val,hint,color,icon){return `<div class="card kpi"><div class="lbl">${color?`<span style="color:${css(color)}">${icon}</span>`:''}${lbl}</div><div class="val">${val}</div><div class="hint">${hint}</div></div>`}
+function kpi(lbl,val,hint,color,icon){return `<div class="card kpi"${color?` style="--kc:${css(color)}"`:''}><div class="lbl">${color?`<span style="color:${css(color)}">${icon}</span>`:''}${lbl}</div><div class="val">${val}</div><div class="hint">${hint}</div></div>`}
 function renderKPIs(){
   const hs=hotspots(),r=DATA.radius.hotspot,area=isOV()?null:state.tab;
   const qs=quakes('all').map(g=>({...g,...eqView(g)}));
@@ -633,7 +864,7 @@ function renderOverviewAreas(){
     const qs=quakes('all').filter(g=>g.per_area&&g.per_area[k]&&(eqAge(g)??1e9)<=GEMPA_BARU_JAM).sort((a,b)=>a.per_area[k].jarak_km-b.per_area[k].jarak_km)[0];
     const P=(DATA.gerakan_tanah||{}).prakiraan||{},ym=periodeBulan(P),pk=(P.per_area||{})[k];
     const hk=hs.filter(h=>h.area===k&&h.status!=='luar'&&h.persisten).length;
-    return `<button type="button" class="card area" data-id="${k}">
+    return `<button type="button" class="card area st-${worstOf(k)||'normal'}" data-id="${k}">
       <div class="area-h"><div><b><i class="line" style="background:${css(areaColor[k])};vertical-align:middle;margin-right:6px"></i>${k}</b><div class="nm">${esc(DATA.areas[k].nama)}</div></div>${badge(worstOf(k))}</div>
       ${KLAS&&KLAS.area[k]?.pemicu?`<div class="foot"><span><b>R ${KLAS.area[k].R}</b> · ${esc(KLAS.area[k].pemicu.teks)}${KLAS.area[k].eskalasi?' · <b>naik satu tingkat</b> (bahaya gabungan)':''}</span></div>`:''}
       <div class="counts" title="Jumlah hotspot menurut jarak ke aset (bukan status)">
@@ -720,7 +951,7 @@ function locateAsset(name){
   const p=f.properties,html=`<b>${esc(p.name)}</b><br>${esc(p.area)} · ${esc(p.grup||p.kind)}`;
   if(f.geometry.type==='Point'){const [x,y]=f.geometry.coordinates;map.setView([y,x],14);L.popup().setLatLng([y,x]).setContent(html).openOn(map);}
   else{const g=L.geoJSON(f);map.fitBounds(g.getBounds(),{padding:[30,30],maxZoom:14});L.popup().setLatLng(g.getBounds().getCenter()).setContent(html).openOn(map);}
-  $('#map').scrollIntoView({behavior:'smooth',block:'center'});
+  bukaPeta();$('#map').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function drawMap(fit){
   if(!map){$('#legend').innerHTML='';return;}
@@ -872,9 +1103,11 @@ function eqPopup(g){
 }
 
 /* ---------- Daftar samping ---------- */
+// peta sedang ditutup (collapse)? buka dulu sebelum menuju lokasi
+function bukaPeta(){const d=$('#mapCard');if(d&&!d.open){d.open=true;mapPerluFit=false;if(map)map.invalidateSize();}}
 function focusMap(lat,lon,z,html){
   if(!map)return;
-  window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
+  bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
   map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);
 }
 function renderLists(){
@@ -994,7 +1227,7 @@ let segHi=null;
 function focusSeg(sg,judul){
   if(!sg)return;
   if(!map||sg.lat==null){return;}
-  window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
+  bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
   if(segHi){map.removeLayer(segHi);segHi=null;}
   const c=css((GT_INFO[sg.level]||GT_INFO.menengah).v);
   const pop=`<div class="pop"><b>${esc(judul)}</b> ${gtBadge(sg.level)}`+popRows([['Ruas pipa',esc(sg.aset)],['Panjang dalam zona',`<b>${fmt(sg.km,2)} km</b>`],
@@ -1069,7 +1302,7 @@ function renderGT(){
         ${segs.length?segs.map((s,i)=>`<tr class="link" data-seg="${i}" title="Klik untuk menuju ruas ini di peta"><td>${esc(s.aset)}</td><td>${gtBadge(s.level)}</td><td class="num">${fmt(s.km,2)}</td><td style="white-space:nowrap;color:var(--brand)">${s.lat!=null?`${(+s.lat).toFixed(4)}, ${(+s.lon).toFixed(4)} ↗`:'<span style="color:var(--muted)">–</span>'}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Tidak ada segmen di zona menengah–tinggi.</td></tr>'}</tbody></table></div>
         <div class="note" style="padding:4px 0 0">Klik baris untuk menuju ruas di peta; ruas disorot sesuai warna zonanya.</div></div>
     </div>`;
-  const toMap=(lat,lon,z,html)=>{window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);};
+  const toMap=(lat,lon,z,html)=>{bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);};
   document.querySelectorAll('#gtBody tr[data-lat]').forEach(r=>r.onclick=()=>toMap(+r.dataset.lat,+r.dataset.lon,14));
   document.querySelectorAll('#gtBody tr[data-seg]').forEach(r=>r.onclick=()=>focusSeg(segs[+r.dataset.seg],state.gtSeg==='kerentanan'?'Zona kerentanan gerakan tanah':`Prakiraan gerakan tanah ${namaBulan(ym)}`));
   document.querySelectorAll('#gtSegTabs button').forEach(b=>b.onclick=()=>{state.gtSeg=b.dataset.k;safe('gerakan tanah',renderGT,'#gtBody');});
@@ -1148,7 +1381,7 @@ function renderLS(){
       <div><h4>Fasilitas dengan indikasi</h4><div class="tbl"><table><thead><tr><th>Fasilitas</th><th>Tingkat</th><th>Hujan vs ambang</th></tr></thead><tbody>
         ${fas.length?fas.map((f,i)=>`<tr class="link" data-f="${i}"><td>${esc(f.aset)}</td><td>${lsBadge(f.level)}</td><td>${pbar(f.rasio)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Model tidak menunjukkan indikasi pada fasilitas.</td></tr>'}</tbody></table></div></div>
     </div>`;
-  const toMap=(r,z)=>{window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});map.setView([r.lat,r.lon],z);L.popup().setLatLng([r.lat,r.lon]).setContent(lsPopup({...r,area:k})).openOn(map);};
+  const toMap=(r,z)=>{bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});map.setView([r.lat,r.lon],z);L.popup().setLatLng([r.lat,r.lon]).setContent(lsPopup({...r,area:k})).openOn(map);};
   document.querySelectorAll('#lsBody tr[data-r]').forEach(el=>el.onclick=()=>toMap(ruas[+el.dataset.r],13));
   document.querySelectorAll('#lsBody tr[data-f]').forEach(el=>el.onclick=()=>toMap(fas[+el.dataset.f],14));
 }
@@ -1224,7 +1457,40 @@ function render(fit){
   [['status',renderStatus],['tab',renderTabs],['judul',renderTitle,'#viewTitle'],['kpi',renderKPIs,'#kpis'],['status area',renderRisk,'#riskTable'],['kartu wilayah',renderOverviewAreas,'#ovAreas'],
    ['peta',()=>drawMap(fit)],['daftar',renderLists,'#hsList'],['cuaca',renderWeather,'#wxGrid'],['gerakan tanah',renderGT,'#gtBody'],['longsor',renderLS,'#lsBody'],
    ['grafik',renderCharts],['tabel hotspot',renderHsTable,'#hsTable'],['sumber data',renderSources,'#srcTable'],['footer',renderFoot]].forEach(([n,f,el])=>safe(n,f,el));
+  safe('catatan',clampNotes);
 }
+
+/* ---------- bagian buka/tutup (expand/collapse) — pilihan pengguna disimpan di browser ---------- */
+const FOLD_KEY='pg-fold';let FOLD={};try{FOLD=JSON.parse(localStorage.getItem(FOLD_KEY)||'{}')||{};}catch(e){}
+const folds=()=>[...document.querySelectorAll('details.fold')];
+let mapPerluFit=false;
+function syncFoldBtn(){const any=folds().some(d=>!d.hidden&&!d.classList.contains('sub')&&d.open);const b=$('#btnFold');b.textContent=any?'Tutup semua':'Buka semua';b.setAttribute('aria-expanded',any);}
+function afterOpen(d){
+  if(map&&d.contains($('#map'))){map.invalidateSize();if(mapPerluFit){mapPerluFit=false;safe('peta',()=>drawMap(true));}}
+  if(AREAS.length&&d.querySelector('canvas'))safe('grafik',renderCharts);
+  safe('catatan',clampNotes);
+}
+folds().forEach(d=>{
+  if(d.id in FOLD)d.open=!!FOLD[d.id];
+  d.addEventListener('toggle',()=>{FOLD[d.id]=d.open;try{localStorage.setItem(FOLD_KEY,JSON.stringify(FOLD));}catch(e){}if(d.open)afterOpen(d);syncFoldBtn();});
+});
+mapPerluFit=!$('#mapCard').open;
+$('#btnFold').onclick=()=>{const any=folds().some(d=>!d.hidden&&!d.classList.contains('sub')&&d.open);folds().forEach(d=>{if(!d.classList.contains('sub'))d.open=!any;});};
+syncFoldBtn();
+// tautan #bagian: buka dulu bagiannya bila sedang tertutup, lalu gulir ke sana
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a)return;const t=document.getElementById(a.getAttribute('href').slice(1));
+  if(!t||!t.matches('details.fold'))return;e.preventDefault();t.open=true;t.scrollIntoView({behavior:'smooth',block:'start'});});
+// catatan panjang diringkas 2 baris; tombol "Selengkapnya" membukanya
+function clampNotes(){
+  document.querySelectorAll('.fold-body>.note').forEach(n=>{
+    let b=n.nextElementSibling;if(!(b&&b.classList.contains('note-more')))b=null;
+    const open=n.dataset.open==='1';n.classList.toggle('clamp',!open);
+    const need=open||n.scrollHeight>n.clientHeight+2;
+    if(need&&!b){b=document.createElement('button');b.type='button';b.className='note-more';n.after(b);b.onclick=()=>{n.dataset.open=n.dataset.open==='1'?'':'1';clampNotes();};}
+    if(b){b.hidden=!need;b.textContent=open?'Ringkas ▴':'Selengkapnya ▾';b.setAttribute('aria-expanded',open);}
+  });
+}
+let _rz;window.addEventListener('resize',()=>{clearTimeout(_rz);_rz=setTimeout(clampNotes,200);});
 
 $('#fConf').onchange=e=>{state.conf=e.target.value;render(false)};
 $('#btnTheme').onclick=()=>{const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
