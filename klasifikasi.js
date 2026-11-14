@@ -45,7 +45,7 @@
     // Modul tambahan (semua berbasis lokasi aset). Tidak ikut aturan gabungan.
     peringatan: { P: { biasa: 3, parah: 4 }, K: 2 },          // peringatan dini BMKG aktif yang poligonnya mengenai aset
     banjir: { P: { tinggi: 4, sedang: 3, rendah: 2 }, K: 3 }, // model GloFAS di sel sungai yang dilintasi pipa
-    petir: { P: { tinggi: 3, sedang: 2 }, K: 2 },             // prakiraan model, bukan deteksi sambaran
+    petir: { P: { tinggi: 3 }, K: 2 },                        // prakiraan model; hanya tingkat Tinggi yang dihitung (Sedang hampir harian di musim hujan)
     gdacs: { K: 3 },                                          // P dihitung pipeline (scripts/gdacs.py)
     tanpaGabungan: ['cuaca', 'cuaca_ekstrem', 'banjir', 'petir', 'gdacs'],
     gabungan: { radiusKm: 5 },

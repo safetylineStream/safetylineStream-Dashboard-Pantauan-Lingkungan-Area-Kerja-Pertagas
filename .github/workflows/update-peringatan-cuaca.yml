@@ -6,8 +6,6 @@ name: Update Peringatan Dini Cuaca (BMKG)
 on:
   schedule:
     - cron: "4,19,34,49 * * * *"
-  push:            # SEMENTARA — uji di cabang, dihapus sebelum merge
-    branches: [modul-bahaya-tambahan]
   workflow_dispatch:
 
 permissions:

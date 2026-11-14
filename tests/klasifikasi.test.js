@@ -78,6 +78,8 @@ r = tb({ banjir: { per_area: { A: { terburuk: 'rendah', sel: { rendah: 1 }, pipa
 assert.strictEqual(r.area.A.R, 6);
 r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'tinggi', pipa_km: { tinggi: 30 }, n_fasilitas: { tinggi: 2 } } } }, besok: { per_area: { B: { terburuk: 'tinggi' } } } } } });
 assert.strictEqual(r.area.A.R, 6); assert.strictEqual(r.area.B.status, 'normal', 'hanya produk hari ini yang dihitung');
+r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'sedang', pipa_km: { sedang: 9 } } } } } } });
+assert.strictEqual(r.area.A.status, 'normal', 'petir sedang tidak mengubah status');
 r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'rendah' } } } } } });
 assert.strictEqual(r.area.A.status, 'normal');
 r = tb({ gdacs: { kejadian: [{ jenis_nama: 'Siklon tropis', nama: 'X', level: 'Red', per_area: { A: { P: 5, ket: 'aset berada di zona angin ≥ 120 km/jam' }, B: { P: 0, ket: 'jauh' } } }] } });
