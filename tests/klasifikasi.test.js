@@ -62,4 +62,30 @@ assert.strictEqual(r.area.A.R, 8);
 assert.strictEqual(r.area.A.status, 'kritis');
 assert.ok(r.area.A.eskalasi);
 
+// 10. Modul tambahan berbasis lokasi aset (peringatan BMKG, banjir sungai, petir model, GDACS)
+const tb = (tambahan) => run([], { args: { tambahan } });
+const akan = new Date(now + 3.6e6).toISOString(), lewat = new Date(now - 3.6e6).toISOString();
+r = tb({ peringatan: { aktif: [{ event: 'Hujan Lebat', severity: 'Moderate', berakhir: akan, per_area: { A: { pipa_km: 12.3, fasilitas: ['X'] } } }] } });
+assert.strictEqual(r.area.A.R, 6); assert.strictEqual(r.area.A.status, 'pantau'); assert.strictEqual(r.area.A.pemicu.jenis, 'cuaca_ekstrem');
+assert.strictEqual(r.area.B.status, 'normal', 'peringatan hanya berlaku untuk area yang asetnya terkena');
+r = tb({ peringatan: { aktif: [{ event: 'Hujan Lebat', severity: 'Moderate', berakhir: lewat, per_area: { A: { pipa_km: 12.3 } } }] } });
+assert.strictEqual(r.area.A.status, 'normal', 'peringatan kedaluwarsa tidak dihitung');
+r = tb({ peringatan: { aktif: [{ event: 'Hujan Ekstrem', severity: 'Severe', berakhir: akan, per_area: { A: { pipa_km: 1 } } }] } });
+assert.strictEqual(r.area.A.R, 8);
+r = tb({ banjir: { per_area: { A: { terburuk: 'tinggi', sel: { tinggi: 2 }, pipa_km: { tinggi: 4.5 }, rasio_maks: 1.2 }, B: { terburuk: null } } } });
+assert.strictEqual(r.area.A.R, 12); assert.strictEqual(r.area.A.status, 'waspada'); assert.strictEqual(r.area.B.status, 'normal');
+r = tb({ banjir: { per_area: { A: { terburuk: 'rendah', sel: { rendah: 1 }, pipa_km: { rendah: 1 } } } } });
+assert.strictEqual(r.area.A.R, 6);
+r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'tinggi', pipa_km: { tinggi: 30 }, n_fasilitas: { tinggi: 2 } } } }, besok: { per_area: { B: { terburuk: 'tinggi' } } } } } });
+assert.strictEqual(r.area.A.R, 6); assert.strictEqual(r.area.B.status, 'normal', 'hanya produk hari ini yang dihitung');
+r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'sedang', pipa_km: { sedang: 9 } } } } } } });
+assert.strictEqual(r.area.A.status, 'normal', 'petir sedang tidak mengubah status');
+r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'rendah' } } } } } });
+assert.strictEqual(r.area.A.status, 'normal');
+r = tb({ gdacs: { kejadian: [{ jenis_nama: 'Siklon tropis', nama: 'X', level: 'Red', per_area: { A: { P: 5, ket: 'aset berada di zona angin ≥ 120 km/jam' }, B: { P: 0, ket: 'jauh' } } }] } });
+assert.strictEqual(r.area.A.R, 15); assert.strictEqual(r.area.A.status, 'kritis'); assert.strictEqual(r.area.B.status, 'normal');
+// modul tambahan tidak memicu eskalasi gabungan
+r = run([hs({ tutupan: { kategori: 'vegetasi_rendah' } })], { args: { tambahan: { banjir: { per_area: { A: { terburuk: 'tinggi', sel: { tinggi: 1 }, pipa_km: { tinggi: 1 } } } } } } });
+assert.strictEqual(r.area.A.R, 12); assert.strictEqual(r.area.A.status, 'waspada'); assert.strictEqual(r.area.A.eskalasi, null);
+
 console.log('klasifikasi.test.js: semua uji lulus');

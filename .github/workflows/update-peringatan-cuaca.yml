@@ -1,0 +1,56 @@
+name: Update Peringatan Dini Cuaca (BMKG)
+
+# Peringatan dini cuaca ekstrem BMKG (nowcasting, berlaku ±1–3 jam) vs jalur pipa & fasilitas.
+# Dicek tiap ±15 menit. Commit HANYA bila daftar peringatan di sekitar aset berubah, atau sudah 60 menit
+# (heartbeat) — supaya jumlah build GitHub Pages tetap wajar. Tidak butuh API key.
+on:
+  schedule:
+    - cron: "4,19,34,49 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-peringatan-cuaca
+  cancel-in-progress: false
+
+jobs:
+  jalankan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependensi
+        run: pip install -r requirements.txt
+
+      - name: Ambil peringatan dini BMKG & tumpangkan ke aset
+        run: python scripts/peringatan_cuaca.py
+        timeout-minutes: 5
+        continue-on-error: true
+
+      - name: Simpan hasil ke repositori
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          [ -d data/peringatan_cuaca ] || { echo "Belum ada data."; exit 0; }
+          rm -rf "$RUNNER_TEMP/pd" && cp -r data/peringatan_cuaca "$RUNNER_TEMP/pd"
+          for i in 1 2 3; do
+            git fetch -q origin ${{ github.ref_name }}
+            git reset -q --hard origin/${{ github.ref_name }}
+            mkdir -p data && rm -rf data/peringatan_cuaca && cp -r "$RUNNER_TEMP/pd" data/peringatan_cuaca
+            git add -A data/peringatan_cuaca
+            if git diff --cached --quiet; then echo "Tidak ada perubahan data."; exit 0; fi
+            git commit -q -m "Update peringatan dini BMKG $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M WIB')"
+            git push -q origin HEAD:${{ github.ref_name }} && exit 0
+            echo "Push ditolak (ada perubahan baru), mencoba lagi..."; sleep 5
+          done
+          exit 1

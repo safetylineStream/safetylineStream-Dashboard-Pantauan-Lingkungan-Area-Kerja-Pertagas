@@ -8,6 +8,10 @@
  *   Status AREA = R tertinggi di area itu (+ eskalasi bila ≥ 2 jenis bahaya Waspada berdekatan).
  *   Status satu area tidak memengaruhi area lain.
  *
+ * Modul tambahan (peringatan dini BMKG, banjir sungai GloFAS, potensi petir model, GDACS) hanya dihitung
+ * bila datanya mengenai/mendekati aset wilayah itu; skornya sengaja konservatif (maks. Waspada, kecuali
+ * siklon tropis yang zona anginnya mengenai aset).
+ *
  * Hotspot hanya dianggap titik api lahan bila berada di lahan bervegetasi. Hotspot di kawasan
  * terbangun/terbuka/air (ESA WorldCover) = sumber panas non-vegetasi: P maks. 2, tidak bisa memicu Kritis.
  * Api permukaan jarang merusak pipa tertanam → K hotspot = 2 untuk pipa, 4 untuk fasilitas ≤ 1 km.
@@ -38,6 +42,12 @@
     gempa: { magMin: 5, jam: 72, K: 3 },
     gerakanTanah: { K: { pipa: 3, fasilitas: 4 }, hujanPemicuMm: 50 },
     cuaca: { K: 2 },
+    // Modul tambahan (semua berbasis lokasi aset). Tidak ikut aturan gabungan.
+    peringatan: { P: { biasa: 3, parah: 4 }, K: 2 },          // peringatan dini BMKG aktif yang poligonnya mengenai aset
+    banjir: { P: { tinggi: 4, sedang: 3, rendah: 2 }, K: 3 }, // model GloFAS di sel sungai yang dilintasi pipa
+    petir: { P: { tinggi: 3 }, K: 2 },                        // prakiraan model; hanya tingkat Tinggi yang dihitung (Sedang hampir harian di musim hujan)
+    gdacs: { K: 3 },                                          // P dihitung pipeline (scripts/gdacs.py)
+    tanpaGabungan: ['cuaca', 'cuaca_ekstrem', 'banjir', 'petir', 'gdacs'],
     gabungan: { radiusKm: 5 },
   };
   const URUT = { normal: 0, pantau: 1, waspada: 2, kritis: 3 };
@@ -130,7 +140,7 @@
   }
 
   /* ------------------------------------------------------------ utama */
-  function hitung({ data, lhasa, ruasLhasa, dikenal, now }) {
+  function hitung({ data, lhasa, ruasLhasa, dikenal, now, tambahan }) {
     data = data || {};
     now = now instanceof Date ? now.getTime() : (now || Date.now());
     const hs = (data.hotspot && data.hotspot.dekat_aset) || [];
@@ -214,6 +224,46 @@
       if (best) tambah(a, { jenis: 'cuaca', P: best.P, K: ATURAN.cuaca.K, lokasi: null, teks: best.teks });
     }
 
+    // E–H. Modul tambahan berbasis lokasi aset
+    const T = tambahan || {};
+    const jamWIB = iso => { const t = Date.parse(iso); return Number.isFinite(t) ? new Date(t + 7 * 3.6e6).toISOString().slice(11, 16) + ' WIB' : ''; };
+    // E. Peringatan dini cuaca ekstrem BMKG yang masih berlaku dan poligonnya mengenai aset
+    for (const w of (T.peringatan && T.peringatan.aktif) || []) {
+      const akhir = Date.parse(w.berakhir);
+      if (Number.isFinite(akhir) && akhir < now) continue;
+      const parah = /severe|extreme/i.test(w.severity || '');
+      for (const [a, v] of Object.entries(w.per_area || {})) {
+        if (!(a in temuan)) continue;
+        const nf = v.n_fasilitas || (v.fasilitas || []).length;
+        tambah(a, { jenis: 'cuaca_ekstrem', P: parah ? ATURAN.peringatan.P.parah : ATURAN.peringatan.P.biasa, K: ATURAN.peringatan.K, lokasi: null,
+          teks: `Peringatan dini BMKG: ${w.event || w.judul} — ${f(num(v.pipa_km) || 0)} km pipa${nf ? ` & ${nf} fasilitas` : ''} di wilayah peringatan${w.berakhir ? ` (s.d. ${jamWIB(w.berakhir)})` : ''}` });
+      }
+    }
+    // F. Banjir sungai (model GloFAS) di sel sungai yang dilintasi pipa
+    for (const [a, v] of Object.entries((T.banjir && T.banjir.per_area) || {})) {
+      const P = ATURAN.banjir.P[v.terburuk];
+      if (!P || !(a in temuan)) continue;
+      const n = (v.sel || {})[v.terburuk] || 0, km = (v.pipa_km || {})[v.terburuk] || 0;
+      tambah(a, { jenis: 'banjir', P, K: ATURAN.banjir.K, lokasi: null,
+        teks: `Model banjir sungai ${v.terburuk}: ${n} sel sungai, ${f(km)} km pipa${num(v.rasio_maks) != null ? ` (puncak ${f(v.rasio_maks, 2)}× maksimum 5 tahun)` : ''}` });
+    }
+    // G. Potensi petir hari ini (prakiraan model)
+    for (const [a, v] of Object.entries((T.petir && T.petir.produk && T.petir.produk.hari_ini && T.petir.produk.hari_ini.per_area) || {})) {
+      const P = ATURAN.petir.P[v.terburuk];
+      if (!P || !(a in temuan)) continue;
+      const nf = (v.n_fasilitas || {})[v.terburuk] || 0;
+      tambah(a, { jenis: 'petir', P, K: ATURAN.petir.K, lokasi: null,
+        teks: `Potensi petir ${v.terburuk} hari ini (model): ${f((v.pipa_km || {})[v.terburuk] || 0)} km pipa${nf ? ` & ${nf} fasilitas` : ''}` });
+    }
+    // H. Siklon tropis & bencana besar (GDACS)
+    for (const k of (T.gdacs && T.gdacs.kejadian) || []) {
+      for (const [a, v] of Object.entries(k.per_area || {})) {
+        const P = clamp(num(v.P) || 0, 0, 5);
+        if (!P || !(a in temuan)) continue;
+        tambah(a, { jenis: 'gdacs', P, K: ATURAN.gdacs.K, lokasi: null, teks: `${k.jenis_nama}${k.nama ? ' ' + k.nama : ''} (GDACS ${k.level}): ${v.ket}` });
+      }
+    }
+
     // Status area
     const area = {};
     for (const a of areas) {
@@ -221,7 +271,7 @@
       const R = t.length ? t[0].R : 0;
       let status = R ? statusDariR(R) : 'normal', eskalasi = null;
       // cuaca tidak ikut aturan gabungan: pengaruhnya sudah masuk ke P hotspot (kering/hujan) dan P gerakan tanah (hujan)
-      const w = t.filter(x => x.R >= ATURAN.ambang.waspada && x.jenis !== 'cuaca');
+      const w = t.filter(x => x.R >= ATURAN.ambang.waspada && !ATURAN.tanpaGabungan.includes(x.jenis));
       const jenis = [...new Set(w.map(x => x.jenis))];
       if (jenis.length >= 2) {
         const dekat = (x, y) => !x.lokasi || !y.lokasi || !x.lokasi.length || !y.lokasi.length ||
