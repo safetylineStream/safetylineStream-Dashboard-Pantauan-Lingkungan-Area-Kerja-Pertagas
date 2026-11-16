@@ -1,0 +1,137 @@
+[
+{
+"lat": -1.238,
+"lon": 116.81707,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-16T17:02:00.000000Z",
+"waktu": "Selasa, 17 November 2026 00:02:00",
+"prov": "Kalimantan Timur",
+"kab": "Kota Balikpapan",
+"kec": "Balikpapan Barat",
+"desa": "Kelurahan Marga Sari",
+"jarak_km": 0.74,
+"area": "OKA",
+"aset": "Jalur Pipa OKA #11",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 5 SENBAL",
+"jarak_fasilitas_km": 6.5,
+"status": "kritis",
+"berulang_hari": 5,
+"persisten": true,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.597,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.597,
+"80": 0.272,
+"60": 0.095,
+"10": 0.019
+}
+}
+},
+{
+"lat": -7.52455,
+"lon": 112.69383,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-16T06:41:00.000000Z",
+"waktu": "Senin, 16 November 2026 13:41:00",
+"prov": "Jawa Timur",
+"kab": "Sidoarjo",
+"kec": "Porong",
+"desa": "Pamotan",
+"jarak_km": 0.97,
+"area": "OEJA",
+"aset": "Pipa OEJA 12\"",
+"jenis_aset": "pipa",
+"fasilitas": "Wunut Station",
+"jarak_fasilitas_km": 1.0,
+"status": "kritis",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 30,
+"label": "Padang rumput/alang-alang",
+"porsi": 0.353,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"30": 0.353,
+"50": 0.309,
+"40": 0.212,
+"10": 0.078
+}
+}
+},
+{
+"lat": -6.96163,
+"lon": 109.3653,
+"conf": "medium",
+"sumber": "NASA-MODIS",
+"waktu_utc": "2026-11-16T01:36:00.000000Z",
+"waktu": "Senin, 16 November 2026 08:36:00",
+"prov": "Jawa Tengah",
+"kab": "Pemalang",
+"kec": "Pemalang",
+"desa": "Surajaya",
+"jarak_km": 3.12,
+"area": "OEJA",
+"aset": "Pipa Cirebon-Semarang (Cisem)",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 11 Cisem",
+"jarak_fasilitas_km": 5.2,
+"status": "pantau",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.747,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.747,
+"40": 0.245,
+"30": 0.009,
+"50": 0.0
+}
+}
+},
+{
+"lat": -1.05004,
+"lon": 116.90087,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-16T17:02:00.000000Z",
+"waktu": "Selasa, 17 November 2026 00:02:00",
+"prov": "Ikn",
+"kab": "Kutai Kartanegara",
+"kec": "Samboja",
+"desa": "Kelurahan Karya Merdeka",
+"jarak_km": 4.25,
+"area": "OKA",
+"aset": "Pipa Senipah-Balikpapan #28",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 3 SENBAL",
+"jarak_fasilitas_km": 4.5,
+"status": "pantau",
+"berulang_hari": 6,
+"persisten": true,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.989,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.989,
+"30": 0.011,
+"50": 0.0
+}
+}
+}
+]
