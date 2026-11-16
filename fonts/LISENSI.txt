@@ -1,0 +1,3 @@
+Carlito (subset Latin) — Copyright (c) 2010-2013 by tyPoland Lukasz Dziedzic, dengan Reserved Font Name "Carlito".
+Dilisensikan di bawah SIL Open Font License, Version 1.1 — https://openfontlicense.org
+Berkas di folder ini adalah subset (pyftsubset) dari Carlito-Regular.ttf dan Carlito-Bold.ttf untuk laporan PDF PERTAGAS WASPADA.

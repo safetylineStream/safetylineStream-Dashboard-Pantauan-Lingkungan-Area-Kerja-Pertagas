@@ -212,6 +212,17 @@ Tiga modul terakhir dijalankan workflow **Update Bahaya Tambahan (petir, banjir 
 
 ---
 
+### B8c. Unduh laporan PDF saat ini
+
+Tombol hitam **↓ Unduh …(PDF)** di samping filter kepercayaan hotspot membuat laporan PDF seketika dari data yang sedang tampil — tanpa server dan tanpa menunggu jadwal:
+
+| Tab yang dibuka | Isi PDF |
+|---|---|
+| **Ringkasan semua** | *Rangkuman direksi*: status keseluruhan, status & pemicu tiap area, lokasi prioritas (hotspot berdekatan digabung per klaster), tren 8 hari, rekomendasi, sumber & kesegaran data (±3 halaman). |
+| **Tab wilayah** (mis. OKA) | *Laporan detail area*: status & penentu status (P × K = R), peta skematis (seluruh jalur + perbesaran di hotspot berisiko tertinggi), daftar hotspot ≤ 5 km, gempa 7 hari, longsor (LHASA) & gerakan tanah (PVMBG), cuaca & udara per titik pantau, peringatan BMKG/petir/banjir/GDACS, tren, rekomendasi (±4–6 halaman). |
+
+Subjudul bernomor dan berhuruf kapital, dengan sub-poin. Rekomendasi adalah usulan otomatis dari data — sesuaikan dengan penilaian lapangan sebelum diteruskan. Kode ada di `laporan.js`; pustaka jsPDF/AutoTable (`vendor/`) dan font Carlito (`fonts/`, lisensi SIL OFL) disimpan di repositori sendiri dan baru dimuat saat tombol diklik.
+
 ### B9. Waktu, cek langsung & uji otomatis
 - Semua waktu di dashboard ditampilkan dalam **WIB**, juga bila komputer pengguna memakai WITA/WIT.
 - Browser pengguna mengecek langsung **gempa terbaru BMKG** tiap 10 menit dan **cuaca/kualitas udara** titik pantau saat tab wilayah dibuka. Bila cek langsung gagal (mis. jaringan kantor memblokir), dashboard otomatis memakai data terjadwal dan menuliskannya.

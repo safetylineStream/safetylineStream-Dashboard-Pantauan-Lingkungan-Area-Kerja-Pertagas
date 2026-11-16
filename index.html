@@ -307,6 +307,8 @@ html,body{font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-sm
 .area-head h2{font-size:20px;font-weight:800;letter-spacing:-.01em;flex-wrap:wrap}
 select,button{border-radius:10px;padding:7px 12px;font-family:var(--font)}
 .tools button{font-weight:600}
+.tools .btn-pdf{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tools .btn-pdf:disabled{opacity:.6;cursor:progress}
 
 /* Kartu & bagian buka/tutup */
 .card{border-radius:14px}
@@ -460,6 +462,7 @@ footer{padding:10px 4px 28px;line-height:1.6}
         <option value="h">Tinggi saja</option>
       </select>
       <button id="btnFold" type="button" title="Buka atau tutup semua bagian di halaman ini">Tutup semua</button>
+      <button id="btnPdf" type="button" class="btn-pdf" title="Buat laporan PDF dari data yang sedang tampil">↓ Unduh laporan saat ini (PDF)</button>
       <button id="btnTheme" type="button" title="Ganti tema terang/gelap">◐ Tema</button>
     </div>
   </div>
@@ -1732,5 +1735,6 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&umurJam(w
 window.__lastRefresh=new Date().toISOString();
 load().catch(e=>{console.error(e);document.querySelector('.wrap').insertAdjacentHTML('afterbegin',`<div class="banner">Gagal memuat dashboard: ${esc(e.message)}. Jika membuka file langsung dari komputer, jalankan lewat GitHub Pages atau <code>python -m http.server</code>.</div>`)});
 </script>
+<script src="laporan.js"></script>
 </body>
 </html>
