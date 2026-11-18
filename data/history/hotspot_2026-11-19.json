@@ -1,0 +1,138 @@
+[
+{
+"lat": -3.10211,
+"lon": 104.70468,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-17T19:08:00.000000Z",
+"waktu": "Rabu, 18 November 2026 02:08:00",
+"prov": "Sumatera Selatan",
+"kab": "Ogan Ilir",
+"kec": "Indralaya Utara",
+"desa": "Soak Batok",
+"jarak_km": 0.09,
+"area": "OSSA",
+"aset": "20 Simpang Y - Pulau Layang - Pusri",
+"jenis_aset": "pipa",
+"fasilitas": "Kantor Distrik Palembang",
+"jarak_fasilitas_km": 0.1,
+"status": "kritis",
+"berulang_hari": 3,
+"persisten": true,
+"tutupan": {
+"kode": 30,
+"label": "Padang rumput/alang-alang",
+"porsi": 0.598,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"30": 0.598,
+"10": 0.143,
+"50": 0.133,
+"40": 0.105
+}
+}
+},
+{
+"lat": -6.94725,
+"lon": 110.00279,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-18T06:03:00.000000Z",
+"waktu": "Rabu, 18 November 2026 13:03:00",
+"prov": "Jawa Tengah",
+"kab": "Batang",
+"kec": "Gringsing",
+"desa": "Sawangan",
+"jarak_km": 0.29,
+"area": "OEJA",
+"aset": "Pipa OEJA 20\"",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 07 Cisem",
+"jarak_fasilitas_km": 14.3,
+"status": "kritis",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.495,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"10": 0.495,
+"30": 0.249,
+"40": 0.219,
+"50": 0.037
+}
+}
+},
+{
+"lat": 0.09889,
+"lon": 117.45699,
+"conf": "medium",
+"sumber": "NASA-MODIS",
+"waktu_utc": "2026-11-17T20:08:00.000000Z",
+"waktu": "Rabu, 18 November 2026 03:08:00",
+"prov": "Kalimantan Timur",
+"kab": "Kota Bontang",
+"kec": "Bontang Selatan",
+"desa": "Kelurahan Satimpo",
+"jarak_km": 2.87,
+"area": "OKA",
+"aset": "Jalur Pipa OKA #17",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 1 SENBAL",
+"jarak_fasilitas_km": 130.6,
+"status": "waspada",
+"berulang_hari": 4,
+"persisten": true,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.868,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.868,
+"40": 0.069,
+"80": 0.029,
+"30": 0.021
+}
+}
+},
+{
+"lat": -6.97332,
+"lon": 109.98873,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-18T06:03:00.000000Z",
+"waktu": "Rabu, 18 November 2026 13:03:00",
+"prov": "Jawa Tengah",
+"kab": "Batang",
+"kec": "Gringsing",
+"desa": "Surodadi",
+"jarak_km": 2.94,
+"area": "OEJA",
+"aset": "Pipa OEJA 20\"",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 07 Cisem",
+"jarak_fasilitas_km": 13.8,
+"status": "waspada",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.731,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.731,
+"50": 0.215,
+"30": 0.032,
+"60": 0.012
+}
+}
+}
+]
