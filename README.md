@@ -218,7 +218,7 @@ Tombol hitam **↓ Unduh …(PDF)** di samping filter kepercayaan hotspot membua
 
 | Tab yang dibuka | Isi PDF |
 |---|---|
-| **Ringkasan semua** | *Rangkuman direksi*: status keseluruhan, status & pemicu tiap area, lokasi prioritas (hotspot berdekatan digabung per klaster), tren 8 hari, rekomendasi, sumber & kesegaran data (±3 halaman). |
+| **Ringkasan semua** | *Rangkuman direksi*: status keseluruhan, status & pemicu tiap area, lokasi prioritas (hotspot berdekatan digabung per klaster), tren 8 hari, rekomendasi, status sumber data (±3 halaman). |
 | **Tab wilayah** (mis. OKA) | *Laporan detail area*: status & penentu status (P × K = R), peta skematis (seluruh jalur + perbesaran di hotspot berisiko tertinggi), daftar hotspot ≤ 5 km, gempa 7 hari, longsor (LHASA) & gerakan tanah (PVMBG), cuaca & udara per titik pantau, peringatan BMKG/petir/banjir/GDACS, tren, rekomendasi (±4–6 halaman). |
 
 Subjudul bernomor dan berhuruf kapital, dengan sub-poin. Rekomendasi adalah usulan otomatis dari data — sesuaikan dengan penilaian lapangan sebelum diteruskan. Kode ada di `laporan.js`; pustaka jsPDF/AutoTable (`vendor/`) dan font Carlito (`fonts/`, lisensi SIL OFL) disimpan di repositori sendiri dan baru dimuat saat tombol diklik.

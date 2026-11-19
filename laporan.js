@@ -432,9 +432,9 @@
     return { hari, seri: [0, 1, 2].map(i => hari.map(t => per[t][i])) };
   }
   function bagianSumber(L, X, n) {
-    L.h1(n, 'Sumber & kesegaran data');
-    L.h2(`${n}.1`, 'Status sumber data');
-    const LBL = { fresh: 'Refresh', delayed: 'Terlambat', stale: 'Kedaluwarsa', none: 'Tidak tersedia' };
+    L.h1(n, 'Status sumber data');
+    L.h2(`${n}.1`, 'Rincian sumber data');
+    const LBL = { fresh: 'Refresh', delayed: 'On Progress', stale: 'Kedaluwarsa', none: 'Tidak tersedia' };
     const W = { fresh: C.normal, delayed: C.waspada, stale: C.kritis, none: C.grey };
     const rows = X.sumber.map(r => [{ content: bersih(r.nama), bold: true }, bersih(r.src), bersih(String(r.data || '').replace(/<[^>]+>/g, '')), { content: LBL[r.st] || r.st, bold: true }]);
     L.tabel(['Data', 'Sumber', 'Waktu / cakupan data', 'Status'], rows, [36, 52, 0, 22], {
@@ -447,14 +447,12 @@
   }
   function catatanData(X) {
     const lambat = X.sumber.filter(r => r.st === 'stale' || r.st === 'delayed').map(r => bersih(r.nama));
-    return lambat.length ? `Catatan kesegaran data: ${lambat.join(', ')} berstatus terlambat/kedaluwarsa — lihat bagian Sumber & kesegaran data.` : 'Semua sumber data utama berstatus refresh saat laporan dibuat.';
+    return lambat.length ? `Catatan data: ${lambat.join(', ')} berstatus on progress/kedaluwarsa — lihat bagian Status sumber data.` : 'Semua sumber data utama berstatus refresh saat laporan dibuat.';
   }
   function rekomendasiArea(X, R) {
     const out = [], A = R.A, top = (A.temuan || []).filter(t => t.R >= 8);
     const hsTop = kelompok(top.filter(t => t.jenis === 'hotspot' && t.ref)).slice(0, 3);
     if (hsTop.length) out.push(`**Verifikasi lapangan hotspot** di ${hsTop.map(t => `${t.ref.kec ? bersih(t.ref.kec) + ', ' + bersih(t.ref.kab) : lokasiHs(t.ref)} (${t.n > 1 ? `${t.n} titik, ` : ''}${nf(t.jMin ?? t.ref.jarak_km, 2)} km dari ${bersih(t.ref.aset)})`).join('; ')}; koordinasikan dengan Manggala Agni/Daops dan BPBD setempat bila api terkonfirmasi.`);
-    const nonveg = R.h.filter(h => h.persisten && h.risiko && h.risiko.nonVegetasi);
-    if (nonveg.length) out.push(`**Perbarui register sumber panas tetap** (flare/industri) untuk ${nonveg.length} titik berulang di lahan non-vegetasi agar tidak berulang kali diverifikasi.`);
     if (top.some(t => t.jenis === 'gempa')) out.push(`**Cek visual ROW dan fasilitas** di sekitar ${R.q ? bersih(R.q.per_area[R.k].aset) : 'aset terdekat'} pasca gempa.`);
     if ((A.temuan || []).some(t => t.jenis === 'gerakan_tanah' && t.R >= 6)) out.push('**Siagakan patroli lereng** pada ruas zona prakiraan gerakan tanah tinggi PVMBG / indikasi longsor model, terutama saat hujan lebat.');
     if (R.pd.length) out.push(`**Teruskan ${R.pd.length} peringatan dini BMKG yang aktif** ke tim lapangan; tunda pekerjaan di ketinggian dan di ruang terbuka selama peringatan berlaku.`);
@@ -510,7 +508,7 @@
     L.butir([
       R.wx.length ? `Prakiraan hujan hari ini ${rentang(R.hjMin, R.hjMax, 1, ' mm')} di ${R.wx.length} titik pantau; US AQI ${rentang(R.aqiMin, R.aqiMax)} (maks. ${aqiKat(R.aqiMax)}).` : 'Data cuaca tidak tersedia.',
       R.pd.length ? `**${R.pd.length} peringatan dini BMKG aktif** mengenai aset: ${R.pd.map(w => bersih(w.event || w.judul)).join('; ')}.` : 'Tidak ada peringatan dini cuaca BMKG yang aktif mengenai aset.',
-      `Potensi petir (model) hari ini: ${R.pt && R.pt.terburuk ? `**${LVL[R.pt.terburuk]}** (${nf(kmLv(R.pt, R.pt.terburuk), 1)} km pipa)` : 'tidak ada'} · banjir sungai (model): ${R.bj && R.bj.terburuk ? LVL[R.bj.terburuk] : 'tidak ada'}${R.gd.length ? ` · GDACS: ${R.gd.length} kejadian relevan` : ''}.`,
+      `Potensi petir hari ini: ${R.pt && R.pt.terburuk ? `**${LVL[R.pt.terburuk]}** (${nf(kmLv(R.pt, R.pt.terburuk), 1)} km pipa)` : 'tidak ada'} · banjir sungai: ${R.bj && R.bj.terburuk ? LVL[R.bj.terburuk] : 'tidak ada'}${R.gd.length ? ` · GDACS: ${R.gd.length} kejadian relevan` : ''}.`,
     ]);
 
     // 2. PENENTU STATUS
@@ -609,7 +607,7 @@
     L.h2('10.1', 'Usulan tindakan');
     L.butir(rk.length ? rk : ['Tidak ada temuan yang memerlukan tindakan khusus; lanjutkan pemantauan rutin.']);
     L.h2('10.2', 'Pelaporan');
-    L.butir(['Laporkan hasil verifikasi lapangan agar titik yang terbukti bukan kebakaran dapat ditandai di dashboard.', 'Tetap rujuk peringatan resmi BMKG/BNPB/PVMBG.']);
+    L.butir(['Tetap rujuk peringatan resmi BMKG/BNPB/PVMBG.']);
 
     bagianSumber(L, X, 11);
     L.selesai(`Laporan_PERTAGAS_WASPADA_${k}_${stamp(now)}.pdf`, `${tglPendek(now)} ${jamWIB(now)}`);
@@ -661,9 +659,9 @@
     L.h2('1.4', 'Cuaca, udara & peringatan dini');
     const pt = Rs.filter(r => r.pt && r.pt.terburuk === 'tinggi'), bj = Rs.filter(r => r.bj && ['tinggi', 'sedang'].includes(r.bj.terburuk)), gdA = Rs.filter(r => r.gd.length);
     L.butir([
-      aqi150.length ? `Udara tidak sehat (US AQI > 150, model) di ${aqi150.length} area: ${aqi150.sort((a, b) => b.aqiMax - a.aqiMax).map(r => `${r.k} ${nf(r.aqiMax)}`).join(', ')}.` : 'Tidak ada area dengan US AQI > 150 (model).',
+      aqi150.length ? `Udara tidak sehat (US AQI > 150) di ${aqi150.length} area: ${aqi150.sort((a, b) => b.aqiMax - a.aqiMax).map(r => `${r.k} ${nf(r.aqiMax)}`).join(', ')}.` : 'Tidak ada area dengan US AQI > 150.',
       nPd ? `Peringatan dini BMKG aktif mengenai aset: ${Rs.filter(r => r.pd.length).map(r => `${r.k} ${r.pd.length}`).join(', ')}.` : 'Tidak ada peringatan dini cuaca BMKG yang aktif mengenai aset.',
-      `Potensi petir tinggi hari ini (model): ${pt.length ? pt.map(r => r.k).join(', ') : 'tidak ada'} · banjir sungai sedang/tinggi (model): ${bj.length ? bj.map(r => r.k).join(', ') : 'tidak ada'}${gdA.length ? ` · GDACS relevan: ${gdA.map(r => r.k).join(', ')}` : ''}.`,
+      `Potensi petir tinggi hari ini: ${pt.length ? pt.map(r => r.k).join(', ') : 'tidak ada'} · banjir sungai sedang/tinggi: ${bj.length ? bj.map(r => r.k).join(', ') : 'tidak ada'}${gdA.length ? ` · GDACS relevan: ${gdA.map(r => r.k).join(', ')}` : ''}.`,
     ]);
 
     // 2. STATUS PER AREA
@@ -672,10 +670,10 @@
     L.butir(['kritis', 'waspada', 'pantau', 'normal'].map(s => `**${ST[s].label[0] + ST[s].label.slice(1).toLowerCase()} (${rk[s].length}):** ${rk[s].length ? rk[s].join(', ') : '–'}`));
     L.h2('2.2', 'Rincian per area');
     const ord = Rs.slice().sort((a, b) => ({ kritis: 3, waspada: 2, pantau: 1, normal: 0 }[b.status] - { kritis: 3, waspada: 2, pantau: 1, normal: 0 }[a.status]) || b.R - a.R);
-    L.tabel(['Area', 'Status', 'R', 'Pemicu utama', 'Hotspot ≤1/1–3/3–5 km (berisiko)', 'US AQI maks', 'Hujan hari ini'],
+    L.tabel(['Area', 'Status', 'R', 'Pemicu utama', 'US AQI maks', 'Hujan hari ini'],
       ord.map(r => [{ content: `${r.k}\n${bersih(r.nama.replace('Operation ', ''))}`, bold: false }, { badge: r.status }, r.R ? String(r.R) : '–',
-        r.A.pemicu ? bersih(r.A.pemicu.teks) : 'Tidak ada temuan', `${r.n1} / ${r.n3} / ${r.n5} (${r.nRisk})`, r.aqiMax == null ? '–' : nf(r.aqiMax), rentang(r.hjMin, r.hjMax, 1, ' mm')]),
-      [24, 23, 8, 0, 26, 14, 20], { size: 8, sorot: i => ord[i].status === 'kritis' });
+        r.A.pemicu ? bersih(r.A.pemicu.teks) : 'Tidak ada temuan', r.aqiMax == null ? '–' : nf(r.aqiMax), rentang(r.hjMin, r.hjMax, 1, ' mm')]),
+      [26, 23, 8, 0, 16, 24], { size: 8, sorot: i => ord[i].status === 'kritis' });
 
     // 3. LOKASI PRIORITAS
     L.h1(3, 'Lokasi prioritas tindak lanjut');
@@ -703,7 +701,6 @@
     n++; L.h2(`5.${n}`, 'Umum');
     L.butir([
       aqi150.length ? `Sediakan masker partikulat bagi pekerja lapangan di ${aqi150.map(r => r.k).join(', ')} (US AQI > 150).` : null,
-      'Laporkan hasil verifikasi lapangan agar titik yang terbukti bukan kebakaran dapat ditandai di dashboard.',
       'Tetap rujuk peringatan resmi BMKG/BNPB/PVMBG. Laporan detail tiap area dapat diunduh dari tab wilayah di dashboard.',
     ]);
 
