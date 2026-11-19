@@ -434,8 +434,8 @@
   function bagianSumber(L, X, n) {
     L.h1(n, 'Status sumber data');
     L.h2(`${n}.1`, 'Rincian sumber data');
-    const LBL = { fresh: 'Refresh', delayed: 'On Progress', stale: 'Kedaluwarsa', none: 'Tidak tersedia' };
-    const W = { fresh: C.normal, delayed: C.waspada, stale: C.kritis, none: C.grey };
+    const LBL = { fresh: 'Refresh', delayed: 'On Progress', stale: 'On Progress', none: 'Tidak tersedia' };
+    const W = { fresh: C.normal, delayed: C.waspada, stale: C.waspada, none: C.grey };
     const rows = X.sumber.map(r => [{ content: bersih(r.nama), bold: true }, bersih(r.src), bersih(String(r.data || '').replace(/<[^>]+>/g, '')), { content: LBL[r.st] || r.st, bold: true }]);
     L.tabel(['Data', 'Sumber', 'Waktu / cakupan data', 'Status'], rows, [36, 52, 0, 22], {
       size: 8, warna: (r, c) => (c === 3 ? W[X.sumber[r].st] : null),
@@ -447,7 +447,7 @@
   }
   function catatanData(X) {
     const lambat = X.sumber.filter(r => r.st === 'stale' || r.st === 'delayed').map(r => bersih(r.nama));
-    return lambat.length ? `Catatan data: ${lambat.join(', ')} berstatus on progress/kedaluwarsa — lihat bagian Status sumber data.` : 'Semua sumber data utama berstatus refresh saat laporan dibuat.';
+    return lambat.length ? `Catatan data: ${lambat.join(', ')} berstatus on progress — lihat bagian Status sumber data.` : 'Semua sumber data utama berstatus refresh saat laporan dibuat.';
   }
   function rekomendasiArea(X, R) {
     const out = [], A = R.A, top = (A.temuan || []).filter(t => t.R >= 8);
