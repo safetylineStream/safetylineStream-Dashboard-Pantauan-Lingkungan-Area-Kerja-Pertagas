@@ -1,0 +1,36 @@
+[
+{
+"lat": -6.96925,
+"lon": 110.52404,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-19T05:46:00.000000Z",
+"waktu": "Kamis, 19 November 2026 12:46:00",
+"prov": "Jawa Tengah",
+"kab": "Demak",
+"kec": "Sayung",
+"desa": "Karangasem",
+"jarak_km": 3.44,
+"area": "OEJA",
+"aset": "Pipa OEJA 12\"",
+"jenis_aset": "pipa",
+"fasilitas": "Arkof Station",
+"jarak_fasilitas_km": 3.7,
+"status": "pantau",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.502,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.502,
+"50": 0.376,
+"10": 0.058,
+"30": 0.057
+}
+}
+}
+]
