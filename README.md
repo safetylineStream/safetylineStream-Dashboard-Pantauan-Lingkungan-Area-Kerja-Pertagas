@@ -119,9 +119,11 @@ Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagi
 | RH, suhu, angin, PM2.5 | RH rendah + angin kencang = risiko rambatan api naik; PM2.5 tinggi = indikasi asap | Pertimbangkan pembatasan *hot work* / pekerjaan lapangan |
 
 - **Tab wilayah** di bagian atas: **Ringkasan semua** menampilkan kartu tiap wilayah (klik kartu untuk membuka tabnya), lalu satu tab untuk tiap wilayah kerja (ONSA, OCSA, ODA, OSSA, OWJA). Angka kecil di tab menunjukkan jumlah hotspot dengan status terburuk di wilayah itu. Tanda ✓ berarti tidak ada hotspot dalam radius.
-- Di tab wilayah, peta langsung terfokus ke wilayah tersebut. Jarak gempa dihitung ke aset **wilayah itu**, dan panel cuaca menampilkan kondisi terkini serta prakiraan 3 hari tiap titik pantau. Grafik tren dipecah per status, dan grafik provinsi hanya memuat provinsi tempat wilayah itu beroperasi.
+- Di tab wilayah, peta langsung terfokus ke wilayah tersebut. Jarak gempa dihitung ke aset **wilayah itu**, dan panel cuaca menampilkan kondisi terkini serta prakiraan 3 hari tiap titik pantau. Grafik tren dipecah per jarak ke aset, dan angka hotspot provinsi (kartu di atas) hanya memuat provinsi tempat wilayah itu beroperasi.
 - Tab bisa dibuka langsung lewat alamat, misalnya `.../pertagas-env-dashboard/#OSSA`. Tautan ini praktis untuk dikirim ke tim area.
 - Pilih **Kepercayaan** untuk menyaring hotspot berkeyakinan rendah.
+- Tabel **Hotspot dekat aset** di bawah peta: pilih *≤ 5 km · dinilai risiko* (urut skor R) atau *≤ 25 km · semua tersimpan* (urut jarak).
+- Panel **Gerakan tanah & longsor** memuat indikasi longsor harian (model LHASA) dan zona/prakiraan bulanan PVMBG dalam satu kartu.
 - Klik baris hotspot atau gempa untuk langsung menuju lokasinya di peta. Popup hotspot memuat tautan Google Maps untuk tim lapangan.
 - Ikon lapisan di kanan atas peta: ganti ke **Citra satelit**, atau nyalakan **Titik cuaca**.
 - Hotspot adalah **indikasi titik panas dari satelit**, bukan kepastian kebakaran. Selalu verifikasi di lapangan.
@@ -141,7 +143,7 @@ Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagi
 | Radius kritis/waspada/pantau | `config/monitoring.json` | `hotspot.radius_km`, `gempa.radius_km` |
 | Titik cuaca (tambah/hapus lokasi) | `config/monitoring.json` | `titik_cuaca` |
 | Memakai data cuaca **BMKG resmi** | `config/monitoring.json` | isi `adm4` (lihat B5) |
-| Provinsi di grafik | `config/monitoring.json` | `provinsi_pantauan` (tab Ringkasan), `provinsi_area` (tab wilayah) |
+| Provinsi di kartu angka hotspot provinsi | `config/monitoring.json` | `provinsi_pantauan` (tab Ringkasan), `provinsi_area` (tab wilayah) |
 | Jam update | `.github/workflows/update-data.yml` | `cron` (jam UTC = WIB − 7) |
 
 Contoh: update setiap 3 jam → ganti kedua baris cron dengan `- cron: "0 */3 * * *"`.
@@ -192,23 +194,21 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 ---
 
 ### B8b. Modul tambahan berbasis lokasi aset (tanpa API key)
-Empat modul ini hanya menampilkan data yang **mengenai atau mendekati jalur pipa/fasilitas**; data yang tidak bisa ditumpangkan ke aset tidak diambil.
+Tiga modul ini hanya menampilkan data yang **mengenai atau mendekati jalur pipa/fasilitas**; data yang tidak bisa ditumpangkan ke aset tidak diambil.
 
 | Modul | Sumber | Cara ditumpangkan ke aset | Jadwal | Berkas |
 |---|---|---|---|---|
 | **Peringatan dini cuaca ekstrem** | BMKG nowcasting (RSS + CAP) — peringatan resmi, berlaku ±1–3 jam | Poligon wilayah peringatan diiris dengan jalur pipa (km pipa) dan fasilitas di dalamnya | tiap ±15 menit (workflow **Update Peringatan Dini Cuaca (BMKG)**) | `data/peringatan_cuaca/` |
-| **Potensi petir (model)** | Open-Meteo Forecast: CAPE, kode cuaca, hujan per jam — **prakiraan, bukan deteksi sambaran** | Grid 0,1° (±11 km); hanya sel yang dilalui pipa/memuat fasilitas | 4× sehari | `data/petir_model/` |
 | **Potensi banjir sungai (model)** | Open-Meteo Flood API — GloFAS v4 (Copernicus/ECMWF), grid ±5 km | Hanya **sel sungai yang dilalui jalur pipa** (median debit 5 tahun ≥ 10 m³/s) | 4× sehari | `data/banjir/` |
-| **Siklon tropis & bencana besar** | GDACS (PBB & Komisi Eropa): siklon tropis, banjir besar, erupsi | Jarak geodesik ke aset; zona angin & kerucut lintasan siklon diiris dengan aset | 4× sehari | `data/gdacs/` |
+| **Siklon tropis & gunung api** | GDACS (PBB & Komisi Eropa): siklon tropis, erupsi gunung api | Jarak geodesik ke aset; zona angin & kerucut lintasan siklon diiris dengan aset | 4× sehari | `data/gdacs/` |
 
-Tiga modul terakhir dijalankan workflow **Update Bahaya Tambahan (petir, banjir sungai, GDACS)** pukul 05:40, 11:40, 17:40 dan 23:40 WIB.
+Dua modul terakhir dijalankan workflow **Update Bahaya Tambahan (banjir sungai, GDACS)** pukul 05:40, 11:40, 17:40 dan 23:40 WIB.
 
 - **Peringatan BMKG:** berkas hanya ditulis ulang bila daftar peringatan di sekitar aset berubah atau sudah 60 menit, jadi commit tidak terjadi tiap 15 menit. Peringatan yang sudah berakhir disembunyikan otomatis oleh dashboard. Wajib mencantumkan BMKG sebagai sumber.
-- **Potensi petir:** tingkat per jam — *Tinggi* = model memprakirakan badai petir dan CAPE ≥ 2.500 J/kg; *Sedang* = model memprakirakan badai petir, atau CAPE ≥ 2.500 J/kg dengan hujan ≥ 1 mm/jam; *Rendah* = CAPE ≥ 1.000 J/kg dengan hujan ≥ 0,5 mm/jam. Ambang ini pendekatan umum meteorologi, **bukan prosedur resmi Pertagas** — ubah di `config/monitoring.json` → `petir_model`. Modul ini tidak bisa menyatakan kapan/di mana petir menyambar.
 - **Banjir sungai:** bekerja tiga tahap otomatis. (1) *Saring*: jalur pipa dipetakan ke sel GloFAS. (2) *Ambang*: riwayat debit 5 tahun tiap sel berdebit diunduh sekali dan diringkas (median, persentil 98, persentil 99,5, maksimum) — **dicicil 30 sel per run**, sungai terbesar lebih dulu, sehingga daftar sel sungai baru lengkap setelah beberapa hari; kartu menampilkan berapa sel yang masih menunggu. (3) *Prakiraan*: puncak debit 7 hari dibanding ambang sel itu sendiri — *Tinggi* ≥ maksimum 5 tahun, *Sedang* ≥ persentil 99,5, *Rendah* ≥ persentil 98. Ini keluaran model, bukan pos duga air; sungai kecil dan genangan lokal tidak terwakili. Untuk mempercepat tahap 2: **Run workflow** dan isi `sel_per_run` (mis. 60). Hapus `data/banjir/sel_statis.json` untuk membangun ulang.
-- **GDACS:** level Green/Orange/Red adalah perkiraan dampak kemanusiaan, bukan peringatan resmi BMKG/BNPB. Lokasi banjir GDACS berupa titik perkiraan. Gempa dan kebakaran tidak diambil dari GDACS karena sudah dipantau dari BMKG dan SiPongi.
+- **GDACS:** level Green/Orange/Red adalah perkiraan dampak kemanusiaan, bukan peringatan resmi BMKG/BNPB. Gempa, kebakaran dan banjir tidak diambil dari GDACS karena sudah dipantau dari BMKG, SiPongi dan modul banjir sungai (GloFAS) — lokasi banjir GDACS hanya titik perkiraan.
 - **Lisensi Open-Meteo:** layanan gratisnya untuk pemakaian non-komersial. Bila dashboard dinilai pemakaian komersial, gunakan paket berbayar/API key atau server sendiri.
-- **Pengaruh ke status area:** lihat "Cara status dihitung" di dashboard — keempat modul bernilai konservatif dan tidak ikut aturan kenaikan gabungan.
+- **Pengaruh ke status area:** lihat "Cara status dihitung" di dashboard — ketiga modul bernilai konservatif dan tidak ikut aturan kenaikan gabungan.
 
 ---
 
@@ -219,7 +219,7 @@ Tombol hitam **↓ Unduh …(PDF)** di samping filter kepercayaan hotspot membua
 | Tab yang dibuka | Isi PDF |
 |---|---|
 | **Ringkasan semua** | *Rangkuman direksi*: status keseluruhan, status & pemicu tiap area, lokasi prioritas (hotspot berdekatan digabung per klaster), tren 8 hari, rekomendasi, status sumber data (±3 halaman). |
-| **Tab wilayah** (mis. OKA) | *Laporan detail area*: status & penentu status (P × K = R), peta skematis (seluruh jalur + perbesaran di hotspot berisiko tertinggi), daftar hotspot ≤ 5 km, gempa 7 hari, longsor (LHASA) & gerakan tanah (PVMBG), cuaca & udara per titik pantau, peringatan BMKG/petir/banjir/GDACS, tren, rekomendasi (±4–6 halaman). |
+| **Tab wilayah** (mis. OKA) | *Laporan detail area*: status & penentu status (P × K = R), peta skematis (seluruh jalur + perbesaran di hotspot berisiko tertinggi), daftar hotspot ≤ 5 km, gempa 7 hari, longsor (LHASA) & gerakan tanah (PVMBG), cuaca & udara per titik pantau, peringatan BMKG/banjir/GDACS, tren, rekomendasi (±4–6 halaman). |
 
 Subjudul bernomor dan berhuruf kapital, dengan sub-poin. Rekomendasi adalah usulan otomatis dari data — sesuaikan dengan penilaian lapangan sebelum diteruskan. Kode ada di `laporan.js`; pustaka jsPDF/AutoTable (`vendor/`) dan font Carlito (`fonts/`, lisensi SIL OFL) disimpan di repositori sendiri dan baru dimuat saat tombol diklik.
 

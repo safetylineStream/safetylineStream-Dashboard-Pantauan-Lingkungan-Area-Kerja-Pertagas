@@ -4,7 +4,7 @@
  *   • Tab Ringkasan  → Rangkuman 8 area operasi untuk direksi/manajemen.
  *   • Tab wilayah    → Laporan detail area operasi tersebut.
  *
- * PDF dibuat seketika di browser dari data yang sedang tampil di dashboard (DATA, KLAS, LS, PD, PT, BJ, GD,
+ * PDF dibuat seketika di browser dari data yang sedang tampil di dashboard (DATA, KLAS, LS, PD, BJ, GD,
  * HIST, ASSETS) — tanpa server. Pustaka jsPDF + AutoTable dan font Carlito (OFL) dimuat dari folder
  * vendor/ & fonts/ hanya saat tombol diklik pertama kali.
  *
@@ -32,7 +32,7 @@
   };
   const PW = 210, PH = 297, M = 15, CW = PW - 2 * M, TOP1 = 12, TOPN = 24, BOT = PH - 18, IND = 7;
   const JL = { hotspot: 'Hotspot', gempa: 'Gempa/tsunami', gerakan_tanah: 'Gerakan tanah/longsor', cuaca: 'Cuaca/udara',
-    cuaca_ekstrem: 'Peringatan dini BMKG', banjir: 'Banjir sungai (model)', petir: 'Petir (model)', gdacs: 'Siklon/bencana (GDACS)' };
+    cuaca_ekstrem: 'Peringatan dini BMKG', banjir: 'Banjir sungai (model)', gdacs: 'Siklon/gunung api (GDACS)' };
   const LVL = { tinggi: 'Tinggi', sedang: 'Sedang', rendah: 'Rendah', menengah: 'Menengah', bandang: 'Banjir bandang', sangat_rendah: 'Sangat rendah' };
 
   // ---------------------------------------------------------------- utilitas
@@ -81,10 +81,9 @@
     const qs = quakesFn ? quakesFn('all').filter(g => { const a = umur(g.datetime); return a != null && a <= 24 * 7; }) : [];
     return {
       DATA, KLAS, AREAS, hs, hsSt, qs,
-      LS: G('LS'), PD: G('PD'), PT: G('PT'), BJ: G('BJ'), GD: G('GD'), HIST: G('HIST') || [], ASSETS: G('ASSETS') || { features: [] },
+      LS: G('LS'), PD: G('PD'), BJ: G('BJ'), GD: G('GD'), HIST: G('HIST') || [], ASSETS: G('ASSETS') || { features: [] },
       TL: G('TL') || {}, sumber: (G('sources') || (() => []))(),
       pdArea: G('pdArea') || (() => []), lsArea: (k, p) => ((((G('LS') || {}).produk || {})[p] || {}).per_area || {})[k] || null,
-      ptArea: (k, p) => ((((G('PT') || {}).produk || {})[p] || {}).per_area || {})[k] || null,
       bjArea: k => { const B = G('BJ'); return (B && B.per_area && B.per_area[k]) || null; },
       now: new Date(),
     };
@@ -107,7 +106,7 @@
       wx, aqiMax: aqi.length ? Math.max(...aqi) : null, aqiMin: aqi.length ? Math.min(...aqi) : null,
       hjMin: hj.length ? Math.min(...hj) : null, hjMax: hj.length ? Math.max(...hj) : null,
       q, pk, P, lsH: X.lsArea(k, 'hari_ini'), lsB: X.lsArea(k, 'besok'),
-      pd: X.pdArea(k), pt: X.ptArea(k, 'hari_ini'), ptB: X.ptArea(k, 'besok'), bj: X.bjArea(k), gd,
+      pd: X.pdArea(k), bj: X.bjArea(k), gd,
       provinsi: (D.hotspot && D.hotspot.provinsi_area && D.hotspot.provinsi_area[k]) || {},
     };
   }
@@ -442,7 +441,7 @@
     });
     L.h2(`${n}.2`, 'Penafian');
     L.kotak('Laporan ini dibuat otomatis dari dashboard PERTAGAS WASPADA pada saat tombol unduh ditekan, sebagai sistem pemantauan dan pendukung keputusan. '
-      + 'Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran; cuaca, kualitas udara, indikasi longsor, banjir sungai dan potensi petir adalah keluaran model. '
+      + 'Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran; cuaca, kualitas udara, indikasi longsor dan banjir sungai adalah keluaran model. '
       + 'Rekomendasi adalah usulan otomatis berdasarkan data dan perlu disesuaikan dengan penilaian tim lapangan. Informasi ini tidak menggantikan peringatan resmi BMKG, PVMBG, BNPB/BPBD dan Kemenhut.');
   }
   function catatanData(X) {
@@ -456,7 +455,6 @@
     if (top.some(t => t.jenis === 'gempa')) out.push(`**Cek visual ROW dan fasilitas** di sekitar ${R.q ? bersih(R.q.per_area[R.k].aset) : 'aset terdekat'} pasca gempa.`);
     if ((A.temuan || []).some(t => t.jenis === 'gerakan_tanah' && t.R >= 6)) out.push('**Siagakan patroli lereng** pada ruas zona prakiraan gerakan tanah tinggi PVMBG / indikasi longsor model, terutama saat hujan lebat.');
     if (R.pd.length) out.push(`**Teruskan ${R.pd.length} peringatan dini BMKG yang aktif** ke tim lapangan; tunda pekerjaan di ketinggian dan di ruang terbuka selama peringatan berlaku.`);
-    if (R.pt && R.pt.terburuk === 'tinggi') out.push('**Potensi petir tinggi (model):** batasi pekerjaan di ruang terbuka saat badai dan pastikan sistem proteksi petir fasilitas berfungsi.');
     if (R.bj && ['tinggi', 'sedang'].includes(R.bj.terburuk)) out.push('**Pantau crossing sungai** yang dilintasi pipa: potensi debit tinggi menurut model GloFAS.');
     if (R.gd.length) out.push(`**Siaga kejadian GDACS:** ${R.gd.map(e => bersih(e.jenis_nama + (e.nama ? ' ' + e.nama : ''))).join(', ')}.`);
     if (R.aqiMax != null && R.aqiMax > 150) out.push(`**Lindungi pekerja dari asap/polusi:** US AQI maks ${nf(R.aqiMax)} (${aqiKat(R.aqiMax)}); sediakan masker partikulat dan kurangi pekerjaan berat di luar ruang.`);
@@ -508,7 +506,7 @@
     L.butir([
       R.wx.length ? `Prakiraan hujan hari ini ${rentang(R.hjMin, R.hjMax, 1, ' mm')} di ${R.wx.length} titik pantau; US AQI ${rentang(R.aqiMin, R.aqiMax)} (maks. ${aqiKat(R.aqiMax)}).` : 'Data cuaca tidak tersedia.',
       R.pd.length ? `**${R.pd.length} peringatan dini BMKG aktif** mengenai aset: ${R.pd.map(w => bersih(w.event || w.judul)).join('; ')}.` : 'Tidak ada peringatan dini cuaca BMKG yang aktif mengenai aset.',
-      `Potensi petir hari ini: ${R.pt && R.pt.terburuk ? `**${LVL[R.pt.terburuk]}** (${nf(kmLv(R.pt, R.pt.terburuk), 1)} km pipa)` : 'tidak ada'} · banjir sungai: ${R.bj && R.bj.terburuk ? LVL[R.bj.terburuk] : 'tidak ada'}${R.gd.length ? ` · GDACS: ${R.gd.length} kejadian relevan` : ''}.`,
+      `Banjir sungai: ${R.bj && R.bj.terburuk ? LVL[R.bj.terburuk] : 'tidak ada'}${R.gd.length ? ` · GDACS: ${R.gd.length} kejadian relevan` : ''}.`,
     ]);
 
     // 2. PENENTU STATUS
@@ -588,11 +586,10 @@
     if (R.pd.length) L.tabel(['Kejadian', 'Berlaku', 'Aset terdampak'], R.pd.map(w => [bersih(w.judul || w.event), `${waktu(w.mulai)} – ${waktu(w.berakhir)}`,
       (() => { const v = w.per_area[k] || {}; return `${nf(v.pipa_km, 1)} km pipa${v.n_fasilitas ? `, ${v.n_fasilitas} fasilitas` : ''}`; })()]), [0, 52, 40], { size: 8 });
     else L.para('Tidak ada peringatan aktif yang mengenai aset wilayah ini.');
-    L.h2('8.2', 'Potensi petir, banjir sungai & GDACS (model/otomatis)');
+    L.h2('8.2', 'Banjir sungai & GDACS (model/otomatis)');
     L.butir([
-      `Petir hari ini: ${R.pt && R.pt.terburuk ? `${LVL[R.pt.terburuk]} — ${nf(kmLv(R.pt, R.pt.terburuk), 1)} km pipa${R.pt.n_fasilitas && R.pt.n_fasilitas[R.pt.terburuk] ? `, ${R.pt.n_fasilitas[R.pt.terburuk]} fasilitas` : ''}` : 'tidak ada'}; besok: ${R.ptB && R.ptB.terburuk ? LVL[R.ptB.terburuk] : 'tidak ada'}.`,
       `Banjir sungai (GloFAS): ${R.bj ? (R.bj.terburuk ? `${LVL[R.bj.terburuk]} — ${nf(kmLv(R.bj, R.bj.terburuk), 1)} km pipa di ${nf(R.bj.sel_sungai)} sel sungai` : `tidak ada potensi (${nf(R.bj.sel_sungai)} sel sungai dipantau)`) : 'tidak tersedia'}.`,
-      R.gd.length ? `GDACS: ${R.gd.map(e => `${bersih(e.jenis_nama)}${e.nama ? ' ' + bersih(e.nama) : ''} (${e.level}) — ${bersih(e.per_area[k].ket)}`).join('; ')}.` : 'GDACS: tidak ada siklon tropis atau bencana besar yang relevan.',
+      R.gd.length ? `GDACS: ${R.gd.map(e => `${bersih(e.jenis_nama)}${e.nama ? ' ' + bersih(e.nama) : ''} (${e.level}) — ${bersih(e.per_area[k].ket)}`).join('; ')}.` : 'GDACS: tidak ada siklon tropis atau erupsi gunung api yang relevan.',
     ]);
 
     // 9. TREN
@@ -657,11 +654,11 @@
       gt.length ? `Prakiraan gerakan tanah PVMBG zona tinggi/banjir bandang: ${gt.map(r => `${r.k} ${nf(kmLv(r.pk, 'tinggi') + kmLv(r.pk, 'bandang'), 1)} km`).join(', ')}.` : 'Tidak ada pipa di zona prakiraan gerakan tanah tinggi PVMBG.',
     ]);
     L.h2('1.4', 'Cuaca, udara & peringatan dini');
-    const pt = Rs.filter(r => r.pt && r.pt.terburuk === 'tinggi'), bj = Rs.filter(r => r.bj && ['tinggi', 'sedang'].includes(r.bj.terburuk)), gdA = Rs.filter(r => r.gd.length);
+    const bj = Rs.filter(r => r.bj && ['tinggi', 'sedang'].includes(r.bj.terburuk)), gdA = Rs.filter(r => r.gd.length);
     L.butir([
       aqi150.length ? `Udara tidak sehat (US AQI > 150) di ${aqi150.length} area: ${aqi150.sort((a, b) => b.aqiMax - a.aqiMax).map(r => `${r.k} ${nf(r.aqiMax)}`).join(', ')}.` : 'Tidak ada area dengan US AQI > 150.',
       nPd ? `Peringatan dini BMKG aktif mengenai aset: ${Rs.filter(r => r.pd.length).map(r => `${r.k} ${r.pd.length}`).join(', ')}.` : 'Tidak ada peringatan dini cuaca BMKG yang aktif mengenai aset.',
-      `Potensi petir tinggi hari ini: ${pt.length ? pt.map(r => r.k).join(', ') : 'tidak ada'} · banjir sungai sedang/tinggi: ${bj.length ? bj.map(r => r.k).join(', ') : 'tidak ada'}${gdA.length ? ` · GDACS relevan: ${gdA.map(r => r.k).join(', ')}` : ''}.`,
+      `Banjir sungai sedang/tinggi: ${bj.length ? bj.map(r => r.k).join(', ') : 'tidak ada'}${gdA.length ? ` · GDACS relevan: ${gdA.map(r => r.k).join(', ')}` : ''}.`,
     ]);
 
     // 2. STATUS PER AREA
