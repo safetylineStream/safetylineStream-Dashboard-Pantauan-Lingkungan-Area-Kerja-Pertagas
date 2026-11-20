@@ -805,6 +805,7 @@
     }
     return angka(o.teks);
   }
+  const labelTemuan = t => (urai(t).bandang ? 'Banjir bandang' : (katDari(t) || {}).lbl || JL[t.jenis] || t.jenis);
   const DAMPAK = {
     hotspot: 'Bila benar ada kebakaran, api dapat merambat ke ROW, merusak fasilitas di atas tanah dan menghambat akses pemeliharaan.',
     gempa: 'Guncangan dapat merusak pipa, sambungan atau fasilitas di sekitarnya.',
@@ -1242,11 +1243,6 @@
       qDekat ? `Dalam 7 hari terakhir tercatat ${X.qs.length} gempa; yang paling dekat dengan aset berkekuatan M ${nf(qDekat.mag, 1)}, sekitar ${nf(qDekat.jarak_km)} km dari ${bersih(qDekat.aset)} (${qDekat.area}).` : 'Tidak ada gempa yang tercatat dalam 7 hari terakhir.',
     ]);
 
-    // HALAMAN 3 — SOROTAN PER AREA
-    L.halamanBaru();
-    L.subjudul('Sorotan per area', 'peta ringkas jalur pipa dan temuan utama');
-    L.sorotanArea(X, ord);
-
     // HALAMAN 4
     L.halamanBaru();
     L.subjudul('Sebaran bahaya per area', 'status tertinggi setiap jenis bahaya');
@@ -1267,9 +1263,6 @@
     else L.para('Tidak ada langkah khusus; pemantauan rutin tetap berjalan.', { indent: 0 });
     if (utama.length && nPantau) L.catatan(`Selain itu ada ${nPantau} hal berstatus Pantau yang cukup ditangani lewat pemantauan rutin di masing-masing area (rinciannya di laporan area).`);
 
-    L.subjudul('Perkembangan titik panas di sekitar aset');
-    const tr = trenHarian(X, null);
-    if (tr.hari.length) L.grafik(tr.hari, tr.seri, 'Jumlah titik panas dalam radius 5 km dari aset Pertagas, seluruh area', 42);
 
     L.subjudul('Cara membaca status');
     L.legendaStatus();
@@ -1277,9 +1270,13 @@
 
     // LAMPIRAN
     L.halamanBaru();
-    L.subjudul('Lampiran A — Dasar penentuan status (teknis)');
-    L.tabelV2(['Area', 'Status', 'Skor', 'Pemicu menurut dashboard'], ord.map(a => [{ content: a.R.k, bold: true }, { badge: a.R.status }, a.R.R ? String(a.R.R) : '–', a.R.A.pemicu ? bersih(a.R.A.pemicu.teks) : 'Tidak ada temuan']), [16, 24, 12, 0], { size: 8 });
-    L.catatan('Skor = peluang bahaya mengenai aset (1–5) × besarnya dampak menurut jenis aset (1–5). Kritis 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2.');
+    L.subjudul('Lampiran A — Mengapa setiap area mendapat status tersebut');
+    L.tabelV2(['Area', 'Status', 'Skor risiko', 'Penjelasan'], ord.map(a => {
+      const u = a.semua[0];
+      return [{ content: a.R.k, bold: true }, { badge: a.R.status }, a.R.R ? String(a.R.R) : '–',
+        !u || a.R.status === 'normal' ? 'Tidak ada ancaman berarti yang terpantau di sekitar jalur pipa dan fasilitas.' : cerita(u)];
+    }), [16, 24, 16, 0], { size: 8.2 });
+    L.catatan('Skor risiko menggabungkan dua hal: seberapa besar kemungkinan bahaya tersebut mengenai aset (nilai 1–5) dan seberapa besar dampaknya bila terjadi (nilai 1–5). Kedua nilai dikalikan; makin tinggi skornya, makin serius kondisinya. Skor 15–25 = Kritis, 8–14 = Waspada, 3–7 = Pantau, 1–2 = Normal.');
     lampiranSumber(L, X, 'Lampiran B — Status sumber data');
     L.selesai(`Laporan_Situasi_Harian_PERTAGAS_WASPADA_${stamp(now)}.pdf`, `${tglPendek(now)} ${jamWIB(now)}`);
   }
@@ -1347,9 +1344,9 @@
         [8, 23, 14, 38, 0, 30, 22], { size: 7.4 });
       if (R.h.length > 40) L.catatan(`Ditampilkan 40 dari ${R.h.length} titik.`);
     } else L.para('Tidak ada titik panas dalam radius 5 km.', { indent: 0 });
-    L.subjudul('Lampiran B — Dasar penentuan status (teknis)');
-    L.tabelV2(['Jenis', 'Status', 'Skor (P × K)', 'Keterangan teknis'], kelompok((R.A.temuan || []).filter(x => x.R >= 1)).slice(0, 12).map(x => [JL[x.jenis] || x.jenis, { badge: x.status }, `${x.P} × ${x.K} = ${x.R}`, bersih(x.teks)]), [34, 24, 22, 0], { size: 7.8 });
-    L.catatan('P = peluang bahaya mengenai aset (1–5); K = besarnya dampak menurut jenis aset (1–5). Kritis 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2.');
+    L.subjudul('Lampiran B — Mengapa area ini mendapat status tersebut');
+    L.tabelV2(['Jenis bahaya', 'Status', 'Skor risiko', 'Penjelasan'], kelompok((R.A.temuan || []).filter(x => x.R >= 1).map(x => ({ ...x, area: k }))).slice(0, 12).map(x => [labelTemuan(x), { badge: x.status }, String(x.R), cerita(x)]), [34, 24, 16, 0], { size: 7.8 });
+    L.catatan('Skor risiko menggabungkan dua hal: seberapa besar kemungkinan bahaya tersebut mengenai aset (nilai 1–5) dan seberapa besar dampaknya bila terjadi (nilai 1–5). Kedua nilai dikalikan; makin tinggi skornya, makin serius kondisinya. Skor 15–25 = Kritis, 8–14 = Waspada, 3–7 = Pantau, 1–2 = Normal.');
     lampiranSumber(L, X, 'Lampiran C — Status sumber data');
     L.selesai(`Laporan_Area_${k}_PERTAGAS_WASPADA_${stamp(now)}.pdf`, `${tglPendek(now)} ${jamWIB(now)}`);
   }
