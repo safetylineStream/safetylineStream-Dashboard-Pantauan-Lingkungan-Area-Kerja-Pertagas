@@ -1,9 +1,8 @@
-name: Update Bahaya Tambahan (petir, banjir sungai, GDACS)
+name: Update Bahaya Tambahan (banjir sungai, GDACS)
 
-# Tiga modul berbasis lokasi aset, semuanya tanpa API key:
-#   - Potensi petir (prakiraan model Open-Meteo — bukan deteksi sambaran)
+# Dua modul berbasis lokasi aset, semuanya tanpa API key:
 #   - Potensi banjir sungai (model GloFAS via Open-Meteo Flood) di sel sungai yang dilalui pipa
-#   - Siklon tropis & bencana besar (GDACS)
+#   - Siklon tropis & erupsi gunung api (GDACS)
 # Jam GitHub = UTC: 22:40, 04:40, 10:40, 16:40 UTC = 05:40, 11:40, 17:40, 23:40 WIB.
 # Ambang banjir (riwayat 5 tahun per sel sungai) diunduh bertahap tiap run sampai lengkap.
 on:
@@ -42,12 +41,7 @@ jobs:
       - name: Install dependensi
         run: pip install -r requirements.txt
 
-      - name: Potensi petir (model)
-        run: python scripts/petir_model.py
-        timeout-minutes: 6
-        continue-on-error: true
-
-      - name: Siklon tropis & bencana besar (GDACS)
+      - name: Siklon tropis & gunung api (GDACS)
         run: python scripts/gdacs.py
         timeout-minutes: 5
         continue-on-error: true
@@ -63,12 +57,12 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm -rf "$RUNNER_TEMP/bt" && mkdir -p "$RUNNER_TEMP/bt"
-          for d in petir_model gdacs banjir; do [ -d data/$d ] && cp -r data/$d "$RUNNER_TEMP/bt/$d"; done
+          for d in gdacs banjir; do [ -d data/$d ] && cp -r data/$d "$RUNNER_TEMP/bt/$d"; done
           [ -n "$(ls -A "$RUNNER_TEMP/bt")" ] || { echo "Belum ada hasil."; exit 0; }
           for i in 1 2 3; do
             git fetch -q origin ${{ github.ref_name }}
             git reset -q --hard origin/${{ github.ref_name }}
-            for d in petir_model gdacs banjir; do
+            for d in gdacs banjir; do
               [ -d "$RUNNER_TEMP/bt/$d" ] && { rm -rf data/$d; cp -r "$RUNNER_TEMP/bt/$d" data/$d; git add -A data/$d; }
             done
             if git diff --cached --quiet; then echo "Tidak ada perubahan data."; exit 0; fi

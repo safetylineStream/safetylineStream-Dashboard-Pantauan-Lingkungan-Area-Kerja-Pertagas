@@ -1,5 +1,5 @@
 """
-gdacs.py — Siklon tropis & bencana besar (GDACS) terhadap jalur pipa & fasilitas.
+gdacs.py — Siklon tropis & erupsi gunung api (GDACS) terhadap jalur pipa & fasilitas.
 
 Sumber : GDACS — Global Disaster Alert and Coordination System (PBB & Komisi Eropa/JRC), API publik tanpa kunci.
          https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH
@@ -7,10 +7,12 @@ Jenis  : Peringatan otomatis skala global (level Green/Orange/Red = perkiraan da
 Spasial: jarak geodesik kejadian → aset terdekat per wilayah; untuk siklon tropis, poligon lintasan/zona angin GDACS
          ditumpangkan ke aset. Kejadian di luar `radius_tampil_km` tidak disimpan.
          Gempa (EQ) dan kebakaran (WF) tidak diambil karena sudah dipantau dari BMKG dan SiPongi/FIRMS.
+         Banjir (FL) tidak diambil: lokasinya hanya titik perkiraan (sering satu titik per negara) dan banjir
+         di perlintasan pipa sudah dipantau modul banjir sungai GloFAS (scripts/banjir_sungai.py).
 
 Skor peluang P (dipakai klasifikasi multi-bahaya, K = 3):
   Siklon : aset di zona angin Red (≥ 120 km/jam) 5 · Orange (≥ 90) 4 · Green (≥ 60) 3 · di kerucut prakiraan 2 · ≤ `tc_pantau_km` 1
-  Banjir/gunung api : ≤ `dekat_km` & level Orange/Red 3 · ≤ `pantau_km` & Orange/Red 2 · ≤ `pantau_km` & Green 1
+  Gunung api : ≤ `dekat_km` & level Orange/Red 3 · ≤ `pantau_km` & Orange/Red 2 · ≤ `pantau_km` & Green 1
 
 Keluaran: data/gdacs/gdacs.json  dan  data/gdacs/geometri.geojson (lintasan & zona siklon)
 """
@@ -27,13 +29,13 @@ from umum import DATA, ambil, baca_json, cfg, iso, log, muat_aset, sekarang, tul
 OUT = DATA / "gdacs"
 CFG = cfg("gdacs", {
     "url": "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH",
-    "jenis": ["TC", "FL", "VO"],
+    "jenis": ["TC", "VO"],
     "hari_ke_belakang": 10,
     "kejadian_aktif_hari": 3,
-    "radius_tampil_km": {"TC": 1500, "FL": 150, "VO": 150},
+    "radius_tampil_km": {"TC": 1500, "VO": 150},
     "tc_pantau_km": 500,
-    "dekat_km": {"FL": 25, "VO": 30},
-    "pantau_km": {"FL": 100, "VO": 100},
+    "dekat_km": {"VO": 30},
+    "pantau_km": {"VO": 100},
 })
 JENIS = {"TC": "Siklon tropis", "FL": "Banjir", "VO": "Gunung api", "EQ": "Gempa bumi", "WF": "Kebakaran hutan", "DR": "Kekeringan"}
 KELAS_TC = {"poly_red": (5, "zona angin ≥ 120 km/jam"), "poly_orange": (4, "zona angin ≥ 90 km/jam"),
@@ -217,7 +219,7 @@ def main():
         tulis_json(OUT / "gdacs.json", {
             "sumber": "GDACS — Global Disaster Alert and Coordination System (PBB & Komisi Eropa)", "url": "https://www.gdacs.org/",
             "jenis": "Peringatan otomatis skala global — bukan peringatan resmi BMKG/BNPB",
-            "catatan": "Level Green/Orange/Red GDACS adalah perkiraan dampak kemanusiaan. Lokasi banjir GDACS berupa titik perkiraan, bukan batas genangan.",
+            "catatan": "Level Green/Orange/Red GDACS adalah perkiraan dampak kemanusiaan.",
             "diambil": iso(), "jenis_dipantau": CFG["jenis"], "radius_tampil_km": CFG["radius_tampil_km"], "global": len(feats),
             "kejadian": kejadian, "status": {"ok": True, "pesan": None}, "durasi_detik": round(time.time() - t0)})
         tulis_json(OUT / "geometri.geojson", {"type": "FeatureCollection", "features": gj})
