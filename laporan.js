@@ -1354,6 +1354,434 @@
   const stamp = d => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { ...tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d).map(x => [x.type, x.value])); return `${p.year}-${p.month}-${p.day}_${p.hour}${p.minute}`; };
   const tglPendek = d => d.toLocaleDateString('id-ID', { ...tz, day: 'numeric', month: 'short', year: 'numeric' });
 
+  // ================================================================ PRESENTASI (PPTX) — Laporan Situasi Harian
+  // Dibuat di browser dengan PptxGenJS (vendor/pptxgen.bundle.js, dimuat saat tombol diklik).
+  // Peta & ikon digambar di <canvas> (satuan mm) lalu disisipkan sebagai gambar; teks & tabel tetap native agar mudah disunting.
+  const LIB_PPT = 'vendor/pptxgen.bundle.js';
+  const hx = c => c.map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase();
+  const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+  let FONT_KANVAS = false;
+  async function siapkanPpt() {
+    await siapkan();
+    if (!window.PptxGenJS) await muatSkrip(LIB_PPT);
+    if (!FONT_KANVAS && window.FontFace && document.fonts) {
+      try {
+        const f1 = new FontFace('Carlito', `url(${FONT.normal})`), f2 = new FontFace('Carlito', `url(${FONT.bold})`, { weight: 'bold' });
+        await Promise.all([f1.load(), f2.load()]); document.fonts.add(f1); document.fonts.add(f2);
+      } catch (e) { /* font cadangan sans-serif */ }
+      FONT_KANVAS = true;
+    }
+  }
+  function kanvas(wMm, hMm, pxPerMm = 12) {
+    const cv = document.createElement('canvas'); cv.width = Math.round(wMm * pxPerMm); cv.height = Math.round(hMm * pxPerMm);
+    const g = cv.getContext('2d'); g.scale(pxPerMm, pxPerMm); g.lineCap = 'round'; g.lineJoin = 'round';
+    return { cv, g };
+  }
+  const fk = (g, st, pt) => { g.font = `${st === 'bold' ? 'bold ' : ''}${(pt * 0.3528).toFixed(3)}px Carlito, Calibri, Arial, sans-serif`; };
+  const png = cv => cv.toDataURL('image/png').replace(/^data:/, '');
+  function jalurK(g, cmd, cx, cy, s) {
+    g.beginPath(); g.moveTo(cx + cmd[0][1] * s, cy + cmd[0][2] * s);
+    for (const c of cmd.slice(1)) { if (c[0] === 'L') g.lineTo(cx + c[1] * s, cy + c[2] * s); else g.bezierCurveTo(cx + c[1] * s, cy + c[2] * s, cx + c[3] * s, cy + c[4] * s, cx + c[5] * s, cy + c[6] * s); }
+  }
+  function glyphK(g, id, cx, cy, s, col, bg) {
+    g.fillStyle = rgb(col); g.strokeStyle = rgb(col);
+    const bul = (x, y, r) => { g.beginPath(); g.arc(x, y, r, 0, 2 * Math.PI); g.fill(); };
+    if (id === 'kebakaran') {
+      jalurK(g, [['M', 0, 1], ['C', -0.62, 1, -0.8, 0.42, -0.52, -0.02], ['C', -0.38, -0.25, -0.2, -0.42, -0.1, -1], ['C', 0.28, -0.62, 0.74, -0.25, 0.7, 0.32], ['C', 0.66, 0.78, 0.38, 1, 0, 1]], cx, cy, s); g.closePath(); g.fill();
+      g.fillStyle = rgb(bg); jalurK(g, [['M', 0, 0.9], ['C', -0.28, 0.9, -0.36, 0.58, -0.22, 0.36], ['C', -0.12, 0.2, -0.04, 0.08, 0, -0.14], ['C', 0.16, 0.08, 0.32, 0.3, 0.3, 0.54], ['C', 0.28, 0.8, 0.16, 0.9, 0, 0.9]], cx, cy, s); g.closePath(); g.fill();
+    } else if (id === 'gempa') {
+      g.lineWidth = s * 0.2; const p = [[-0.95, 0.05], [-0.58, 0.05], [-0.38, -0.6], [-0.14, 0.75], [0.1, -0.85], [0.32, 0.5], [0.52, 0.05], [0.95, 0.05]];
+      g.beginPath(); p.forEach(([x, y], i) => (i ? g.lineTo : g.moveTo).call(g, cx + x * s, cy + y * s)); g.stroke();
+    } else if (id === 'tanah') {
+      jalurK(g, [['M', -0.98, 0.82], ['L', -0.2, -0.72], ['L', 0.32, 0.12], ['L', 0.08, 0.82]], cx, cy, s); g.closePath(); g.fill();
+      [[0.46, 0.64, 0.17], [0.78, 0.7, 0.13], [0.62, 0.36, 0.11]].forEach(([x, y, r]) => bul(cx + x * s, cy + y * s, r * s));
+    } else if (id === 'banjir') {
+      jalurK(g, [['M', 0, -0.98], ['C', 0.36, -0.52, 0.4, -0.32, 0.4, -0.2], ['C', 0.4, 0.04, 0.2, 0.2, 0, 0.2], ['C', -0.2, 0.2, -0.4, 0.04, -0.4, -0.2], ['C', -0.4, -0.32, -0.36, -0.52, 0, -0.98]], cx, cy, s); g.closePath(); g.fill();
+      g.lineWidth = s * 0.17;
+      [0.5, 0.86].forEach(yy => { jalurK(g, [['M', -0.92, yy], ['C', -0.7, yy - 0.2, -0.5, yy - 0.2, -0.3, yy], ['C', -0.1, yy + 0.2, 0.1, yy + 0.2, 0.3, yy], ['C', 0.5, yy - 0.2, 0.7, yy - 0.2, 0.92, yy]], cx, cy, s); g.stroke(); });
+    } else if (id === 'cuaca') {
+      jalurK(g, [['M', 0.24, -1], ['L', -0.52, 0.12], ['L', -0.04, 0.12], ['L', -0.26, 1], ['L', 0.56, -0.22], ['L', 0.08, -0.22], ['L', 0.44, -1]], cx, cy, s); g.closePath(); g.fill();
+    } else if (id === 'udara') {
+      bul(cx - 0.38 * s, cy - 0.02 * s, 0.32 * s); bul(cx + 0.02 * s, cy - 0.26 * s, 0.42 * s); bul(cx + 0.42 * s, cy + 0.02 * s, 0.3 * s);
+      g.fillRect(cx - 0.38 * s, cy - 0.02 * s, 0.8 * s, 0.32 * s);
+      g.lineWidth = s * 0.14; g.beginPath(); g.moveTo(cx - 0.75 * s, cy + 0.62 * s); g.lineTo(cx + 0.45 * s, cy + 0.62 * s); g.moveTo(cx - 0.4 * s, cy + 0.88 * s); g.lineTo(cx + 0.8 * s, cy + 0.88 * s); g.stroke();
+    }
+  }
+  function simbolK(g, st, cx, cy, r, col) {
+    g.fillStyle = rgb(col); g.strokeStyle = rgb(col);
+    if (st === 'kritis') { g.beginPath(); g.moveTo(cx - r, cy + r * 0.85); g.lineTo(cx + r, cy + r * 0.85); g.lineTo(cx, cy - r); g.closePath(); g.fill(); }
+    else if (st === 'waspada') { g.beginPath(); g.moveTo(cx, cy - r); g.lineTo(cx + r, cy); g.lineTo(cx, cy + r); g.lineTo(cx - r, cy); g.closePath(); g.fill(); }
+    else if (st === 'pantau') { g.beginPath(); g.arc(cx, cy, r * 0.8, 0, 2 * Math.PI); g.fill(); }
+    else { g.lineWidth = r * 0.45; g.beginPath(); g.moveTo(cx - r * 0.85, cy); g.lineTo(cx - r * 0.2, cy + r * 0.65); g.lineTo(cx + r * 0.95, cy - r * 0.75); g.stroke(); }
+  }
+  const IKON_CACHE = {};
+  function ikonPng(id, st) {
+    const key = id + '|' + st; if (IKON_CACHE[key]) return IKON_CACHE[key];
+    const { cv, g } = kanvas(10, 10, 24), bg = st && ST[st] ? ST[st].bg : [176, 184, 194];
+    g.fillStyle = rgb(bg); g.beginPath(); g.arc(5, 5, 5, 0, 2 * Math.PI); g.fill();
+    if (['kritis', 'waspada', 'pantau', 'normal'].includes(id)) simbolK(g, id, 5, 5, 2.4, id === 'pantau' ? C.ink : [255, 255, 255]);
+    else glyphK(g, id, 5, 5, 2.9, st === 'pantau' ? C.ink : [255, 255, 255], bg);
+    return (IKON_CACHE[key] = png(cv));
+  }
+  function logoWaspadaPng(warnaBatang) {
+    const { cv, g } = kanvas(33, 19, 30), P = (pts, col) => { g.fillStyle = rgb(col); g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo : g.moveTo).call(g, x / 10, y / 10)); g.closePath(); g.fill(); };
+    P([[20, 40], [50, 40], [90, 150], [60, 150]], warnaBatang || [11, 58, 110]); P([[96, 150], [128, 62], [158, 62], [126, 150]], [0, 108, 183]);
+    P([[164, 62], [194, 62], [226, 150], [196, 150]], [173, 195, 43]); P([[232, 150], [279, 20], [309, 20], [262, 150]], [237, 50, 55]);
+    g.fillStyle = rgb(warnaBatang || [11, 58, 110]); g.beginPath(); g.roundRect ? g.roundRect(2, 16.8, 29, 1, 0.5) : g.rect(2, 16.8, 29, 1); g.fill();
+    return { data: png(cv), aspek: 33 / 19 };
+  }
+  function lencanaK(g, st, x, y, w, h) {
+    const S = ST[st] || ST.normal; g.fillStyle = rgb(S.bg); g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, h * 0.22) : g.rect(x, y, w, h); g.fill();
+    simbolK(g, st, x + 3.1, y + h / 2, 1.1, S.fg);
+    g.fillStyle = rgb(S.fg); fk(g, 'bold', h * 1.5); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(S.label, x + 5.2 + (w - 5.2) / 2 - 0.5, y + h / 2 + 0.1);
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  }
+  function ikonK(g, id, cx, cy, r, st) {
+    const bg = st && ST[st] ? ST[st].bg : [176, 184, 194]; g.fillStyle = rgb(bg); g.beginPath(); g.arc(cx, cy, r, 0, 2 * Math.PI); g.fill();
+    glyphK(g, id, cx, cy, r * 0.58, st === 'pantau' ? C.ink : [255, 255, 255], bg);
+  }
+  // peta situasi nasional di kanvas (mm); label: tampilkan kotak area dengan garis penunjuk
+  function petaKanvas(X, AR, opsi = {}) {
+    const bb = [95.0, -9.0, 119.6, 6.6], [a0, b0, a1, b1] = bb, kx = Math.cos(((b0 + b1) / 2) * Math.PI / 180);
+    const w = opsi.lebar || 200, s = w / ((a1 - a0) * kx), mh = (b1 - b0) * s, label = opsi.label !== false;
+    const boxH = label ? 15 : 0, gapL = label ? 5 : 0, legH = opsi.legenda ? (w < 180 ? 21 : 15) : 0, H = mh + 2 * (boxH + gapL) + legH;
+    const { cv, g } = kanvas(w, H, opsi.ppm || 11);
+    const ox = 0, oy = boxH + gapL, P = (lo, la) => [ox + (lo - a0) * kx * s, oy + (b1 - la) * s];
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, H);
+    g.fillStyle = rgb(C.laut); g.fillRect(ox, oy, w, mh);
+    g.save(); g.beginPath(); g.rect(ox, oy, w, mh); g.clip();
+    g.fillStyle = rgb(C.darat); g.strokeStyle = rgb(C.pantai); g.lineWidth = 0.15;
+    for (const r of (DARAT && (DARAT.ringan.length ? DARAT.ringan : DARAT.detail)) || []) {
+      if (r.b[2] < a0 || r.b[0] > a1 || r.b[3] < b0 || r.b[1] > b1) continue;
+      g.beginPath(); for (let i = 0; i < r.c.length; i += 2) { const [px, py] = P(r.c[i], r.c[i + 1]); i ? g.lineTo(px, py) : g.moveTo(px, py); } g.closePath(); g.fill(); g.stroke();
+    }
+    g.fillStyle = 'rgb(160,170,182)'; fk(g, 'bold', 8.2); g.textAlign = 'center';
+    [['S U M A T E R A', 99.6, -0.6], ['K A L I M A N T A N', 113.2, 0.9], ['J A W A', 110.9, -7.55], ['SEMENANJUNG MALAYSIA', 101.7, 4.6]].forEach(([t, lo, la]) => { const [px, py] = P(lo, la); g.fillText(t, px, py); });
+    g.fillStyle = 'rgb(130,160,192)'; fk(g, 'normal', 8);
+    [['Laut Jawa', 111.3, -4.9], ['Samudra Hindia', 99.2, -6.3], ['Laut Natuna', 108.2, 3.4], ['Selat Makassar', 117.7, -3.2]].forEach(([t, lo, la]) => { const [px, py] = P(lo, la); g.fillText(t, px, py); });
+    g.textAlign = 'left';
+    X.qs.forEach(q => { if (q.lon < a0 || q.lon > a1 || q.lat < b0 || q.lat > b1) return; const [px, py] = P(+q.lon, +q.lat); g.strokeStyle = rgb(C.ungu); g.lineWidth = 0.35; g.beginPath(); g.arc(px, py, 0.9 + Math.max(0, (+q.mag || 0) - 3) * 0.55, 0, 2 * Math.PI); g.stroke(); });
+    const geom = k => (X.ASSETS.features || []).filter(f => f.properties && f.properties.area === k && f.geometry && /LineString/.test(f.geometry.type))
+      .flatMap(f => (f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates));
+    const garis = (c, lw, col) => { g.strokeStyle = rgb(col); g.lineWidth = lw; g.beginPath(); c.forEach((p, i) => { const [px, py] = P(p[0], p[1]); i ? g.lineTo(px, py) : g.moveTo(px, py); }); g.stroke(); };
+    AR.forEach(a => geom(a.R.k).forEach(c => garis(c, 2.0, [255, 255, 255])));
+    AR.forEach(a => geom(a.R.k).forEach(c => garis(c, 1.1, ST[a.R.status].bg)));
+    AR.forEach(a => a.R.h.filter(h => URUT[X.hsSt(h)] >= 1).forEach(h => { const [px, py] = P(+h.lon, +h.lat); g.fillStyle = rgb(C.kritis); g.strokeStyle = '#fff'; g.lineWidth = 0.2; g.beginPath(); g.arc(px, py, 0.8, 0, 2 * Math.PI); g.fill(); g.stroke(); }));
+    g.restore();
+    g.strokeStyle = rgb(C.line); g.lineWidth = 0.25; g.strokeRect(ox, oy, w, mh);
+    if (label) {
+      const titik = AR.map(a => {
+        const pts = geom(a.R.k).flat(); if (!pts.length) return null;
+        const cx = pts.reduce((t, p) => t + p[0], 0) / pts.length, cy = pts.reduce((t, p) => t + p[1], 0) / pts.length;
+        const near = pts.reduce((m, p) => ((p[0] - cx) ** 2 + (p[1] - cy) ** 2 < (m[0] - cx) ** 2 + (m[1] - cy) ** 2 ? p : m), pts[0]);
+        return { a, lon: near[0], lat: near[1], xy: P(near[0], near[1]) };
+      }).filter(Boolean);
+      const med = titik.map(t => t.lat).sort((p, q) => p - q)[Math.floor(titik.length / 2)];
+      const atas = titik.filter(t => t.lat >= med).sort((p, q) => p.lon - q.lon), bawah = titik.filter(t => t.lat < med).sort((p, q) => p.lon - q.lon);
+      const bw = Math.min(46, (w - 3 * 3) / Math.max(atas.length, bawah.length, 1)), chipW = bw < 40 ? 16.5 : 19;
+      const susun = (row, y, keAtas) => {
+        let xs = row.map(t => Math.min(Math.max(t.xy[0] - bw / 2, ox), ox + w - bw));
+        for (let i = 1; i < xs.length; i++) xs[i] = Math.max(xs[i], xs[i - 1] + bw + 3);
+        for (let i = xs.length - 1; i >= 0; i--) { const batas = i === xs.length - 1 ? ox + w - bw : xs[i + 1] - bw - 3; xs[i] = Math.min(xs[i], batas); }
+        row.forEach((t, i) => {
+          const x = xs[i], st = t.a.R.status, S = ST[st], ax = Math.min(Math.max(t.xy[0], x + 3), x + bw - 3), ay = keAtas ? y + boxH : y;
+          g.strokeStyle = rgb(C.grey); g.lineWidth = 0.25; g.beginPath(); g.moveTo(ax, ay); g.lineTo(t.xy[0], t.xy[1]); g.stroke();
+          g.fillStyle = rgb(C.ink); g.beginPath(); g.arc(t.xy[0], t.xy[1], 0.75, 0, 2 * Math.PI); g.fill();
+          g.fillStyle = '#fff'; g.strokeStyle = rgb(S.bg); g.lineWidth = 0.6; g.beginPath(); g.roundRect ? g.roundRect(x, y, bw, boxH, 1.4) : g.rect(x, y, bw, boxH); g.fill(); g.stroke();
+          g.fillStyle = rgb(C.ink); fk(g, 'bold', bw < 40 ? 12 : 10.5); g.fillText(t.a.R.k, x + 2.4, y + 5.4);
+          lencanaK(g, st, x + bw - chipW - 1.5, y + 1.5, chipW, 4.6);
+          const akt = KAT.filter(c => t.a.stKat[c.id] && URUT[t.a.stKat[c.id]] >= 1);
+          if (akt.length) akt.slice(0, 5).forEach((c, j) => ikonK(g, c.id, x + 4.8 + j * 6.4, y + 10.6, 2.65, t.a.stKat[c.id]));
+          else { g.fillStyle = rgb(C.grey); fk(g, 'normal', bw < 40 ? 9 : 8); g.fillText('Tidak ada ancaman', x + 2.4, y + 11.8); }
+        });
+      };
+      susun(atas, 0, true); susun(bawah, oy + mh + gapL, false);
+    }
+    if (opsi.legenda) {
+      let lx = 0, ly = oy + mh + gapL + boxH + 5; fk(g, 'normal', 8.6);
+      [['ln', ST.kritis.bg, 'Kritis'], ['ln', ST.waspada.bg, 'Waspada'], ['ln', ST.pantau.bg, 'Pantau'], ['ln', ST.normal.bg, 'Normal'], ['dot', C.kritis, 'Titik panas berisiko'], ['ring', C.ungu, 'Gempa 7 hari']].forEach(([t, c, l]) => {
+        if (lx + g.measureText(l).width + 8 > w) { lx = 0; ly += 6; }
+        g.strokeStyle = rgb(c); g.fillStyle = rgb(c);
+        if (t === 'ln') { g.lineWidth = 1.2; g.beginPath(); g.moveTo(lx, ly - 1); g.lineTo(lx + 6, ly - 1); g.stroke(); } else if (t === 'dot') { g.beginPath(); g.arc(lx + 2.5, ly - 1, 1, 0, 2 * Math.PI); g.fill(); } else { g.lineWidth = 0.45; g.beginPath(); g.arc(lx + 2.5, ly - 1, 1.6, 0, 2 * Math.PI); g.stroke(); }
+        g.fillStyle = rgb(C.grey); g.fillText(l, lx + 7.5, ly); lx += g.measureText(l).width + 10;
+      });
+      lx = 0; ly += 6.5;
+      KAT.forEach(c => { const lb = c.lbl.replace(' & gerakan tanah', '').replace(' & tsunami', '').replace(' ekstrem & petir', ' & petir'); if (lx + g.measureText(lb).width + 6 > w) { lx = 0; ly += 6; }
+        ikonK(g, c.id, lx + 2.3, ly - 1.1, 2.3, 'waspada'); g.fillStyle = rgb(C.grey); g.fillText(lb, lx + 5.6, ly); lx += g.measureText(lb).width + 9; });
+    }
+    return { data: png(cv), aspek: w / H };
+  }
+
+  // data bersama untuk rangkuman (dipakai presentasi)
+  function dataRingkasan(X) {
+    const AR = X.AREAS.map(k => isuArea(X, k));
+    const rk = { kritis: [], waspada: [], pantau: [], normal: [] }; AR.forEach(a => rk[a.R.status].push(a.R.k));
+    const ter = rk.kritis.length ? 'kritis' : rk.waspada.length ? 'waspada' : rk.pantau.length ? 'pantau' : 'normal';
+    const JUDUL = { kritis: 'Perlu tindakan segera', waspada: 'Aman, dengan beberapa catatan', pantau: 'Aman dan terkendali', normal: 'Aman' };
+    const perlu = AR.filter(a => ['kritis', 'waspada'].includes(a.R.status)).sort((a, b) => URUT[b.R.status] - URUT[a.R.status] || b.R.R - a.R.R);
+    const sebabArea = a => (katDari(a.semua[0]) || {}).sebab || 'temuan bahaya';
+    const ks = {}; perlu.forEach(a => (ks[sebabArea(a)] = ks[sebabArea(a)] || []).push(a.R.k));
+    const frasa = Object.entries(ks).map(([s, k]) => `${daftarKata(k)} karena ${s}`);
+    const tAll = trenArea(X, null), tsunami = X.qs.some(q => q.tsunami), gempaBahaya = AR.some(a => a.stKat.gempa && URUT[a.stKat.gempa] >= 2);
+    const udara = AR.filter(a => a.stKat.udara && URUT[a.stKat.udara] >= 2).map(a => a.R.k);
+    const p1 = ter === 'kritis' ? `Hari ini ada kondisi yang memerlukan tindakan segera di ${daftarKata(rk.kritis)}.${perlu.length > rk.kritis.length ? ` Selain itu, ${daftarKata(rk.waspada)} perlu dicek di lapangan dalam 24 jam.` : ''}`
+      : ter === 'waspada' ? `Secara umum operasi jalur pipa hari ini berjalan aman. Namun ada ${perlu.length} area yang perlu dicek di lapangan dalam 24 jam, yaitu ${daftarKata(frasa)}.${rk.pantau.length ? ` ${daftarKata(rk.pantau)} cukup dipantau, sedangkan area lainnya normal.` : ' Area lainnya normal.'}`
+        : ter === 'pantau' ? `Secara umum kondisi seluruh area aman dan terkendali. Beberapa hal kecil tetap kami pantau di ${daftarKata(rk.pantau)}.` : 'Seluruh area operasi dalam kondisi aman; tidak ada ancaman berarti yang terpantau.';
+    const p2 = `${kalimatTren(tAll, 'aset Pertagas')} ${gempaBahaya || tsunami ? 'Ada gempa yang perlu dicek dampaknya terhadap aset.' : 'Tidak ada gempa yang mengancam aset dan tidak ada potensi tsunami.'}`
+      + (udara.length ? ` Udara di ${daftarKata(udara)} sedang tidak sehat, sehingga pekerja lapangan perlu memakai masker.` : '');
+    const ord = AR.slice().sort((a, b) => URUT[b.R.status] - URUT[a.R.status] || b.R.R - a.R.R || X.AREAS.indexOf(a.R.k) - X.AREAS.indexOf(b.R.k));
+    const isu = [];
+    for (const a of perlu) for (const t of a.semua.filter(t => URUT[t.status] >= 2)) {
+      const kat = (katDari(t) || {}).lbl; if (isu.some(x => x.area === a.R.k && x.kat === kat)) continue;
+      isu.push({ area: a.R.k, kat, katId: (katDari(t) || {}).id, status: t.status, apa: cerita(t), singkat: ringkas(t), dampak: DAMPAK[jenisV2(t)] || '', aksi: tindakan(t), pic: `Manager ${a.R.k}, didampingi Fungsi HSSE`, target: ARTI[t.status].target });
+    }
+    const gab = [];
+    for (const x of isu) {
+      const gx = gab.find(y => y.kat === x.kat && y.status === x.status);
+      if (!gx) { gab.push({ ...x, areas: [x.area], singkats: [x.singkat], aksis: [x.aksi] }); continue; }
+      gx.areas.push(x.area); gx.singkats.push(x.singkat); if (!gx.aksis.includes(x.aksi)) gx.aksis.push(x.aksi);
+    }
+    gab.forEach(gx => { if (gx.areas.length > 1) { gx.area = daftarKata(gx.areas); gx.apa = gx.areas.map((a, i) => `${a}: ${kecil(gx.singkats[i])}.`).join(' '); gx.aksi = gx.aksis.join(' '); gx.pic = `Manager ${daftarKata(gx.areas)}, didampingi Fungsi HSSE`; } });
+    gab.sort((a, b) => URUT[b.status] - URUT[a.status]);
+    const rows = [];
+    for (const a of ord) for (const t of a.semua.filter(t => URUT[t.status] >= 1)) {
+      const c = katDari(t); if (!c || rows.some(r => r.k === a.R.k && r.kat === c.lbl)) continue;
+      rows.push({ k: a.R.k, kat: c.lbl, status: t.status, apa: ringkas(t), aksi: tindakan(t), target: ARTI[t.status].target });
+    }
+    rows.sort((a, b) => URUT[b.status] - URUT[a.status]);
+    const utama = rows.filter(r => URUT[r.status] >= 2), nPantau = rows.filter(r => r.status === 'pantau').length;
+    const sumT = AR.reduce((t, a) => t + a.R.h.length, 0), sumRisk = AR.reduce((t, a) => t + a.R.nRisk, 0);
+    const qDekat = X.qs.slice().sort((p, q) => p.jarak_km - q.jarak_km)[0];
+    const kmTinggi = AR.reduce((t, a) => t + (a.R.pk ? kmLv(a.R.pk, 'tinggi') + kmLv(a.R.pk, 'bandang') : 0), 0);
+    const nSungai = AR.reduce((t, a) => t + (a.perKat.banjir || []).reduce((u, x) => u + (+urai(x).n || 0), 0), 0);
+    const nPd = AR.reduce((t, a) => t + a.R.pd.length, 0), nPt = AR.filter(a => a.R.pt && a.R.pt.terburuk === 'tinggi').length;
+    const aqiTop = AR.filter(a => a.R.aqiMax != null).sort((p, q) => q.R.aqiMax - p.R.aqiMax)[0];
+    const terdampak = id => { const xs = AR.filter(a => a.stKat[id] && URUT[a.stKat[id]] >= 1); return { n: xs.length, areas: xs.map(a => a.R.k), st: xs.length ? stMax(xs.map(a => a.stKat[id])) : 'normal' }; };
+    const indikator = [
+      { id: 'kebakaran', ...terdampak('kebakaran'), sub: sumT ? `${sumT} titik panas dalam radius 5 km dari aset; ${sumRisk ? `${sumRisk} di antaranya berisiko` : 'tidak ada yang berisiko'}.` : 'Tidak ada titik panas dalam radius 5 km dari aset.' },
+      { id: 'gempa', ...terdampak('gempa'), sub: qDekat ? `Gempa terdekat 7 hari terakhir M ${nf(qDekat.mag, 1)}, sekitar ${nf(qDekat.jarak_km)} km dari aset.` : 'Tidak ada gempa dalam 7 hari terakhir.' },
+      { id: 'tanah', ...terdampak('tanah'), sub: `${nf(kmTinggi, 1)} km pipa berada di zona rawan gerakan tanah tinggi (PVMBG).` },
+      { id: 'banjir', ...terdampak('banjir'), sub: nSungai ? `${nSungai} titik perlintasan sungai berpotensi meluap.` : 'Tidak ada potensi luapan sungai di perlintasan pipa.' },
+      { id: 'cuaca', ...terdampak('cuaca'), sub: `${nPd ? `${nPd} peringatan dini BMKG aktif` : 'Tidak ada peringatan dini BMKG'}; ${nPt ? `potensi petir tinggi di ${nPt} area` : 'tidak ada area dengan potensi petir tinggi'}.` },
+      { id: 'udara', ...terdampak('udara'), sub: aqiTop ? `Indeks kualitas udara tertinggi ${nf(aqiTop.R.aqiMax)} di ${aqiTop.R.k}.` : 'Data kualitas udara belum tersedia.' },
+    ].map(i => ({ ...i, lbl: KAT.find(c => c.id === i.id).lbl }));
+    const PULAU = [['Sumatera', ['ONSA', 'ODA', 'ORA', 'OCSA', 'OSSA']], ['Jawa', ['OWJA', 'OEJA']], ['Kalimantan', ['OKA']]];
+    const pulau = PULAU.map(([pl, kk]) => {
+      const ada = AR.filter(a => kk.includes(a.R.k)); if (!ada.length) return null;
+      const grup = ['kritis', 'waspada', 'pantau', 'normal'].map(st => [st, ada.filter(a => a.R.status === st).map(a => a.R.k)]).filter(gp => gp[1].length);
+      if (grup.length === 1) return `Di ${pl}, ${ada.length > 1 ? `seluruh area (${daftarKata(grup[0][1])})` : grup[0][1][0]} berstatus ${grup[0][0]}.`;
+      return `Di ${pl}, ` + grup.map(([st, k2], i) => `${daftarKata(k2)}${i === 0 ? ' berstatus' : ''} ${st}`).join(', sedangkan ') + '.';
+    }).filter(Boolean);
+    const hsArea = AR.filter(a => a.R.nRisk).map(a => `${a.R.k} (${a.R.nRisk} titik)`);
+    const petaCatatan = [...pulau,
+      hsArea.length ? `Titik panas berisiko hanya terpantau di sekitar ${daftarKata(hsArea)}.` : 'Tidak ada titik panas berisiko di sekitar jalur pipa mana pun.',
+      qDekat ? `Gempa terdekat dalam 7 hari terakhir berkekuatan M ${nf(qDekat.mag, 1)}, sekitar ${nf(qDekat.jarak_km)} km dari ${bersih(qDekat.aset)} (${qDekat.area}).` : 'Tidak ada gempa dalam 7 hari terakhir.'];
+    return { AR, rk, ter, JUDUL, p1, p2, ord, gab, rows, utama, nPantau, indikator, petaCatatan };
+  }
+
+  async function laporanPresentasi(X) {
+    const now = X.now, Z = dataRingkasan(X), pres = new window.PptxGenJS();
+    pres.layout = 'LAYOUT_WIDE'; pres.author = 'Fungsi HSSE PT Pertamina Gas'; pres.title = `Laporan Situasi Harian PERTAGAS WASPADA — ${tglPanjang(now)}`;
+    pres.theme = { headFontFace: 'Calibri', bodyFontFace: 'Calibri' };
+    const NAVY = '0B3A6E', INKH = hx(C.ink), GREYH = hx(C.grey), PANELH = 'F3F5F8', F = 'Calibri';
+    const tgl = `${tglPanjang(now)}, pukul ${jamWIB(now)}`, logoPg = ASET.logo ? 'image/png;base64,' + ASET.logo : null;
+    const stH = st => hx(ST[st].bg), stTeks = st => (st === 'pantau' ? 'B07A00' : hx(ST[st].bg));
+    const footer = `PERTAGAS WASPADA · Laporan Situasi Harian · ${tglPendek(now)} ${jamWIB(now)} · Fungsi HSSE PT Pertamina Gas`;
+    pres.defineSlideMaster({
+      title: 'ISI', background: { color: 'FFFFFF' },
+      margin: [0.5, 0.5, 0.7, 0.5],
+      objects: [
+        ...(logoPg ? [{ image: { x: 11.0, y: 0.42, w: 1.83, h: 1.83 * 96 / 504, data: logoPg } }] : []),
+        { text: { text: footer, options: { x: 0.5, y: 7.02, w: 10.5, h: 0.3, fontFace: F, fontSize: 10, color: GREYH, margin: 0 } } },
+        { placeholder: { options: { name: 'judul', type: 'title', x: 0.5, y: 0.3, w: 10.3, h: 0.75, fontFace: F, fontSize: 32, bold: true, color: NAVY, align: 'left', valign: 'middle', margin: 0 }, text: '' } },
+      ],
+      slideNumber: { x: 12.3, y: 7.02, w: 0.55, h: 0.3, fontFace: F, fontSize: 10, color: GREYH, align: 'right' },
+    });
+    pres.defineSlideMaster({ title: 'GELAP', background: { color: NAVY }, objects: [] });
+    const chip = (sl, st, x, y, w, h, teks, size) => {
+      sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h, fill: { color: stH(st) }, line: { color: stH(st) }, rectRadius: h / 2 });
+      sl.addText(teks || ST[st].label, { x, y, w, h, fontFace: F, fontSize: size || 11, bold: true, color: st === 'pantau' ? INKH : 'FFFFFF', align: 'center', valign: 'middle', margin: 0, isTextBox: true });
+    };
+    const judul = (sl, t, ket) => { sl.addText(t, { placeholder: 'judul' }); if (ket) sl.addText(ket, { x: 0.5, y: 1.02, w: 10.3, h: 0.3, fontFace: F, fontSize: 13, color: GREYH, margin: 0, isTextBox: true }); };
+
+    // 1. SAMPUL
+    {
+      const sl = pres.addSlide({ masterName: 'GELAP' });
+      if (logoPg) { sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.6, y: 0.55, w: 2.75, h: 0.8, fill: { color: 'FFFFFF' }, line: { color: 'FFFFFF' }, rectRadius: 0.1 }); sl.addImage({ data: logoPg, x: 0.78, y: 0.72, w: 2.4, h: 2.4 * 96 / 504 }); }
+      const lw = logoWaspadaPng([255, 255, 255]); sl.addImage({ data: lw.data, x: 0.6, y: 2.05, w: 0.95, h: 0.95 / lw.aspek });
+      sl.addText([{ text: 'PERTAGAS ', options: { color: 'FFFFFF' } }, { text: 'WASPADA', options: { color: 'FF6B6F' } }], { x: 1.7, y: 2.0, w: 5.2, h: 0.6, fontFace: F, fontSize: 26, bold: true, margin: 0, isTextBox: true });
+      sl.addText('Watch & Analytics for Spatial Pipeline Anomaly & Disaster Awareness', { x: 1.7, y: 2.55, w: 5.4, h: 0.3, fontFace: F, fontSize: 11, color: 'CADCFC', margin: 0, isTextBox: true });
+      sl.addText('Laporan Situasi Harian Jalur Pipa', { x: 0.6, y: 3.2, w: 6.3, h: 1.5, fontFace: F, fontSize: 40, bold: true, color: 'FFFFFF', margin: 0, valign: 'top', isTextBox: true });
+      sl.addText(tgl, { x: 0.6, y: 4.75, w: 6.3, h: 0.4, fontFace: F, fontSize: 18, color: 'CADCFC', margin: 0, isTextBox: true });
+      sl.addText('Status keseluruhan', { x: 0.6, y: 5.45, w: 3, h: 0.3, fontFace: F, fontSize: 12, color: 'CADCFC', margin: 0, isTextBox: true });
+      chip(sl, Z.ter, 0.6, 5.8, 4.6, 0.55, Z.JUDUL[Z.ter].toUpperCase(), 16);
+      sl.addText('Disiapkan oleh Fungsi HSSE PT Pertamina Gas dari dashboard PERTAGAS WASPADA', { x: 0.6, y: 6.75, w: 7, h: 0.3, fontFace: F, fontSize: 11, color: 'CADCFC', margin: 0, isTextBox: true });
+      const pk = petaKanvas(X, Z.AR, { label: false, lebar: 200, ppm: 9 });
+      sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 7.25, y: 1.7, w: 5.6, h: 5.3 / pk.aspek + 0.3, fill: { color: 'FFFFFF' }, line: { color: 'FFFFFF' }, rectRadius: 0.12 });
+      sl.addImage({ data: pk.data, x: 7.4, y: 1.85, w: 5.3, h: 5.3 / pk.aspek });
+      sl.addText('Jalur pipa 8 area operasi, diwarnai sesuai status hari ini', { x: 7.25, y: 1.85 + 5.3 / pk.aspek + 0.3, w: 5.6, h: 0.3, fontFace: F, fontSize: 11, color: 'CADCFC', margin: 0, isTextBox: true });
+      sl.addNotes(`${Z.p1}\n\n${Z.p2}`);
+    }
+
+    // 2. RINGKASAN HARI INI
+    {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Ringkasan hari ini', tgl);
+      sl.addText(Z.JUDUL[Z.ter], { x: 0.5, y: 1.6, w: 7.4, h: 0.6, fontFace: F, fontSize: 26, bold: true, color: stTeks(Z.ter), margin: 0, isTextBox: true });
+      sl.addText([{ text: Z.p1, options: { breakLine: true, paraSpaceAfter: 14 } }, { text: Z.p2 }], { x: 0.5, y: 2.35, w: 7.4, h: 3.8, fontFace: F, fontSize: 19, color: INKH, valign: 'top', margin: 0, lineSpacingMultiple: 1.1, isTextBox: true });
+      sl.addText(kalimatData(X).replace('rincian di lampiran', 'rincian di slide Status sumber data'), { x: 0.5, y: 6.3, w: 7.4, h: 0.5, fontFace: F, fontSize: 11, italic: true, color: GREYH, margin: 0, valign: 'top', isTextBox: true });
+      ['kritis', 'waspada', 'pantau', 'normal'].forEach((st, i) => {
+        const y = 1.6 + i * 1.3;
+        sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 8.55, y, w: 4.3, h: 1.12, fill: { color: PANELH }, line: { color: PANELH }, rectRadius: 0.1 });
+        sl.addImage({ data: ikonPng(st, st), x: 8.75, y: y + 0.26, w: 0.6, h: 0.6 });
+        sl.addText(String(Z.rk[st].length), { x: 9.55, y: y + 0.08, w: 1.0, h: 0.95, fontFace: F, fontSize: 44, bold: true, color: Z.rk[st].length ? stTeks(st) : 'A0A7B1', valign: 'middle', margin: 0, isTextBox: true });
+        sl.addText([{ text: `area ${ST[st].label[0] + ST[st].label.slice(1).toLowerCase()}`, options: { bold: true, fontSize: 15, color: INKH, breakLine: true } }, { text: Z.rk[st].length ? Z.rk[st].join(', ') : '–', options: { fontSize: 12, color: GREYH } }],
+          { x: 10.6, y: y + 0.12, w: 2.15, h: 0.9, fontFace: F, valign: 'middle', margin: 0, isTextBox: true });
+      });
+      sl.addNotes(`${Z.p1}\n\n${Z.p2}\n\n${kalimatData(X)}`);
+    }
+
+    // 3. GAMBARAN 8 AREA
+    {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Gambaran 8 area operasi', `${Z.rk.kritis.length} Kritis · ${Z.rk.waspada.length} Waspada · ${Z.rk.pantau.length} Pantau · ${Z.rk.normal.length} Normal`);
+      const w = (12.33 - 3 * 0.3) / 4, h = 2.55;
+      Z.ord.forEach((a, i) => {
+        const x = 0.5 + (i % 4) * (w + 0.3), y = 1.55 + Math.floor(i / 4) * (h + 0.3), st = a.R.status;
+        sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h, fill: { color: PANELH }, line: { color: PANELH }, rectRadius: 0.12 });
+        chip(sl, st, x + 0.2, y + 0.2, 1.45, 0.36, null, 11);
+        const akt = KAT.filter(c => a.stKat[c.id] && URUT[a.stKat[c.id]] >= 1).sort((p, q) => URUT[a.stKat[q.id]] - URUT[a.stKat[p.id]]);
+        akt.slice(0, 3).reverse().forEach((c, n) => sl.addImage({ data: ikonPng(c.id, a.stKat[c.id]), x: x + w - 0.58 - n * 0.45, y: y + 0.8, w: 0.38, h: 0.38 }));
+        sl.addText(a.R.k, { x: x + 0.2, y: y + 0.72, w: w - 0.4, h: 0.5, fontFace: F, fontSize: 26, bold: true, color: INKH, margin: 0, isTextBox: true });
+        sl.addText(bersih(a.R.nama.replace('Operation ', '')), { x: x + 0.2, y: y + 1.2, w: w - 0.4, h: 0.28, fontFace: F, fontSize: 11, color: GREYH, margin: 0, isTextBox: true });
+        sl.addText(a.semua[0] && st !== 'normal' ? ringkas(a.semua[0]) + '.' : 'Tidak ada ancaman berarti yang terpantau.', { x: x + 0.2, y: y + 1.55, w: w - 0.4, h: 0.85, fontFace: F, fontSize: 14, color: INKH, valign: 'top', margin: 0, isTextBox: true });
+      });
+    }
+
+    // 4. PETA SITUASI
+    {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Peta situasi 8 area operasi', 'Jalur pipa diwarnai sesuai status area; ikon menunjukkan jenis bahaya yang terpantau');
+      const pk = petaKanvas(X, Z.AR, { label: true, legenda: true, lebar: 150, ppm: 14 }), h = 5.5, w = h * pk.aspek;
+      sl.addImage({ data: pk.data, x: 0.5, y: 1.45, w, h });
+      const xr = 0.5 + w + 0.4, wr = 12.83 - xr;
+      sl.addText('Yang terlihat di peta', { x: xr, y: 1.5, w: wr, h: 0.4, fontFace: F, fontSize: 18, bold: true, color: NAVY, margin: 0, isTextBox: true });
+      sl.addText(Z.petaCatatan.map((t, i, arr) => ({ text: t, options: { bullet: { indent: 15 }, breakLine: i < arr.length - 1, paraSpaceAfter: 12 } })),
+        { x: xr, y: 2.05, w: wr, h: 4.8, fontFace: F, fontSize: 16, color: INKH, valign: 'top', margin: 0, isTextBox: true });
+    }
+
+    // 5. PER JENIS BAHAYA
+    {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Gambaran per jenis bahaya', 'Jumlah area yang terdampak setiap jenis bahaya');
+      const w = (12.33 - 2 * 0.3) / 3, h = 2.5;
+      Z.indikator.forEach((it, i) => {
+        const x = 0.5 + (i % 3) * (w + 0.3), y = 1.55 + Math.floor(i / 3) * (h + 0.3);
+        sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h, fill: { color: PANELH }, line: { color: PANELH }, rectRadius: 0.12 });
+        sl.addImage({ data: ikonPng(it.id, it.n ? it.st : null), x: x + 0.3, y: y + 0.3, w: 0.7, h: 0.7 });
+        sl.addText(it.lbl, { x: x + 1.2, y: y + 0.3, w: w - 1.5, h: 0.7, fontFace: F, fontSize: 18, bold: true, color: INKH, valign: 'middle', margin: 0, isTextBox: true });
+        sl.addText([{ text: String(it.n), options: { fontSize: 40, bold: true, color: it.n ? stTeks(it.st) : 'A0A7B1' } }, { text: `  area${it.n ? ': ' + it.areas.join(', ') : ''}`, options: { fontSize: 14, color: GREYH } }],
+          { x: x + 0.3, y: y + 1.05, w: w - 0.6, h: 0.7, fontFace: F, valign: 'middle', margin: 0, isTextBox: true });
+        sl.addText(it.sub, { x: x + 0.3, y: y + 1.75, w: w - 0.6, h: 0.65, fontFace: F, fontSize: 13, color: INKH, valign: 'top', margin: 0, isTextBox: true });
+      });
+    }
+
+    // 6. HAL YANG PERLU PERHATIAN MANAJEMEN (maks. 2 per slide agar tetap terbaca)
+    const isuList = Z.gab.length ? Z.gab : [null];
+    for (let p = 0; p < isuList.length; p += 2) {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Hal yang perlu perhatian manajemen', Z.gab.length ? `${Z.gab.length} hal berstatus Waspada/Kritis${isuList.length > 2 ? ` (bagian ${p / 2 + 1} dari ${Math.ceil(isuList.length / 2)})` : ''}` : '');
+      if (!Z.gab.length) { sl.addText('Hari ini tidak ada hal yang memerlukan perhatian khusus manajemen. Seluruh temuan cukup ditangani melalui pemantauan rutin di masing-masing area.', { x: 0.5, y: 1.8, w: 12.3, h: 1, fontFace: F, fontSize: 18, color: INKH, margin: 0, isTextBox: true }); break; }
+      const blok = isuList.slice(p, p + 2), gapI = 0.25, hI = (5.35 - gapI) / 2, fs = 15;
+      blok.forEach((t, i) => {
+        const y = 1.5 + i * (hI + gapI), cw = (12.33 - 0.75 - 0.3 - 2 * 0.3) / 3;
+        sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.5, y, w: 12.33, h: hI, fill: { color: PANELH }, line: { color: PANELH }, rectRadius: 0.1 });
+        sl.addImage({ data: ikonPng(t.katId, t.status), x: 0.7, y: y + 0.2, w: 0.5, h: 0.5 });
+        sl.addText(`${t.area} — ${t.kat}`, { x: 1.35, y: y + 0.18, w: 9.4, h: 0.54, fontFace: F, fontSize: 20, bold: true, color: INKH, valign: 'middle', margin: 0, isTextBox: true });
+        chip(sl, t.status, 11.1, y + 0.25, 1.5, 0.4, null, 12);
+        const yIsi = y + 0.85, hIsi = hI - 0.85 - 0.5;
+        [['Apa yang terjadi', t.areas && t.areas.length > 1 ? t.apa : t.singkat + '.'], ['Mengapa penting', t.dampak], ['Yang perlu dilakukan', t.aksi]].forEach(([lbl, isi], j) => {
+          const x = 1.35 + j * (cw + 0.3);
+          sl.addText([{ text: lbl.toUpperCase(), options: { bold: true, fontSize: 11, color: NAVY, breakLine: true, charSpacing: 1 } }, { text: isi, options: { fontSize: fs, color: INKH } }],
+            { x, y: yIsi, w: cw, h: hIsi, fontFace: F, valign: 'top', margin: 0, paraSpaceAfter: 3, isTextBox: true });
+        });
+        sl.addText([{ text: 'Penanggung jawab: ', options: { bold: true } }, { text: t.pic + '    ' }, { text: 'Batas waktu: ', options: { bold: true } }, { text: t.target }],
+          { x: 1.35, y: y + hI - 0.45, w: 11.2, h: 0.32, fontFace: F, fontSize: 12, color: GREYH, valign: 'middle', margin: 0, isTextBox: true });
+      });
+    }
+
+    // 7. SEBARAN BAHAYA PER AREA (matriks)
+    {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Sebaran bahaya per area', 'Status tertinggi setiap jenis bahaya; tanda — berarti tidak ada ancaman yang terpantau');
+      const wA = 1.6, wc = (12.33 - wA) / KAT.length, y0 = 1.55;
+      KAT.forEach((c, i) => sl.addImage({ data: ikonPng(c.id, null), x: 0.5 + wA + i * wc + wc / 2 - 0.22, y: y0, w: 0.44, h: 0.44 }));
+      const head = [{ text: 'Area', options: { bold: true, color: GREYH, align: 'left' } }, ...KAT.map(c => ({ text: c.lbl, options: { bold: true, color: GREYH, align: 'center' } }))];
+      const body = Z.ord.map((a, r) => [{ text: a.R.k, options: { bold: true, color: INKH, fill: { color: r % 2 ? 'FFFFFF' : PANELH } } }, ...KAT.map(c => {
+        const st = a.stKat[c.id]; if (!st || st === 'normal') return { text: '—', options: { color: 'C3C9D1', align: 'center', fill: { color: r % 2 ? 'FFFFFF' : PANELH } } };
+        return { text: ST[st].label, options: { bold: true, align: 'center', color: st === 'pantau' ? INKH : 'FFFFFF', fill: { color: stH(st) } } };
+      })]);
+      sl.addTable([head, ...body], { x: 0.5, y: y0 + 0.55, w: 12.33, colW: [wA, ...KAT.map(() => wc)], rowH: 0.5, fontFace: F, fontSize: 13, valign: 'middle', border: { type: 'solid', pt: 1.5, color: 'FFFFFF' }, fill: { color: 'FFFFFF' }, margin: [0.04, 0.08, 0.04, 0.08] });
+    }
+
+    // 8. LANGKAH TINDAK LANJUT
+    {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Langkah tindak lanjut', 'Untuk diteruskan kepada Manager Area');
+      const tampil = (Z.utama.length ? Z.utama : Z.rows).slice(0, 7), fz = tampil.length <= 3 ? 15 : tampil.length <= 5 ? 13 : 12;
+      if (tampil.length) {
+        const H = ['No', 'Area', 'Status', 'Situasi', 'Langkah yang diminta', 'Penanggung jawab', 'Batas waktu'].map(t => ({ text: t, options: { bold: true, color: 'FFFFFF', fill: { color: NAVY } } }));
+        const body = tampil.map((r, i) => [String(i + 1), { text: r.k, options: { bold: true } }, { text: ST[r.status].label, options: { bold: true, align: 'center', color: r.status === 'pantau' ? INKH : 'FFFFFF', fill: { color: stH(r.status) } } },
+          `${r.kat}: ${kecil(r.apa)}`, r.aksi, `Manager ${r.k}`, r.target]);
+        sl.addTable([H, ...body], { x: 0.5, y: 1.55, w: 12.33, colW: [0.5, 0.9, 1.3, 3.0, 4.0, 1.43, 1.2], rowH: [0.5, ...tampil.map(() => 0.8)], fontFace: F, fontSize: fz, color: INKH, valign: 'middle', border: { type: 'solid', pt: 0.75, color: 'D9DDE3' }, margin: [0.06, 0.08, 0.06, 0.08] });
+      } else sl.addText('Tidak ada langkah khusus; pemantauan rutin tetap berjalan.', { x: 0.5, y: 1.8, w: 12.3, h: 0.6, fontFace: F, fontSize: 18, color: INKH, margin: 0, isTextBox: true });
+      if (Z.utama.length && Z.nPantau) sl.addText(`Selain itu ada ${Z.nPantau} hal berstatus Pantau yang cukup ditangani lewat pemantauan rutin di masing-masing area.`, { x: 0.5, y: 6.45, w: 12.3, h: 0.35, fontFace: F, fontSize: 12, color: GREYH, margin: 0, isTextBox: true });
+    }
+
+    // 9. DASAR STATUS SETIAP AREA
+    {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Mengapa setiap area mendapat statusnya', 'Penjelasan singkat penyebab status tiap area');
+      const H = ['Area', 'Status', 'Skor', 'Penjelasan'].map(t => ({ text: t, options: { bold: true, color: 'FFFFFF', fill: { color: NAVY } } }));
+      const body = Z.ord.map(a => { const u = a.semua[0];
+        return [{ text: a.R.k, options: { bold: true } }, { text: ST[a.R.status].label, options: { bold: true, align: 'center', color: a.R.status === 'pantau' ? INKH : 'FFFFFF', fill: { color: stH(a.R.status) } } }, { text: a.R.R ? String(a.R.R) : '–', options: { align: 'center' } },
+          !u || a.R.status === 'normal' ? 'Tidak ada ancaman berarti yang terpantau di sekitar jalur pipa dan fasilitas.' : cerita(u)]; });
+      sl.addTable([H, ...body], { x: 0.5, y: 1.55, w: 12.33, colW: [0.95, 1.3, 0.75, 9.33], fontFace: F, fontSize: 14, color: INKH, valign: 'middle', border: { type: 'solid', pt: 0.75, color: 'D9DDE3' }, margin: [0.05, 0.08, 0.05, 0.08] });
+      sl.addText('Skor menggabungkan seberapa besar kemungkinan bahaya mengenai aset (1–5) dan seberapa besar dampaknya bila terjadi (1–5). Makin tinggi skornya, makin serius kondisinya: 15–25 Kritis · 8–14 Waspada · 3–7 Pantau · 1–2 Normal.',
+        { x: 0.5, y: 6.35, w: 12.3, h: 0.5, fontFace: F, fontSize: 11, color: GREYH, margin: 0, valign: 'top', isTextBox: true });
+    }
+
+    // 10. CARA MEMBACA STATUS & STATUS SUMBER DATA
+    {
+      const sl = pres.addSlide({ masterName: 'ISI' }); judul(sl, 'Cara membaca status & keandalan data');
+      sl.addText('Arti status', { x: 0.5, y: 1.4, w: 5.3, h: 0.4, fontFace: F, fontSize: 18, bold: true, color: NAVY, margin: 0, isTextBox: true });
+      ['kritis', 'waspada', 'pantau', 'normal'].forEach((st, i) => {
+        const y = 1.95 + i * 1.12;
+        sl.addImage({ data: ikonPng(st, st), x: 0.5, y: y + 0.05, w: 0.55, h: 0.55 });
+        sl.addText([{ text: ST[st].label, options: { bold: true, fontSize: 15, color: stTeks(st), breakLine: true } }, { text: `${ARTI[st].arti} ${ARTI[st].aksi}`, options: { fontSize: 13, color: INKH } }],
+          { x: 1.25, y, w: 4.6, h: 1.0, fontFace: F, valign: 'top', margin: 0, isTextBox: true });
+      });
+      sl.addText('Status sumber data', { x: 6.4, y: 1.4, w: 6.4, h: 0.4, fontFace: F, fontSize: 18, bold: true, color: NAVY, margin: 0, isTextBox: true });
+      const LBL = { fresh: 'Refresh', delayed: 'On Progress', stale: 'On Progress', none: 'Tidak tersedia' }, W = { fresh: hx(C.normal), delayed: hx(C.waspada), stale: hx(C.waspada), none: GREYH };
+      sl.addTable(X.sumber.map(r => [{ text: bersih(r.nama).replace(/\s*\(model\)/i, ''), options: { color: INKH } }, { text: LBL[r.st] || r.st, options: { bold: true, color: W[r.st] || GREYH } }]),
+        { x: 6.4, y: 1.95, w: 6.43, colW: [4.7, 1.73], fontFace: F, fontSize: 11, rowH: 0.33, valign: 'middle', border: { type: 'solid', pt: 0.5, color: 'E3E6EA' }, margin: [0.02, 0.08, 0.02, 0.08] });
+      sl.addText('Titik panas adalah deteksi satelit (indikasi), bukan konfirmasi kebakaran. Cuaca, kualitas udara, longsor, banjir dan petir berasal dari model prakiraan. Laporan ini tidak menggantikan peringatan resmi BMKG, PVMBG, BNPB/BPBD dan Kemenhut.',
+        { x: 0.5, y: 6.35, w: 12.3, h: 0.55, fontFace: F, fontSize: 10, color: GREYH, margin: 0, valign: 'top', isTextBox: true });
+    }
+
+    // 11. PENUTUP
+    {
+      const sl = pres.addSlide({ masterName: 'GELAP' });
+      const lw = logoWaspadaPng([255, 255, 255]); sl.addImage({ data: lw.data, x: 0.8, y: 2.1, w: 1.3, h: 1.3 / lw.aspek });
+      sl.addText('Terima kasih', { x: 0.8, y: 3.0, w: 8, h: 1.0, fontFace: F, fontSize: 44, bold: true, color: 'FFFFFF', margin: 0, isTextBox: true });
+      sl.addText('Hasil pengecekan lapangan, koreksi data atau pertanyaan dapat disampaikan langsung ke Fungsi HSSE PT Pertamina Gas agar laporan berikutnya semakin akurat.', { x: 0.8, y: 4.1, w: 8.5, h: 1.0, fontFace: F, fontSize: 18, color: 'CADCFC', margin: 0, valign: 'top', isTextBox: true });
+      sl.addText(`PERTAGAS WASPADA · ${tgl}`, { x: 0.8, y: 6.6, w: 8, h: 0.35, fontFace: F, fontSize: 12, color: 'CADCFC', margin: 0, isTextBox: true });
+      if (logoPg) { sl.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 10.0, y: 6.35, w: 2.75, h: 0.75, fill: { color: 'FFFFFF' }, line: { color: 'FFFFFF' }, rectRadius: 0.1 }); sl.addImage({ data: logoPg, x: 10.17, y: 6.5, w: 2.4, h: 2.4 * 96 / 504 }); }
+    }
+
+    const nama = `Presentasi_Situasi_Harian_PERTAGAS_WASPADA_${stamp(now)}.pptx`;
+    if (!window.JSZip) { await pres.writeFile({ fileName: nama }); return; }
+    // PptxGenJS menyertakan entri folder di dalam ZIP; dibuang agar file aman dibuka/diunggah ke layanan cloud (OneDrive/SharePoint)
+    const asal = await window.JSZip.loadAsync(await pres.write({ outputType: 'arraybuffer' })), z = new window.JSZip();
+    for (const [n, f] of Object.entries(asal.files)) if (!f.dir) z.file(n, await f.async('uint8array'), { createFolders: false });
+    const blob = await z.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nama; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+
+
   // ---------------------------------------------------------------- tombol
   async function unduh(target) {
     const btn = document.getElementById('btnPdf'), lama = btn && btn.innerHTML;
@@ -1373,15 +1801,30 @@
     const st = G('state'), OVv = G('OV'), tab = st && st.tab;
     const area = tab && tab !== OVv;
     btn.innerHTML = area ? `↓ Unduh laporan ${tab} (PDF)` : '↓ Unduh rangkuman direksi (PDF)';
+    const bp = document.getElementById('btnPpt'); if (bp) bp.style.display = area ? 'none' : '';
     btn.title = area ? `Buat laporan PDF detail ${tab} dari data yang sedang tampil` : 'Buat laporan PDF rangkuman seluruh area operasi untuk direksi dari data yang sedang tampil';
   }
   function pasang() {
     const btn = document.getElementById('btnPdf'); if (!btn) return;
     btn.onclick = () => { const st = G('state'), OVv = G('OV'); unduh(st && st.tab !== OVv ? st.tab : null); };
+    const bp = document.getElementById('btnPpt'); if (bp) bp.onclick = unduhPresentasi;
     labelTombol();
     const t = document.getElementById('viewTitle');
     if (t && window.MutationObserver) new MutationObserver(labelTombol).observe(t, { childList: true, subtree: true });
   }
-  window.LaporanWaspada = { unduh, area: k => unduh(k), ringkasan: () => unduh(null) };
+  async function unduhPresentasi() {
+    const btn = document.getElementById('btnPpt'), lama = btn && btn.innerHTML;
+    try {
+      if (btn) { btn.disabled = true; btn.textContent = 'Menyusun PPT…'; }
+      await siapkanPpt();
+      const X = konteks();
+      if (!X.AREAS.length) throw new Error('data dashboard belum dimuat');
+      await laporanPresentasi(X);
+    } catch (e) {
+      console.error('presentasi PPT', e);
+      alert('Presentasi PPT gagal dibuat: ' + (e && e.message ? e.message : e));
+    } finally { if (btn) { btn.disabled = false; btn.innerHTML = lama; } }
+  }
+  window.LaporanWaspada = { unduh, area: k => unduh(k), ringkasan: () => unduh(null), presentasi: unduhPresentasi };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
 })();
