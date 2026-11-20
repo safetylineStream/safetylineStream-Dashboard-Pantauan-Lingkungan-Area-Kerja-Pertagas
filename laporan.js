@@ -16,6 +16,8 @@
   const LIB = { jspdf: 'vendor/jspdf.umd.min.js', autotable: 'vendor/jspdf.plugin.autotable.min.js' };
   const FONT = { normal: 'fonts/Carlito-Regular.ttf', bold: 'fonts/Carlito-Bold.ttf' };
   const LOGO = 'img/logo-pertamina-gas.png';
+  const PETA_DASAR = { detail: 'data/peta_dasar/daratan_detail.json', ringan: 'data/peta_dasar/daratan_ringan.json' };
+  let DARAT = null; // { detail: [{b,c}], ringan: [...] } — garis pantai Natural Earth (domain publik)
 
   // ---------------------------------------------------------------- warna & tata letak (mm, A4 tegak)
   const C = {
@@ -23,6 +25,7 @@
     ink: [29, 35, 48], grey: [95, 102, 114], line: [217, 221, 227], panel: [244, 245, 247], rowhi: [253, 236, 236],
     kritis: [198, 40, 40], waspada: [232, 116, 59], pantau: [240, 180, 41], normal: [46, 125, 50], luar: [154, 161, 171],
     pipa: [11, 78, 162], ungu: [123, 31, 162],
+    laut: [234, 242, 249], darat: [250, 249, 245], pantai: [190, 202, 214], kisi: [214, 224, 234],
   };
   const ST = {
     kritis: { label: 'KRITIS', bg: C.kritis, fg: [255, 255, 255] },
@@ -69,6 +72,11 @@
     if (!ASET) {
       const [n, b, l] = await Promise.all([b64(FONT.normal), b64(FONT.bold), b64(LOGO).catch(() => null)]);
       ASET = { n, b, logo: l };
+    }
+    if (!DARAT) {
+      const ambil = u => fetch(u, { cache: 'force-cache' }).then(r => (r.ok ? r.json() : null)).then(j => (j && j.ring) || []).catch(() => []);
+      const [dt, rg] = await Promise.all([ambil(PETA_DASAR.detail), ambil(PETA_DASAR.ringan)]);
+      DARAT = { detail: dt, ringan: rg };
     }
   }
 
@@ -284,11 +292,13 @@
           if (r && typeof r === 'object' && r.badge) { a.cell.text = ['']; a.cell.styles.minCellHeight = 6.6; }
           if (r && typeof r === 'object' && r.bold) a.cell.styles.fontStyle = 'bold';
           if (r && typeof r === 'object' && r.link) a.cell.styles.textColor = C.blue;
+          if (a.section === 'body' && r && typeof r === 'object' && r.ikon) a.cell.styles.cellPadding = { top: 1.6, bottom: 1.6, left: 8.4, right: 1.4 };
           if (a.section === 'body' && o.sorot && o.sorot(a.row.index)) a.cell.styles.fillColor = C.rowhi;
           if (a.section === 'body' && o.warna) { const w = o.warna(a.row.index, a.column.index); if (w) a.cell.styles.textColor = w; }
         },
         didDrawCell(a) {
           const r = a.cell.raw;
+          if (a.section === 'body' && r && typeof r === 'object' && r.ikon) self.ikon(r.ikon, a.cell.x + 3.8, a.cell.y + 3.9, 2.6, r.st);
           if (a.section === 'body' && r && typeof r === 'object' && r.link) d.link(a.cell.x, a.cell.y, a.cell.width, a.cell.height, { url: r.link });
           if (a.section === 'body' && r && typeof r === 'object' && r.badge) self.lencana(r.badge, a.cell.x + 1.2, a.cell.y + 1.2, Math.min(21, a.cell.width - 2.4), 4.6);
           d.setDrawColor(...(a.section === 'head' ? C.ink : C.line)); d.setLineWidth(a.section === 'head' ? 0.35 : 0.15);
@@ -298,14 +308,14 @@
       this.y = d.lastAutoTable.finalY + (o.after ?? 2.5);
     }
     catatan(t) { this.para(t, { size: 8.2, col: C.grey, after: 1.6 }); }
-    kotak(t) {
-      const x = M + IND, w = CW - IND, h = this.teks(t, x + 3.5, w - 7, { size: 8.2, ukurSaja: true }) + 6;
+    kotak(t, ind = IND) {
+      const x = M + ind, w = CW - ind, h = this.teks(t, x + 3.5, w - 7, { size: 8.2, ukurSaja: true }) + 6;
       this.perlu(h); this.d.setFillColor(...C.panel); this.d.rect(x, this.y, w, h, 'F');
       const y0 = this.y; this.y += 3; this.teks(t, x + 3.5, w - 7, { size: 8.2, col: C.grey }); this.y = y0 + h + 2;
     }
     // grafik batang bertumpuk hotspot ≤5 km per hari
-    grafik(hari, seri, judul) {
-      const d = this.d, x0 = M + IND, w = CW - IND, h = 52; this.perlu(h + 8);
+    grafik(hari, seri, judul, hTinggi) {
+      const d = this.d, x0 = M + IND, w = CW - IND, h = hTinggi || 52; this.perlu(h + 8);
       this.f('bold', 8.8, C.ink); d.text(judul, x0, this.y + 3); this.y += 5;
       const leg = [['≤ 1 km', C.kritis], ['1–3 km', C.waspada], ['3–5 km', C.pantau]];
       let lx = x0; leg.forEach(([t, c]) => { d.setFillColor(...c); d.rect(lx, this.y + 0.4, 2.6, 2.6, 'F'); this.f('normal', 7.8, C.grey); d.text(t, lx + 3.6, this.y + 2.6); lx += 6 + d.getTextWidth(t) + 4; });
@@ -359,17 +369,23 @@
       });
       this.y += 6;
     }
-    panel(X, k, R, feats, bb, ox, oy, wMax, hMax, judul, kotakZoom, besar) {
+    panel(X, k, R, feats, bb, ox, oy, wMax, hMax, judul, kotakZoom, besar, opsi = {}) {
+      const mini = !!opsi.mini;
       const d = this.d, [a0, b0, a1, b1] = bb, kx = Math.cos(((b0 + b1) / 2) * Math.PI / 180);
       const s = Math.min(wMax / ((a1 - a0) * kx), hMax / (b1 - b0)), mw = (a1 - a0) * kx * s, mh = (b1 - b0) * s;
       const P = (lo, la) => [ox + (lo - a0) * kx * s, oy + (b1 - la) * s];
       const dalam = (lo, la) => lo >= a0 && lo <= a1 && la >= b0 && la <= b1;
-      d.setFillColor(255, 255, 255); d.setDrawColor(...C.line); d.setLineWidth(0.25); d.rect(ox, oy, mw, mh, 'FD');
+      // garis pantai skala 1:10 juta hanya akurat ±1 km: tidak digambar pada perbesaran < ±40 km agar pipa tidak tampak "di laut"
+      const pantai = (a1 - a0) >= 0.4 || opsi.mini;
+      d.setFillColor(...(pantai ? C.laut : [255, 255, 255])); d.setDrawColor(...C.line); d.setLineWidth(0.25); d.rect(ox, oy, mw, mh, 'FD');
+      if (pantai) this.daratan(DARAT && DARAT.detail, bb, P, ox, oy, mw, mh);
       // kisi derajat (label di tepi atas & kiri)
-      d.setDrawColor(236, 238, 241); d.setLineWidth(0.15); this.f('normal', 6.2, C.grey);
+      d.setDrawColor(...C.kisi); d.setLineWidth(0.12); this.f('normal', 6.2, C.grey);
       const step = niceStep(Math.max(a1 - a0, b1 - b0) / 3), dg = step < 0.01 ? 3 : step < 0.1 ? 2 : 1;
-      for (let lo = Math.ceil(a0 / step) * step; lo < a1; lo += step) { const [px] = P(lo, b0); d.line(px, oy, px, oy + mh); d.text(`${nf(lo, dg)}° BT`, px + 0.6, oy + 2.6); }
-      for (let la = Math.ceil(b0 / step) * step; la < b1; la += step) { const [, py] = P(a0, la); d.line(ox, py, ox + mw, py); d.text(`${nf(Math.abs(la), dg)}° ${la < 0 ? 'LS' : 'LU'}`, ox + 0.8, py - 0.6); }
+      if (!mini) {
+        for (let lo = Math.ceil(a0 / step) * step; lo < a1; lo += step) { const [px] = P(lo, b0); d.line(px, oy, px, oy + mh); d.text(`${nf(lo, dg)}° BT`, px + 0.6, oy + 2.6); }
+        for (let la = Math.ceil(b0 / step) * step; la < b1; la += step) { const [, py] = P(a0, la); d.line(ox, py, ox + mw, py); d.text(`${nf(Math.abs(la), dg)}° ${la < 0 ? 'LS' : 'LU'}`, ox + 0.8, py - 0.6); }
+      }
       const garis = c => { let prev = null, pIn = false; for (const p of c) { const q = P(p[0], p[1]), qi = dalam(p[0], p[1]); if (prev && (Math.abs(q[0] - prev[0]) + Math.abs(q[1] - prev[1]) < 0.2)) continue; if (prev && (qi || pIn)) { const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v)); d.line(cl(prev[0], ox, ox + mw), cl(prev[1], oy, oy + mh), cl(q[0], ox, ox + mw), cl(q[1], oy, oy + mh)); } prev = q; pIn = qi; } };
       d.setDrawColor(...C.ungu); d.setLineWidth(besar ? 2.2 : 1.6);
       ((R.pk && R.pk.segmen) || []).filter(sg => (sg.level === 'tinggi' || sg.level === 'bandang') && Array.isArray(sg.garis)).forEach(sg => garis(sg.garis));
@@ -390,7 +406,7 @@
       else { R.h.filter(h => ['kritis', 'waspada'].includes(X.hsSt(h)) && h.fasilitas).forEach(h => nama.add(h.fasilitas)); ((R.pk && R.pk.fasilitas) || []).filter(f => f.level === 'tinggi' || f.level === 'bandang').forEach(f => nama.add(f.aset)); }
       const dipakai = []; let nL = 0;
       for (const nm of nama) {
-        if (nL >= (besar ? 8 : 5)) break;
+        if (mini || nL >= (besar ? 8 : 5)) break;
         const f = fasDalam.find(x => x.properties.name === nm); if (!f) continue;
         const [px, py] = P(...f.geometry.coordinates); if (dipakai.some(([qx, qy]) => Math.abs(qx - px) < 20 && Math.abs(qy - py) < 3.5)) continue;
         dipakai.push([px, py]); nL++; this.f('bold', 6.4, C.ink); const kanan = px + 28 > ox + mw;
@@ -398,12 +414,13 @@
       }
       if (kotakZoom) { const [zx0, zy0] = P(kotakZoom[0], kotakZoom[3]), [zx1, zy1] = P(kotakZoom[2], kotakZoom[1]); d.setDrawColor(...C.ink); d.setLineWidth(0.35); d.setLineDashPattern([1, 0.8], 0); d.rect(zx0, zy0, Math.max(zx1 - zx0, 1.5), Math.max(zy1 - zy0, 1.5), 'S'); d.setLineDashPattern([], 0); }
       // skala, utara, judul panel
-      const kmPerMm = 111.32 / s, target = niceStep(kmPerMm * Math.min(22, mw * 0.35)), bar = target / kmPerMm;
+      const kmPerMm = 111.32 / s, target = niceStep(kmPerMm * Math.min(mini ? 14 : 22, mw * 0.35)), bar = target / kmPerMm;
       d.setFillColor(255, 255, 255); d.rect(ox + mw - bar - 6.5, oy + mh - 6.6, bar + 5.5, 5.2, 'F');
       d.setDrawColor(...C.ink); d.setLineWidth(0.4); d.line(ox + mw - bar - 4, oy + mh - 2.6, ox + mw - 4, oy + mh - 2.6);
       this.f('normal', 6.4, C.ink); d.text(`${nf(target, target < 1 ? 1 : 0)} km`, ox + mw - 4 - bar / 2, oy + mh - 3.6, { align: 'center' });
       d.setFillColor(...C.ink); d.triangle(ox + mw - 4.5, oy + 4.2, ox + mw - 6, oy + 7.8, ox + mw - 3, oy + 7.8, 'F'); this.f('bold', 6.2, C.ink); d.text('U', ox + mw - 4.5, oy + 10.2, { align: 'center' });
-      this.f('bold', 7.6, C.ink); d.text(d.splitTextToSize(judul, mw)[0], ox, oy + mh + 3.4);
+      if (judul) { this.f('bold', 7.6, C.ink); d.text(d.splitTextToSize(judul, mw)[0], ox, oy + mh + 3.4); }
+      return [mw, mh];
     }
     selesai(namaBerkas, waktuBuat) {
       const d = this.d, n = d.getNumberOfPages();
@@ -869,6 +886,7 @@
         d.setFillColor(...s.bg); d.roundedRect(x, y, w, 7, 1.4, 1.4, 'F'); d.rect(x, y + 4, w, 3, 'F');
         this.lencanaIkon(it.status, x + 4.2, y + 3.6, s.fg);
         this.f('bold', 9.5, s.fg); d.text(s.label, x + 7.6, y + 4.9);
+        (it.ikon || []).slice(0, 5).forEach((ic, n) => this.glyph(ic, x + w - 3.6 - n * 4.6, y + 3.6, 1.65, s.fg, s.bg));
         this.f('bold', 13, C.ink); d.text(it.k, x + 3, y + 13); const wk = d.getTextWidth(it.k);
         this.f('normal', 7.4, C.grey); d.text(d.splitTextToSize(it.nama, w - 8 - wk)[0] || '', x + 5 + wk, y + 12.8);
         const y0 = this.y; this.y = y + 15.2; this.teks(it.sebab, x + 3, w - 6, { size: 8 }); this.y = y0;
@@ -884,11 +902,12 @@
       startY: this.y, margin: { left: M, right: M, top: TOPN, bottom: PH - BOT }, tableWidth: CW, theme: 'plain',
       head: [['Area', ...KAT.map(c => c.pendek)]], body: baris.map(b => [b.k, ...KAT.map(c => ({ dot: b.stKat[c.id] }))]),
       styles: { font: 'Carlito', fontSize: 8.6, cellPadding: { top: 1.6, bottom: 1.6, left: 1.5, right: 1.5 }, textColor: C.ink, valign: 'middle', halign: 'center', minCellHeight: 6.6 },
-      headStyles: { fontStyle: 'bold', textColor: C.grey, fontSize: 7.8, valign: 'bottom' },
+      headStyles: { fontStyle: 'bold', textColor: C.grey, fontSize: 7.8, valign: 'bottom', cellPadding: { top: 9.5, bottom: 1.6, left: 1.5, right: 1.5 } },
       columnStyles: { 0: { cellWidth: wA, halign: 'left', fontStyle: 'bold' }, ...Object.fromEntries(KAT.map((_, i) => [i + 1, { cellWidth: w }])) },
       didParseCell(a) { if (a.cell.raw && typeof a.cell.raw === 'object' && 'dot' in a.cell.raw) a.cell.text = ['']; },
       didDrawCell(a) {
         const r = a.cell.raw;
+        if (a.section === 'head' && a.column.index > 0) self.ikon(KAT[a.column.index - 1].id, a.cell.x + a.cell.width / 2, a.cell.y + 4.6, 3, 'normal');
         if (a.section === 'body' && r && typeof r === 'object' && 'dot' in r) {
           const cx = a.cell.x + a.cell.width / 2, cy = a.cell.y + a.cell.height / 2;
           if (!r.dot || r.dot === 'normal') { self.f('normal', 8, C.line); d.text('—', cx, cy + 1, { align: 'center' }); }
@@ -923,19 +942,204 @@
       d.setFillColor(...s.bg); d.circle(M + 3.4, this.y + 2.8, 3, 'F');
       this.f('bold', 9.5, s.fg); d.text(String(i + 1), M + 3.4, this.y + 4, { align: 'center' });
       const y0 = this.y;
-      this.f('bold', 10, C.ink); d.text(`${t.area} — ${t.kat}`, M + 9, this.y + 4); const wj = d.getTextWidth(`${t.area} — ${t.kat}`);
-      this.lencana(t.status, M + 9 + wj + 3, this.y + 1.2, 21, 4.4);
+      const kid = (KAT.find(c => c.lbl === t.kat) || {}).id;
+      if (kid) this.ikon(kid, M + 11.4, this.y + 2.8, 2.4, t.status);
+      const tx = M + 9 + (kid ? 5.4 : 0);
+      this.f('bold', 10, C.ink); d.text(`${t.area} — ${t.kat}`, tx, this.y + 4); const wj = d.getTextWidth(`${t.area} — ${t.kat}`);
+      this.lencana(t.status, tx + wj + 3, this.y + 1.2, 21, 4.4);
       this.y += 6;
       baris.forEach((b, j) => { this.teks(b, M + 9, wT, { size: 9 }); this.y += hs[j] + 0.6; });
       this.f('normal', 8.2, C.grey); d.text(`Penanggung jawab: ${t.pic}   ·   Batas waktu: ${t.target}`, M + 9, this.y + 2.8);
       this.y = y0 + h; d.setDrawColor(...C.line); d.setLineWidth(0.15); d.line(M + 9, this.y - 1.4, PW - M, this.y - 1.4);
     });
   };
+  Laporan.prototype.kotakPenuh = function (t) { this.kotak(t, 0); };
   Laporan.prototype.tabelV2 = function (head, rows, colW, o = {}) { this.tabel(head, rows, colW, { indent: 0, ...o }); };
   Laporan.prototype.penutup = function (teks) {
     this.perlu(14); this.y += 2;
     this.d.setDrawColor(...C.line); this.d.setLineWidth(0.2); this.d.line(M, this.y, PW - M, this.y); this.y += 2.5;
     this.para(teks, { indent: 0, size: 8.6, col: C.grey });
+  };
+
+  // ================================================================ VISUAL: peta dasar, ikon bahaya, peta situasi
+  // daratan (garis pantai) digambar di dalam bingkai peta dengan clipping
+  Laporan.prototype.daratan = function (ring, bb, P, ox, oy, mw, mh) {
+    if (!ring || !ring.length) return;
+    const d = this.d, [a0, b0, a1, b1] = bb;
+    d.saveGraphicsState();
+    d.rect(ox, oy, mw, mh, null); d.clip(); d.discardPath();
+    d.setFillColor(...C.darat); d.setDrawColor(...C.pantai); d.setLineWidth(0.15);
+    for (const r of ring) {
+      const b = r.b; if (b[2] < a0 || b[0] > a1 || b[3] < b0 || b[1] > b1) continue;
+      const c = r.c, seg = []; let [px, py] = P(c[0], c[1]); const x0 = px, y0 = py;
+      for (let i = 2; i < c.length; i += 2) {
+        const [qx, qy] = P(c[i], c[i + 1]);
+        if (Math.abs(qx - px) + Math.abs(qy - py) < 0.18 && i < c.length - 2) continue;
+        seg.push([qx - px, qy - py]); px = qx; py = qy;
+      }
+      if (seg.length >= 2) d.lines(seg, x0, y0, [1, 1], 'FD', true);
+    }
+    d.restoreGraphicsState();
+  };
+  // jalur bezier sederhana dalam koordinat satuan [-1, 1] → d.lines (relatif)
+  function jalur(d, cmd, cx, cy, s, gaya, tutup = true) {
+    let [x, y] = [cmd[0][1], cmd[0][2]]; const seg = [];
+    for (const c of cmd.slice(1)) {
+      if (c[0] === 'L') { seg.push([(c[1] - x) * s, (c[2] - y) * s]); x = c[1]; y = c[2]; }
+      else { seg.push([(c[1] - x) * s, (c[2] - y) * s, (c[3] - x) * s, (c[4] - y) * s, (c[5] - x) * s, (c[6] - y) * s]); x = c[5]; y = c[6]; }
+    }
+    d.lines(seg, cx + cmd[0][1] * s, cy + cmd[0][2] * s, [1, 1], gaya, tutup);
+  }
+  // glyph bahaya (warna isi = col, warna latar = bg untuk potongan dalam)
+  Laporan.prototype.glyph = function (id, cx, cy, s, col, bg = [255, 255, 255]) {
+    const d = this.d; d.setFillColor(...col); d.setDrawColor(...col);
+    if (id === 'kebakaran') {
+      jalur(d, [['M', 0, 1], ['C', -0.62, 1, -0.8, 0.42, -0.52, -0.02], ['C', -0.38, -0.25, -0.2, -0.42, -0.1, -1], ['C', 0.28, -0.62, 0.74, -0.25, 0.7, 0.32], ['C', 0.66, 0.78, 0.38, 1, 0, 1]], cx, cy, s, 'F');
+      d.setFillColor(...bg);
+      jalur(d, [['M', 0, 0.9], ['C', -0.28, 0.9, -0.36, 0.58, -0.22, 0.36], ['C', -0.12, 0.2, -0.04, 0.08, 0, -0.14], ['C', 0.16, 0.08, 0.32, 0.3, 0.3, 0.54], ['C', 0.28, 0.8, 0.16, 0.9, 0, 0.9]], cx, cy, s, 'F');
+    } else if (id === 'gempa') {
+      d.setLineWidth(s * 0.2); d.setLineJoin && d.setLineJoin('round');
+      const p = [[-0.95, 0.05], [-0.58, 0.05], [-0.38, -0.6], [-0.14, 0.75], [0.1, -0.85], [0.32, 0.5], [0.52, 0.05], [0.95, 0.05]];
+      d.lines(p.slice(1).map((q, i) => [(q[0] - p[i][0]) * s, (q[1] - p[i][1]) * s]), cx + p[0][0] * s, cy + p[0][1] * s, [1, 1], 'S', false);
+    } else if (id === 'tanah') {
+      jalur(d, [['M', -0.98, 0.82], ['L', -0.2, -0.72], ['L', 0.32, 0.12], ['L', 0.08, 0.82]], cx, cy, s, 'F');
+      [[0.46, 0.64, 0.17], [0.78, 0.7, 0.13], [0.62, 0.36, 0.11]].forEach(([x, y, r]) => d.circle(cx + x * s, cy + y * s, r * s, 'F'));
+    } else if (id === 'banjir') {
+      jalur(d, [['M', 0, -0.98], ['C', 0.36, -0.52, 0.4, -0.32, 0.4, -0.2], ['C', 0.4, 0.04, 0.2, 0.2, 0, 0.2], ['C', -0.2, 0.2, -0.4, 0.04, -0.4, -0.2], ['C', -0.4, -0.32, -0.36, -0.52, 0, -0.98]], cx, cy, s, 'F');
+      d.setLineWidth(s * 0.17);
+      [0.5, 0.86].forEach(yy => jalur(d, [['M', -0.92, yy], ['C', -0.7, yy - 0.2, -0.5, yy - 0.2, -0.3, yy], ['C', -0.1, yy + 0.2, 0.1, yy + 0.2, 0.3, yy], ['C', 0.5, yy - 0.2, 0.7, yy - 0.2, 0.92, yy]], cx, cy, s, 'S', false));
+    } else if (id === 'cuaca') {
+      jalur(d, [['M', 0.24, -1], ['L', -0.52, 0.12], ['L', -0.04, 0.12], ['L', -0.26, 1], ['L', 0.56, -0.22], ['L', 0.08, -0.22], ['L', 0.44, -1]], cx, cy, s, 'F');
+    } else if (id === 'udara') {
+      d.circle(cx - 0.38 * s, cy - 0.02 * s, 0.32 * s, 'F'); d.circle(cx + 0.02 * s, cy - 0.26 * s, 0.42 * s, 'F'); d.circle(cx + 0.42 * s, cy + 0.02 * s, 0.3 * s, 'F');
+      d.rect(cx - 0.38 * s, cy - 0.02 * s, 0.8 * s, 0.32 * s, 'F');
+      d.setLineWidth(s * 0.14); d.line(cx - 0.75 * s, cy + 0.62 * s, cx + 0.45 * s, cy + 0.62 * s); d.line(cx - 0.4 * s, cy + 0.88 * s, cx + 0.8 * s, cy + 0.88 * s);
+    }
+    d.setLineWidth(0.2);
+  };
+  // ikon bundar: lingkaran warna status + glyph putih
+  Laporan.prototype.ikon = function (id, cx, cy, r, st) {
+    const bg = st && ST[st] ? ST[st].bg : [176, 184, 194];
+    this.d.setFillColor(...bg); this.d.circle(cx, cy, r, 'F');
+    this.glyph(id, cx, cy, r * 0.58, st === 'pantau' ? C.ink : [255, 255, 255], bg);
+  };
+  Laporan.prototype.panahTren = function (x, y, naik, col) {
+    const d = this.d; d.setFillColor(...col);
+    if (naik) d.triangle(x, y + 1.2, x + 2, y + 1.2, x + 1, y - 0.6, 'F'); else d.triangle(x, y - 0.6, x + 2, y - 0.6, x + 1, y + 1.2, 'F');
+  };
+
+  // strip indikator: satu ubin per jenis bahaya
+  Laporan.prototype.indikatorBahaya = function (items) {
+    const d = this.d, gap = 2, n = items.length, w = (CW - gap * (n - 1)) / n;
+    const h = 8 + 4 + 8 + Math.max(...items.map(it => this.teks(it.sub, 0, w - 5, { size: 7.2, ukurSaja: true }))) + 3;
+    this.perlu(h + 2);
+    items.forEach((it, i) => {
+      const x = M + i * (w + gap), y = this.y;
+      d.setFillColor(...C.panel); d.roundedRect(x, y, w, h, 1.4, 1.4, 'F');
+      this.ikon(it.id, x + 6, y + 6.2, 3.8, it.st);
+      this.f('bold', 7.2, C.grey); d.text(d.splitTextToSize(it.lbl.toUpperCase(), w - 13), x + 11.2, y + 5.2);
+      this.f('bold', 15, it.st && URUT[it.st] >= 2 ? ST[it.st].bg : C.ink); d.text(it.val, x + 3, y + 17.4); const wv = d.getTextWidth(it.val);
+      this.f('normal', 7.4, C.grey); d.text(it.satuan || '', x + 4.2 + wv, y + 17.4);
+      const y0 = this.y; this.y = y + 19.4; this.teks(it.sub, x + 3, w - 5, { size: 7.2, col: C.grey }); this.y = y0;
+    });
+    this.y += h + 3;
+  };
+
+  // peta situasi nasional: daratan, jalur pipa diwarnai status area, titik panas berisiko, gempa 7 hari, label area
+  Laporan.prototype.petaNasional = function (X, AR) {
+    const d = this.d, bb = [95.0, -9.0, 119.6, 6.6], [a0, b0, a1, b1] = bb, kx = Math.cos(((b0 + b1) / 2) * Math.PI / 180);
+    const w = CW, s = w / ((a1 - a0) * kx), mh = (b1 - b0) * s, boxH = 14.5, gapL = 5;
+    this.perlu(mh + 2 * (boxH + gapL) + 12);
+    const ox = M, oy = this.y + boxH + gapL, P = (lo, la) => [ox + (lo - a0) * kx * s, oy + (b1 - la) * s];
+    d.setFillColor(...C.laut); d.setDrawColor(...C.line); d.setLineWidth(0.25); d.rect(ox, oy, w, mh, 'FD');
+    this.daratan(DARAT && (DARAT.ringan.length ? DARAT.ringan : DARAT.detail), bb, P, ox, oy, w, mh);
+    // label geografis
+    this.f('bold', 7.4, [168, 176, 186]);
+    [['SUMATERA', 99.6, -0.6], ['KALIMANTAN', 113.2, 0.9], ['JAWA', 110.9, -7.55], ['SEMENANJUNG MALAYSIA', 101.7, 4.6]].forEach(([t, lo, la]) => { const [px, py] = P(lo, la); d.text(t, px, py, { align: 'center', charSpace: 0.6 }); });
+    this.f('normal', 7.2, [140, 166, 194]);
+    [['Laut Jawa', 111.3, -4.9], ['Samudra Hindia', 99.2, -6.3], ['Laut Natuna', 108.2, 3.4], ['Selat Makassar', 118.6, -3.2]].forEach(([t, lo, la]) => { const [px, py] = P(lo, la); d.text(t, px, py, { align: 'center' }); });
+    // gempa 7 hari
+    X.qs.forEach(g => { if (g.lon < a0 || g.lon > a1 || g.lat < b0 || g.lat > b1) return; const [px, py] = P(+g.lon, +g.lat); d.setDrawColor(...C.ungu); d.setLineWidth(0.35); d.circle(px, py, 0.9 + Math.max(0, (+g.mag || 0) - 3) * 0.55, 'S'); });
+    // jalur pipa: lapisan putih lalu warna status area
+    const garis = (c, lw, col) => { d.setDrawColor(...col); d.setLineWidth(lw); let prev = null; for (const p of c) { const q = P(p[0], p[1]); if (prev && Math.abs(q[0] - prev[0]) + Math.abs(q[1] - prev[1]) < 0.25) continue; if (prev) d.line(prev[0], prev[1], q[0], q[1]); prev = q; } };
+    const geom = k => (X.ASSETS.features || []).filter(f => f.properties && f.properties.area === k && f.geometry && /LineString/.test(f.geometry.type))
+      .flatMap(f => (f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates));
+    AR.forEach(a => geom(a.R.k).forEach(c => garis(c, 1.9, [255, 255, 255])));
+    AR.forEach(a => geom(a.R.k).forEach(c => garis(c, 1.0, ST[a.R.status].bg)));
+    // titik panas berisiko
+    AR.forEach(a => a.R.h.filter(h => URUT[X.hsSt(h)] >= 1).forEach(h => { const [px, py] = P(+h.lon, +h.lat); d.setFillColor(...C.kritis); d.setDrawColor(255, 255, 255); d.setLineWidth(0.15); d.circle(px, py, 0.75, 'FD'); }));
+    // label area: baris atas (utara) dan bawah (selatan), urut bujur, dengan garis penunjuk
+    const titik = AR.map(a => {
+      const pts = geom(a.R.k).flat(); if (!pts.length) return null;
+      const cx = pts.reduce((t, p) => t + p[0], 0) / pts.length, cy = pts.reduce((t, p) => t + p[1], 0) / pts.length;
+      const near = pts.reduce((m, p) => ((p[0] - cx) ** 2 + (p[1] - cy) ** 2 < (m[0] - cx) ** 2 + (m[1] - cy) ** 2 ? p : m), pts[0]);
+      return { a, lon: near[0], lat: near[1], xy: P(near[0], near[1]) };
+    }).filter(Boolean);
+    const med = titik.map(t => t.lat).sort((p, q) => p - q)[Math.floor(titik.length / 2)];
+    const atas = titik.filter(t => t.lat >= med).sort((p, q) => p.lon - q.lon), bawah = titik.filter(t => t.lat < med).sort((p, q) => p.lon - q.lon);
+    const bw = Math.min(42, (w - 3 * 3) / Math.max(atas.length, bawah.length, 1));
+    const susun = (row, y, keAtas) => {
+      let xs = row.map(t => Math.min(Math.max(t.xy[0] - bw / 2, ox), ox + w - bw));
+      for (let i = 1; i < xs.length; i++) xs[i] = Math.max(xs[i], xs[i - 1] + bw + 3);
+      for (let i = xs.length - 1; i >= 0; i--) { const batas = i === xs.length - 1 ? ox + w - bw : xs[i + 1] - bw - 3; xs[i] = Math.min(xs[i], batas); }
+      row.forEach((t, i) => {
+        const x = xs[i], st = t.a.R.status, S = ST[st];
+        const ax = Math.min(Math.max(t.xy[0], x + 3), x + bw - 3), ay = keAtas ? y + boxH : y;
+        d.setDrawColor(...C.grey); d.setLineWidth(0.25); d.line(ax, ay, t.xy[0], t.xy[1]);
+        d.setFillColor(...C.ink); d.circle(t.xy[0], t.xy[1], 0.7, 'F');
+        d.setFillColor(255, 255, 255); d.setDrawColor(...S.bg); d.setLineWidth(0.5); d.roundedRect(x, y, bw, boxH, 1.2, 1.2, 'FD');
+        d.setFillColor(...S.bg); d.rect(x, y, 1.6, boxH, 'F');
+        this.f('bold', 9.6, C.ink); d.text(t.a.R.k, x + 3.4, y + 4.8);
+        this.lencana(st, x + bw - 19.4, y + 1.4, 18, 4.4);
+        const akt = KAT.filter(c => t.a.stKat[c.id] && URUT[t.a.stKat[c.id]] >= 1);
+        if (akt.length) akt.slice(0, 6).forEach((c, j) => this.ikon(c.id, x + 5.2 + j * 5.6, y + 10.2, 2.3, t.a.stKat[c.id]));
+        else { this.f('normal', 7.2, C.grey); d.text('Tidak ada ancaman', x + 3.4, y + 11); }
+      });
+    };
+    susun(atas, this.y, true); susun(bawah, oy + mh + gapL, false);
+    this.y = oy + mh + gapL + boxH + 3;
+    // legenda
+    const leg = [['ln', ST.kritis.bg, 'Pipa area Kritis'], ['ln', ST.waspada.bg, 'Waspada'], ['ln', ST.pantau.bg, 'Pantau'], ['ln', ST.normal.bg, 'Normal'], ['dot', C.kritis, 'Titik panas berisiko'], ['ring', C.ungu, 'Gempa 7 hari (ukuran = magnitudo)']];
+    let lx = M; this.f('normal', 7.2, C.grey);
+    leg.forEach(([t, c, l]) => {
+      d.setDrawColor(...c); d.setFillColor(...c);
+      if (t === 'ln') { d.setLineWidth(1); d.line(lx, this.y + 1.6, lx + 5, this.y + 1.6); } else if (t === 'dot') d.circle(lx + 2.2, this.y + 1.6, 0.9, 'F'); else { d.setLineWidth(0.4); d.circle(lx + 2.2, this.y + 1.6, 1.4, 'S'); }
+      this.f('normal', 7.2, C.grey); d.text(l, lx + 6.4, this.y + 2.6); lx += d.getTextWidth(l) + 11;
+    });
+    this.y += 5;
+    // legenda ikon
+    lx = M; KAT.forEach(c => { this.ikon(c.id, lx + 2.2, this.y + 1.8, 2.1, 'waspada'); this.f('normal', 7.2, C.grey); d.text(c.lbl, lx + 5.4, this.y + 2.7); lx += d.getTextWidth(c.lbl) + 9.5; });
+    this.y += 6.5;
+  };
+
+  // sorotan per area: peta kecil tiap area (2 kolom)
+  Laporan.prototype.sorotanArea = function (X, AR) {
+    const d = this.d, kol = 2, gap = 5, w = (CW - gap) / kol, mapH = 41, cellH = 7.5 + mapH + 1.6 + 7.6;
+    for (let i = 0; i < AR.length; i += kol) {
+      this.perlu(cellH + 3);
+      AR.slice(i, i + kol).forEach((a, j) => {
+        const x = M + j * (w + gap), y = this.y, k = a.R.k, S = ST[a.R.status];
+        this.f('bold', 10.5, C.ink); d.text(k, x, y + 4.4); const wk = d.getTextWidth(k);
+        this.f('normal', 7.6, C.grey); d.text(bersih(a.R.nama.replace('Operation ', '')), x + wk + 2, y + 4.3);
+        this.lencana(a.R.status, x + w - 21, y + 0.8, 21, 4.8);
+        const akt = KAT.filter(c => a.stKat[c.id] && URUT[a.stKat[c.id]] >= 1);
+        akt.slice(0, 6).forEach((c, n) => this.ikon(c.id, x + w - 25 - n * 5.6, y + 3.2, 2.3, a.stKat[c.id]));
+        // peta kecil
+        const feats = (X.ASSETS.features || []).filter(f => f.properties && f.properties.area === k);
+        const pts = []; feats.forEach(f => { const g = f.geometry; if (!g) return; if (g.type === 'Point') pts.push(g.coordinates); else (g.type === 'LineString' ? [g.coordinates] : g.coordinates).forEach(c => c.forEach(p => pts.push(p))); });
+        a.R.h.forEach(h => pts.push([+h.lon, +h.lat]));
+        let bb = [Math.min(...pts.map(p => p[0])), Math.min(...pts.map(p => p[1])), Math.max(...pts.map(p => p[0])), Math.max(...pts.map(p => p[1]))];
+        const pl = (bb[2] - bb[0]) * 0.08 + 0.05, pa = (bb[3] - bb[1]) * 0.08 + 0.05; bb = [bb[0] - pl, bb[1] - pa, bb[2] + pl, bb[3] + pa];
+        const kxx = Math.cos(((bb[1] + bb[3]) / 2) * Math.PI / 180), rasio = w / mapH, sx = (bb[2] - bb[0]) * kxx, sy = bb[3] - bb[1];
+        if (sx / sy < rasio) { const tambah = (sy * rasio - sx) / kxx / 2; bb[0] -= tambah; bb[2] += tambah; } else { const tambah = (sx / rasio - sy) / 2; bb[1] -= tambah; bb[3] += tambah; }
+        d.setDrawColor(...S.bg); d.setLineWidth(0.6);
+        this.panel(X, k, a.R, feats, bb, x, y + 7.5, w, mapH, null, null, false, { mini: true });
+        d.setDrawColor(...S.bg); d.setLineWidth(0.8); d.rect(x, y + 7.5, w, mapH, 'S');
+        const catat = a.semua[0] && a.R.status !== 'normal' ? ringkas(a.semua[0]) + '.' : 'Tidak ada ancaman berarti yang terpantau.';
+        const y0 = this.y; this.y = y + 7.5 + mapH + 1.6; this.teks(catat, x, w, { size: 8 }); this.y = y0;
+      });
+      this.y += cellH + 2.4;
+    }
   };
 
   function lampiranSumber(L, X, judul) {
@@ -945,7 +1149,7 @@
     L.tabelV2(['Data', 'Sumber', 'Waktu / cakupan data', 'Status'],
       X.sumber.map(r => [{ content: bersih(r.nama), bold: true }, bersih(r.src), bersih(String(r.data || '').replace(/<[^>]+>/g, '')), { content: LBL[r.st] || r.st, bold: true }]),
       [40, 54, 0, 22], { size: 7.8, warna: (r, c) => (c === 3 ? W[X.sumber[r].st] : null) });
-    L.kotak('Catatan: laporan ini disusun otomatis dari dashboard PERTAGAS WASPADA saat tombol unduh ditekan. Titik panas adalah deteksi satelit (indikasi), bukan konfirmasi kebakaran; '
+    L.kotakPenuh('Catatan: laporan ini disusun otomatis dari dashboard PERTAGAS WASPADA saat tombol unduh ditekan. Titik panas adalah deteksi satelit (indikasi), bukan konfirmasi kebakaran; '
       + 'prakiraan cuaca, kualitas udara, longsor, banjir dan petir berasal dari model prakiraan. Langkah yang diusulkan perlu disesuaikan dengan penilaian di lapangan. '
       + 'Laporan ini tidak menggantikan peringatan resmi BMKG, PVMBG, BNPB/BPBD dan Kemenhut.');
   }
@@ -981,6 +1185,7 @@
       const t = trenArea(X, a.R.k);
       return { k: a.R.k, nama: bersih(a.R.nama.replace('Operation ', '').replace(' Area', '')), status: a.R.status,
         sebab: a.semua[0] && a.R.status !== 'normal' ? ringkas(a.semua[0]) + '.' : 'Tidak ada ancaman terpantau.',
+        ikon: KAT.filter(c => a.stKat[c.id] && URUT[a.stKat[c.id]] >= 1).sort((p, q) => URUT[a.stKat[q.id]] - URUT[a.stKat[p.id]]).map(c => c.id),
         tren: t.kini || t.kemarin ? `Titik panas ≤ 5 km: ${t.kini}${t.kemarin != null ? ` (kemarin ${t.kemarin})` : ''}` : '' };
     }));
 
@@ -1003,8 +1208,47 @@
     const hal0 = L.d.getNumberOfPages();
     if (gab.length) L.isuKunci(gab.slice(0, 3)); else L.para('Hari ini tidak ada hal yang memerlukan perhatian khusus manajemen.', { indent: 0 });
 
-    // HALAMAN 2
+    // HALAMAN 2 — PETA SITUASI
     if (L.d.getNumberOfPages() === hal0) L.halamanBaru();
+    L.subjudul('Peta situasi 8 area operasi', 'jalur pipa diwarnai sesuai status area');
+    const sumT = AR.reduce((t, a) => t + a.R.h.length, 0), sumRisk = AR.reduce((t, a) => t + a.R.nRisk, 0);
+    const qDekat = X.qs.slice().sort((p, q) => p.jarak_km - q.jarak_km)[0];
+    const kmTinggi = AR.reduce((t, a) => t + (a.R.pk ? kmLv(a.R.pk, 'tinggi') + kmLv(a.R.pk, 'bandang') : 0), 0);
+    const nSungai = AR.reduce((t, a) => t + (a.perKat.banjir || []).reduce((u, x) => u + (+urai(x).n || 0), 0), 0);
+    const nPd = AR.reduce((t, a) => t + a.R.pd.length, 0), nPt = AR.filter(a => a.R.pt && a.R.pt.terburuk === 'tinggi').length;
+    const aqiTop = AR.filter(a => a.R.aqiMax != null).sort((p, q) => q.R.aqiMax - p.R.aqiMax)[0];
+    const terdampak = id => { const xs = AR.filter(a => a.stKat[id] && URUT[a.stKat[id]] >= 1); return { val: String(xs.length), st: xs.length ? stMax(xs.map(a => a.stKat[id])) : 'normal' }; };
+    L.indikatorBahaya([
+      { id: 'kebakaran', lbl: 'Kebakaran lahan', satuan: 'area', ...terdampak('kebakaran'), sub: `${sumT} titik panas ≤ 5 km dari aset, ${sumRisk} berisiko` },
+      { id: 'gempa', lbl: 'Gempa & tsunami', satuan: 'area', ...terdampak('gempa'), sub: qDekat ? `Terdekat M ${nf(qDekat.mag, 1)}, ±${nf(qDekat.jarak_km)} km dari aset` : 'Tidak ada gempa dalam 7 hari' },
+      { id: 'tanah', lbl: 'Longsor & gerakan tanah', satuan: 'area', ...terdampak('tanah'), sub: `${nf(kmTinggi, 1)} km pipa di zona rawan tinggi` },
+      { id: 'banjir', lbl: 'Banjir', satuan: 'area', ...terdampak('banjir'), sub: nSungai ? `${nSungai} titik sungai berpotensi meluap` : 'Tidak ada potensi luapan sungai' },
+      { id: 'cuaca', lbl: 'Cuaca ekstrem & petir', satuan: 'area', ...terdampak('cuaca'), sub: `${nPd} peringatan BMKG aktif; petir tinggi di ${nPt} area` },
+      { id: 'udara', lbl: 'Kualitas udara', satuan: 'area', ...terdampak('udara'), sub: aqiTop ? `AQI tertinggi ${nf(aqiTop.R.aqiMax)} di ${aqiTop.R.k}` : 'Data tidak tersedia' },
+    ]);
+    L.petaNasional(X, AR);
+    L.h2('', 'Yang terlihat di peta');
+    const PULAU = [['Sumatera', ['ONSA', 'ODA', 'ORA', 'OCSA', 'OSSA']], ['Jawa', ['OWJA', 'OEJA']], ['Kalimantan', ['OKA']]];
+    const kalPulau = PULAU.map(([pl, ks]) => {
+      const ada = AR.filter(a => ks.includes(a.R.k)); if (!ada.length) return null;
+      const grup = ['kritis', 'waspada', 'pantau', 'normal'].map(st => [st, ada.filter(a => a.R.status === st).map(a => a.R.k)]).filter(g => g[1].length);
+      if (grup.length === 1) return `di ${pl}, ${ada.length > 1 ? `seluruh area (${daftarKata(grup[0][1])})` : grup[0][1][0]} berstatus ${grup[0][0]}`;
+      return `di ${pl}, ` + grup.map(([st, ks2], i) => `${daftarKata(ks2)} ${i === 0 ? 'berstatus' : ''} ${st}`.replace(/\s+/g, ' ')).join(', sedangkan ');
+    }).filter(Boolean);
+    const hsArea = AR.filter(a => a.R.nRisk).map(a => `${a.R.k} (${a.R.nRisk} titik)`);
+    L.butir([
+      `Secara sebaran, ${kalPulau.join('; ')}.`.replace('Secara sebaran, di', 'Secara sebaran, di'),
+      hsArea.length ? `Titik panas yang perlu diperhatikan hanya terpantau di sekitar ${daftarKata(hsArea)}; jalur pipa di area lain bersih dari titik panas berisiko.` : 'Tidak ada titik panas berisiko di sekitar jalur pipa mana pun.',
+      qDekat ? `Dalam 7 hari terakhir tercatat ${X.qs.length} gempa; yang paling dekat dengan aset berkekuatan M ${nf(qDekat.mag, 1)}, sekitar ${nf(qDekat.jarak_km)} km dari ${bersih(qDekat.aset)} (${qDekat.area}).` : 'Tidak ada gempa yang tercatat dalam 7 hari terakhir.',
+    ]);
+
+    // HALAMAN 3 — SOROTAN PER AREA
+    L.halamanBaru();
+    L.subjudul('Sorotan per area', 'peta ringkas jalur pipa dan temuan utama');
+    L.sorotanArea(X, ord);
+
+    // HALAMAN 4
+    L.halamanBaru();
     L.subjudul('Sebaran bahaya per area', 'status tertinggi setiap jenis bahaya');
     L.matriks(ord.map(a => ({ k: a.R.k, stKat: a.stKat })));
     L.catatan('Tanda — berarti tidak ada ancaman yang terpantau untuk jenis bahaya tersebut.');
@@ -1025,7 +1269,7 @@
 
     L.subjudul('Perkembangan titik panas di sekitar aset');
     const tr = trenHarian(X, null);
-    if (tr.hari.length) L.grafik(tr.hari, tr.seri, 'Jumlah titik panas dalam radius 5 km dari aset Pertagas, seluruh area');
+    if (tr.hari.length) L.grafik(tr.hari, tr.seri, 'Jumlah titik panas dalam radius 5 km dari aset Pertagas, seluruh area', 42);
 
     L.subjudul('Cara membaca status');
     L.legendaStatus();
@@ -1060,7 +1304,7 @@
     L.tabelV2(['Bahaya', 'Status', 'Apa yang terjadi', 'Yang perlu dilakukan'],
       KAT.map(c => { const ts = I.perKat[c.id] || [], u = ts.slice().sort((a, b) => URUT[b.status] - URUT[a.status] || b.R - a.R)[0];
         const aman = !u || u.status === 'normal';
-        return [{ content: c.lbl, bold: true }, { badge: aman ? 'normal' : u.status }, aman ? 'Aman, tidak ada ancaman berarti yang terpantau.' : cerita(u), aman ? '–' : tindakan(u)]; }),
+        return [{ content: c.lbl, bold: true, ikon: c.id, st: aman ? null : u.status }, { badge: aman ? 'normal' : u.status }, aman ? 'Aman, tidak ada ancaman berarti yang terpantau.' : cerita(u), aman ? '–' : tindakan(u)]; }),
       [30, 24, 0, 62], { size: 8.4 });
 
     L.subjudul('Lokasi yang perlu dicek tim lapangan', lokasiCek.length ? 'klik koordinat untuk membuka Google Maps' : '');
