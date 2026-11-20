@@ -283,11 +283,13 @@
           const r = a.cell.raw;
           if (r && typeof r === 'object' && r.badge) { a.cell.text = ['']; a.cell.styles.minCellHeight = 6.6; }
           if (r && typeof r === 'object' && r.bold) a.cell.styles.fontStyle = 'bold';
+          if (r && typeof r === 'object' && r.link) a.cell.styles.textColor = C.blue;
           if (a.section === 'body' && o.sorot && o.sorot(a.row.index)) a.cell.styles.fillColor = C.rowhi;
           if (a.section === 'body' && o.warna) { const w = o.warna(a.row.index, a.column.index); if (w) a.cell.styles.textColor = w; }
         },
         didDrawCell(a) {
           const r = a.cell.raw;
+          if (a.section === 'body' && r && typeof r === 'object' && r.link) d.link(a.cell.x, a.cell.y, a.cell.width, a.cell.height, { url: r.link });
           if (a.section === 'body' && r && typeof r === 'object' && r.badge) self.lencana(r.badge, a.cell.x + 1.2, a.cell.y + 1.2, Math.min(21, a.cell.width - 2.4), 4.6);
           d.setDrawColor(...(a.section === 'head' ? C.ink : C.line)); d.setLineWidth(a.section === 'head' ? 0.35 : 0.15);
           d.line(a.cell.x, a.cell.y + a.cell.height, a.cell.x + a.cell.width, a.cell.y + a.cell.height);
@@ -708,6 +710,350 @@
     L.selesai(`Rangkuman_PERTAGAS_WASPADA_${stamp(now)}.pdf`, `${tglPendek(now)} ${jamWIB(now)}`);
   }
 
+  // ================================================================ TEMPLATE v2 — bahasa manajemen
+  // Prinsip: kesimpulan di depan (BLUF), satu halaman ringkas untuk dibaca 2 menit, istilah teknis & angka model
+  // dipindah ke lampiran, setiap isu langsung disertai tindakan, PIC dan batas waktu.
+  const KAT = [
+    { id: 'kebakaran', lbl: 'Kebakaran lahan', pendek: 'Kebakaran\nlahan', jenis: ['hotspot'] },
+    { id: 'gempa', lbl: 'Gempa & tsunami', pendek: 'Gempa &\ntsunami', jenis: ['gempa'] },
+    { id: 'tanah', lbl: 'Longsor & gerakan tanah', pendek: 'Longsor &\ngerakan tanah', jenis: ['gerakan_tanah'] },
+    { id: 'banjir', lbl: 'Banjir', pendek: 'Banjir', jenis: ['banjir'] },
+    { id: 'cuaca', lbl: 'Cuaca ekstrem & petir', pendek: 'Cuaca ekstrem\n& petir', jenis: ['cuaca_ekstrem', 'petir', 'gdacs', 'cuaca_hujan'] },
+    { id: 'udara', lbl: 'Kualitas udara', pendek: 'Kualitas\nudara', jenis: ['cuaca_udara'] },
+  ];
+  const URUT = { normal: 0, pantau: 1, waspada: 2, kritis: 3 };
+  const ARTI = {
+    kritis: { judul: 'KRITIS', arti: 'Ancaman nyata terhadap aset atau pekerja.', aksi: 'Tindakan segera, laporkan hasil hari ini.', target: 'Hari ini (≤ 6 jam)' },
+    waspada: { judul: 'WASPADA', arti: 'Ada potensi ancaman di dekat aset.', aksi: 'Verifikasi lapangan dan siapkan respons.', target: '≤ 24 jam' },
+    pantau: { judul: 'PANTAU', arti: 'Kondisi perlu diperhatikan, belum mengancam.', aksi: 'Pantau perkembangan di dashboard.', target: 'Pemantauan harian' },
+    normal: { judul: 'NORMAL', arti: 'Tidak ada ancaman berarti.', aksi: 'Operasi berjalan normal.', target: '–' },
+  };
+  const jenisV2 = t => (t.jenis === 'cuaca' ? (/udara/i.test(t.teks) ? 'cuaca_udara' : 'cuaca_hujan') : t.jenis);
+  const katDari = t => KAT.find(k => k.jenis.includes(jenisV2(t)));
+  const stMax = arr => arr.reduce((a, b) => (URUT[b] > URUT[a] ? b : a), 'normal');
+  const mapsUrl = (la, lo) => `https://www.google.com/maps?q=${(+la).toFixed(5)},${(+lo).toFixed(5)}`;
+
+  // kalimat polos (tanpa istilah model) untuk satu temuan / klaster
+  function polos(t, k) {
+    const j = jenisV2(t);
+    if (j === 'hotspot' && t.ref) {
+      const h = t.ref, tempat = h.kec ? `${bersih(h.kec)}, ${bersih(h.kab)}` : lokasiHs(h);
+      const n = t.n || 1, jr = nf(t.jMin ?? h.jarak_km, 1);
+      return `${n > 1 ? `${n} titik panas` : 'Titik panas'} (indikasi kebakaran lahan) ±${jr} km dari ${bersih(h.aset)} di ${tempat}${h.persisten ? `; muncul berulang ${h.berulang_hari} hari` : ''}`;
+    }
+    const s = bersih(t.teks);
+    if (j === 'gempa') return s.replace('berjarak', 'terjadi') + '; tidak ada laporan kerusakan';
+    if (j === 'gerakan_tanah') return s.replace(/ · model longsor LHASA (\w+)/, '; curah hujan memicu indikasi longsor tingkat $1').replace('zona prakiraan', 'zona rawan');
+    if (j === 'banjir') { const m = s.match(/(\d+) sel sungai, ([\d.,]+) km pipa/); return m ? `Debit sungai berpotensi tinggi di ${m[1]} titik sungai yang dilintasi pipa (${m[2]} km pipa)` : 'Debit sungai berpotensi tinggi di sungai yang dilintasi pipa'; }
+    if (j === 'petir') return s.replace(' (model)', '').replace(/Potensi petir (\w+) hari ini:/, 'Potensi petir $1 hari ini di sekitar');
+    if (j === 'cuaca_ekstrem') return s.replace(/ — /, ': ').replace('di wilayah peringatan', 'berada di wilayah peringatan');
+    if (j === 'cuaca_udara') return s.replace(/Kualitas udara (tidak sehat|kurang sehat) \(US AQI (\d+)\)/, 'Udara $1 (indeks $2)');
+    return s;
+  }
+  const DAMPAK = {
+    hotspot: 'Api dapat merambat ke ROW, merusak fasilitas di atas tanah dan menghambat akses pemeliharaan.',
+    gempa: 'Potensi kerusakan pipa, sambungan dan fasilitas di sekitar episentrum.',
+    gerakan_tanah: 'Tanah bergerak dapat menekan atau menggeser pipa dan menutup akses ROW.',
+    banjir: 'Erosi di crossing sungai dapat membuat pipa terbuka atau menggantung.',
+    petir: 'Risiko keselamatan pekerja di ruang terbuka dan gangguan peralatan listrik/instrumen.',
+    cuaca_ekstrem: 'Risiko keselamatan pekerja lapangan dan gangguan operasi.',
+    gdacs: 'Potensi gangguan operasi dan logistik.',
+    cuaca_hujan: 'Genangan dan jalan licin; dapat memicu longsor di lereng ROW.',
+    cuaca_udara: 'Gangguan pernapasan pekerja lapangan.',
+  };
+  function tindakan(t) {
+    const j = jenisV2(t), s = t.status;
+    if (j === 'hotspot') return s === 'kritis' ? 'Kirim tim cek lokasi; koordinasi pemadaman dengan Manggala Agni/BPBD; amankan ROW.'
+      : s === 'waspada' ? 'Verifikasi lapangan (patroli ROW) dan laporkan ada/tidaknya api.' : 'Pantau di dashboard; cek saat patroli rutin.';
+    if (j === 'gempa') return 'Cek visual ROW dan fasilitas terdekat; pantau tekanan/aliran.';
+    if (j === 'gerakan_tanah') return s === 'pantau' ? 'Perhatikan tanda retakan/amblesan saat patroli rutin.' : 'Patroli lereng dan ROW di ruas rawan, terutama setelah hujan lebat.';
+    if (j === 'banjir') return 'Cek crossing sungai dan tanggul ROW; siapkan respons bila air naik.';
+    if (j === 'petir' || j === 'cuaca_ekstrem' || j === 'gdacs') return 'Batasi pekerjaan di luar ruang/ketinggian saat badai; pastikan proteksi petir berfungsi.';
+    if (j === 'cuaca_hujan') return 'Waspadai genangan dan jalan licin; tunda pekerjaan galian saat hujan lebat.';
+    if (j === 'cuaca_udara') return 'Wajibkan masker partikulat untuk pekerja lapangan; kurangi kerja berat di luar ruang.';
+    return 'Pantau perkembangan.';
+  }
+  // isu utama per area: temuan dikelompokkan, 1 baris per kategori (status tertinggi)
+  function isuArea(X, k) {
+    const R = ringkasArea(X, k), semua = kelompok((R.A.temuan || []).filter(t => t.R >= 1).map(t => ({ ...t, area: k })));
+    const perKat = {};
+    for (const t of semua) { const c = katDari(t); if (!c) continue; (perKat[c.id] = perKat[c.id] || []).push(t); }
+    return { R, semua, perKat, stKat: Object.fromEntries(KAT.map(c => [c.id, perKat[c.id] ? stMax(perKat[c.id].map(t => t.status)) : null])) };
+  }
+  function trenArea(X, k) {
+    const per = {}; for (const r of X.HIST) { if (k && r.area !== k) continue; per[r.tanggal] = (per[r.tanggal] || 0) + (+r.kritis || 0) + (+r.waspada || 0) + (+r.pantau || 0); }
+    const t = Object.keys(per).sort(), kini = t[t.length - 1], kmrn = t[t.length - 2];
+    return { kini: per[kini] ?? 0, kemarin: kmrn ? per[kmrn] : null };
+  }
+  const panah = (a, b) => (b == null ? '' : a > b ? `naik dari ${b}` : a < b ? `turun dari ${b}` : 'sama dengan kemarin');
+
+  // ---- komponen gambar khusus v2
+  Laporan.prototype.kotakKesimpulan = function (st, judul, kalimat) {
+    const d = this.d, s = ST[st] || ST.normal, x = M, w = CW, pad = 4.5;
+    const isi = kalimat.filter(Boolean), hs = isi.map(t => this.teks(t, x + pad + 4, w - 2 * pad - 4, { size: 9.8, ukurSaja: true }));
+    const h = 4 + 6.5 + hs.reduce((a, b) => a + b + 1.4, 0) + 3;
+    this.perlu(h);
+    d.setFillColor(...s.bg); d.rect(x, this.y, 3, h, 'F');
+    d.setFillColor(...C.panel); d.rect(x + 3, this.y, w - 3, h, 'F');
+    const y0 = this.y; this.y += 4.2;
+    this.f('bold', 8, C.grey); d.text('KESIMPULAN', x + pad + 1, this.y + 2.4); const wK = d.getTextWidth('KESIMPULAN');
+    this.f('bold', 12.5, s.bg === C.pantau ? [176, 122, 0] : s.bg); d.text(judul, x + pad + 1 + wK + 4, this.y + 2.6);
+    this.y += 6.5;
+    isi.forEach((t, i) => { this.f('normal', 9.8, C.ink); d.text('•', x + pad + 1, this.y + 3.3); this.teks(t, x + pad + 4, w - 2 * pad - 4, { size: 9.8 }); this.y += hs[i] + 1.4; });
+    this.y = y0 + h + 4;
+  };
+  Laporan.prototype.subjudul = function (t, ket) {
+    this.perlu(16); this.y += 2;
+    this.f('bold', 11.5, C.blue); this.d.text(t.toUpperCase(), M, this.y + 4);
+    if (ket) { this.f('normal', 8, C.grey); this.d.text(ket, PW - M, this.y + 4, { align: 'right' }); }
+    this.d.setDrawColor(...C.blue); this.d.setLineWidth(0.4); this.d.line(M, this.y + 5.8, PW - M, this.y + 5.8);
+    this.y += 8.6;
+  };
+  Laporan.prototype.kartuArea = function (items) {
+    const d = this.d, kol = 4, gap = 2.6, w = (CW - gap * (kol - 1)) / kol;
+    const tinggiIsi = it => this.teks(it.sebab, 0, w - 6, { size: 7.8, ukurSaja: true });
+    for (let r = 0; r < items.length; r += kol) {
+      const baris = items.slice(r, r + kol), h = 17 + Math.max(...baris.map(tinggiIsi)) + 7;
+      this.perlu(h + gap);
+      baris.forEach((it, i) => {
+        const x = M + i * (w + gap), y = this.y, s = ST[it.status];
+        d.setDrawColor(...C.line); d.setLineWidth(0.25); d.setFillColor(255, 255, 255); d.roundedRect(x, y, w, h, 1.4, 1.4, 'FD');
+        d.setFillColor(...s.bg); d.roundedRect(x, y, w, 7, 1.4, 1.4, 'F'); d.rect(x, y + 4, w, 3, 'F');
+        this.lencanaIkon(it.status, x + 4.2, y + 3.6, s.fg);
+        this.f('bold', 9.5, s.fg); d.text(s.label, x + 7.6, y + 4.9);
+        this.f('bold', 13, C.ink); d.text(it.k, x + 3, y + 13); const wk = d.getTextWidth(it.k);
+        this.f('normal', 7.4, C.grey); d.text(d.splitTextToSize(it.nama, w - 8 - wk)[0] || '', x + 5 + wk, y + 12.8);
+        const y0 = this.y; this.y = y + 15.2; this.teks(it.sebab, x + 3, w - 6, { size: 7.8 }); this.y = y0;
+        this.f('normal', 7, C.grey); d.text(it.tren, x + 3, y + h - 2.4);
+      });
+      this.y += h + gap;
+    }
+  };
+  Laporan.prototype.matriks = function (baris) {
+    const d = this.d, self = this, wA = 26, wS = 0, w = (CW - wA) / KAT.length;
+    this.perlu(10 + baris.length * 7);
+    d.autoTable({
+      startY: this.y, margin: { left: M, right: M, top: TOPN, bottom: PH - BOT }, tableWidth: CW, theme: 'plain',
+      head: [['Area', ...KAT.map(c => c.pendek)]], body: baris.map(b => [b.k, ...KAT.map(c => ({ dot: b.stKat[c.id] }))]),
+      styles: { font: 'Carlito', fontSize: 8.6, cellPadding: { top: 1.6, bottom: 1.6, left: 1.5, right: 1.5 }, textColor: C.ink, valign: 'middle', halign: 'center', minCellHeight: 6.6 },
+      headStyles: { fontStyle: 'bold', textColor: C.grey, fontSize: 7.8, valign: 'bottom' },
+      columnStyles: { 0: { cellWidth: wA, halign: 'left', fontStyle: 'bold' }, ...Object.fromEntries(KAT.map((_, i) => [i + 1, { cellWidth: w }])) },
+      didParseCell(a) { if (a.cell.raw && typeof a.cell.raw === 'object' && 'dot' in a.cell.raw) a.cell.text = ['']; },
+      didDrawCell(a) {
+        const r = a.cell.raw;
+        if (a.section === 'body' && r && typeof r === 'object' && 'dot' in r) {
+          const cx = a.cell.x + a.cell.width / 2, cy = a.cell.y + a.cell.height / 2;
+          if (!r.dot || r.dot === 'normal') { self.f('normal', 8, C.line); d.text('—', cx, cy + 1, { align: 'center' }); }
+          else { const s = ST[r.dot]; d.setFillColor(...s.bg); d.roundedRect(cx - 9, cy - 2.4, 18, 4.8, 2.4, 2.4, 'F'); self.f('bold', 6.8, s.fg); d.text(s.label, cx, cy + 0.85, { align: 'center' }); }
+        }
+        d.setDrawColor(...(a.section === 'head' ? C.ink : C.line)); d.setLineWidth(a.section === 'head' ? 0.35 : 0.15);
+        d.line(a.cell.x, a.cell.y + a.cell.height, a.cell.x + a.cell.width, a.cell.y + a.cell.height);
+      },
+    });
+    this.y = d.lastAutoTable.finalY + 2;
+    void wS;
+  };
+  Laporan.prototype.legendaStatus = function () {
+    const d = this.d, w = (CW - 3 * 2) / 4; this.perlu(20);
+    ['kritis', 'waspada', 'pantau', 'normal'].forEach((st, i) => {
+      const x = M + i * (w + 2), a = ARTI[st];
+      this.lencana(st, x, this.y, 22, 5);
+      const y0 = this.y; this.y = y0 + 6.4;
+      this.teks(`${a.arti} **${a.aksi}**`, x, w - 1, { size: 7.6, col: C.ink }); this.y = y0;
+    });
+    this.y += 6.4 + 11;
+  };
+  Laporan.prototype.isuKunci = function (isu) {
+    const d = this.d;
+    isu.forEach((t, i) => {
+      const wT = CW - 10, baris = [
+        `**${t.area} · ${t.kat}.** ${t.apa}.`,
+        `**Dampak bila dibiarkan:** ${t.dampak}`,
+        `**Tindakan:** ${t.aksi} **PIC:** ${t.pic} · **Target:** ${t.target}`,
+      ];
+      const hs = baris.map(b => this.teks(b, 0, wT, { size: 9.2, ukurSaja: true })), h = hs.reduce((a, b) => a + b + 0.8, 0) + 4;
+      this.perlu(h + 2);
+      const s = ST[t.status]; d.setFillColor(...s.bg); d.circle(M + 3.4, this.y + 3.6, 3, 'F');
+      this.f('bold', 9.5, s.fg); d.text(String(i + 1), M + 3.4, this.y + 4.8, { align: 'center' });
+      const y0 = this.y; this.y += 1.2;
+      baris.forEach((b, j) => { this.teks(b, M + 9, wT, { size: 9.2 }); this.y += hs[j] + 0.8; });
+      this.y = y0 + h; d.setDrawColor(...C.line); d.setLineWidth(0.15); d.line(M + 9, this.y - 1.6, PW - M, this.y - 1.6);
+    });
+  };
+  Laporan.prototype.tabelV2 = function (head, rows, colW, o = {}) { this.tabel(head, rows, colW, { indent: 0, ...o }); };
+
+  // ---- ringkasan status sumber data (satu baris)
+  function kalimatSumber(X) {
+    const ok = X.sumber.filter(r => r.st === 'fresh').length, belum = X.sumber.filter(r => r.st !== 'fresh').map(r => bersih(r.nama));
+    return `${ok} dari ${X.sumber.length} sumber data berstatus Refresh${belum.length ? `; On Progress: ${belum.join(', ')}` : ''}.`;
+  }
+  function lampiranSumber(L, X, judul) {
+    L.subjudul(judul);
+    const LBL = { fresh: 'Refresh', delayed: 'On Progress', stale: 'On Progress', none: 'Tidak tersedia' };
+    const W = { fresh: C.normal, delayed: C.waspada, stale: C.waspada, none: C.grey };
+    L.tabelV2(['Data', 'Sumber', 'Waktu / cakupan data', 'Status'],
+      X.sumber.map(r => [{ content: bersih(r.nama), bold: true }, bersih(r.src), bersih(String(r.data || '').replace(/<[^>]+>/g, '')), { content: LBL[r.st] || r.st, bold: true }]),
+      [40, 54, 0, 22], { size: 7.8, warna: (r, c) => (c === 3 ? W[X.sumber[r].st] : null) });
+    L.kotak('Laporan dibuat otomatis dari dashboard PERTAGAS WASPADA saat tombol unduh ditekan. Titik panas adalah deteksi satelit (indikasi), bukan konfirmasi kebakaran; '
+      + 'prakiraan cuaca, kualitas udara, longsor, banjir dan petir berasal dari model prakiraan. Tindakan yang diusulkan perlu disesuaikan dengan penilaian lapangan. '
+      + 'Laporan ini tidak menggantikan peringatan resmi BMKG, PVMBG, BNPB/BPBD dan Kemenhut.');
+  }
+
+  // ================================================================ RANGKUMAN DIREKSI (v2)
+  function laporanRingkasanV2(X) {
+    const D = X.DATA, now = X.now, AR = X.AREAS.map(k => isuArea(X, k));
+    const rk = { kritis: [], waspada: [], pantau: [], normal: [] }; AR.forEach(a => rk[a.R.status].push(a.R.k));
+    const ter = rk.kritis.length ? 'kritis' : rk.waspada.length ? 'waspada' : rk.pantau.length ? 'pantau' : 'normal';
+    const JUDUL = { kritis: 'PERLU TINDAKAN SEGERA', waspada: 'PERLU PERHATIAN', pantau: 'TERKENDALI — DIPANTAU', normal: 'AMAN' };
+    const L = new Laporan('Laporan Situasi Harian', `Laporan Situasi Harian PERTAGAS WASPADA — ${tglPanjang(now)}`);
+    L.X = X;
+    L.kepala('LAPORAN SITUASI HARIAN · DIREKSI & MANAJEMEN', 'Laporan Situasi Harian Jalur Pipa', 'Geohazard & lingkungan di 8 area operasi Pertamina Gas',
+      [`${tglPanjang(now)}, pukul ${jamWIB(now)} · disusun otomatis oleh Fungsi HSSE dari dashboard PERTAGAS WASPADA`, `Keandalan data: ${kalimatSumber(X)}`]);
+
+    // KESIMPULAN
+    const perlu = AR.filter(a => ['kritis', 'waspada'].includes(a.R.status)).sort((a, b) => URUT[b.R.status] - URUT[a.R.status] || b.R.R - a.R.R);
+    const top = a => a.semua[0];
+    const gempaBahaya = AR.some(a => a.stKat.gempa && URUT[a.stKat.gempa] >= 2), tsunami = X.qs.some(g => g.tsunami);
+    const udara = AR.filter(a => a.stKat.udara && URUT[a.stKat.udara] >= 2).map(a => a.R.k);
+    const tAll = trenArea(X, null);
+    L.kotakKesimpulan(ter, JUDUL[ter], [
+      perlu.length ? `**${perlu.length} dari ${AR.length} area perlu verifikasi lapangan** — ${perlu.map(a => `${a.R.k} (${(katDari(top(a)) || {}).lbl.toLowerCase()})`).join(', ')}. Area lain dalam status pantau/normal.`
+        : `**Seluruh ${AR.length} area tidak memerlukan tindakan khusus**; ${rk.pantau.length ? `${rk.pantau.join(', ')} dipantau.` : 'semua normal.'}`,
+      perlu[0] ? `Isu terberat: **${perlu[0].R.k}** — ${polos(top(perlu[0]))}.` : null,
+      `Titik panas dalam radius 5 km dari aset: **${tAll.kini}** (${panah(tAll.kini, tAll.kemarin) || 'data kemarin belum ada'}). ${gempaBahaya || tsunami ? '**Ada gempa yang perlu dicek dampaknya terhadap aset.**' : 'Tidak ada gempa yang mengancam aset dan tidak ada potensi tsunami.'}`,
+      udara.length ? `Udara tidak sehat di ${udara.join(', ')} — pekerja lapangan wajib memakai masker.` : null,
+    ]);
+
+    // STATUS 8 AREA
+    L.subjudul('Status 8 area operasi', `${rk.kritis.length} Kritis · ${rk.waspada.length} Waspada · ${rk.pantau.length} Pantau · ${rk.normal.length} Normal`);
+    const ord = AR.slice().sort((a, b) => URUT[b.R.status] - URUT[a.R.status] || b.R.R - a.R.R || X.AREAS.indexOf(a.R.k) - X.AREAS.indexOf(b.R.k));
+    L.kartuArea(ord.map(a => {
+      const t = trenArea(X, a.R.k);
+      return { k: a.R.k, nama: bersih(a.R.nama.replace('Operation ', '').replace(' Area', '')), status: a.R.status,
+        sebab: a.semua[0] ? polos(a.semua[0]).replace(/ \(indikasi kebakaran lahan\)/, '') : 'Tidak ada ancaman terdeteksi.',
+        tren: `Titik panas ≤ 5 km: ${t.kini}${t.kemarin != null ? ` (kemarin ${t.kemarin})` : ''}` };
+    }));
+
+    // ISU KUNCI
+    const isu = [];
+    for (const a of perlu) for (const t of a.semua.filter(t => URUT[t.status] >= 2)) {
+      if (isu.some(x => x.area === a.R.k && x.kat === (katDari(t) || {}).lbl)) continue;
+      isu.push({ area: a.R.k, kat: (katDari(t) || {}).lbl, status: t.status, apa: polos(t), dampak: DAMPAK[jenisV2(t)] || '', aksi: tindakan(t), pic: `Manager ${a.R.k} · HSSE`, target: ARTI[t.status].target });
+    }
+    isu.sort((a, b) => URUT[b.status] - URUT[a.status]);
+    L.subjudul('Isu yang perlu perhatian manajemen', isu.length > 3 ? `3 teratas dari ${isu.length} — lengkap di halaman berikut` : '');
+    if (isu.length) L.isuKunci(isu.slice(0, 3)); else L.para('Tidak ada isu berstatus Waspada atau Kritis hari ini.', { indent: 0 });
+
+    // HALAMAN 2 — PETA BAHAYA & RENCANA TINDAK LANJUT
+    L.halamanBaru();
+    // MATRIKS
+    L.subjudul('Peta bahaya per area', 'status tertinggi tiap jenis bahaya');
+    L.matriks(ord.map(a => ({ k: a.R.k, stKat: a.stKat })));
+    L.catatan('— = tidak ada ancaman terdeteksi.');
+
+    L.subjudul('Rencana tindak lanjut', 'untuk diteruskan ke Manager Area');
+    const rows = [];
+    for (const a of ord) for (const t of a.semua.filter(t => URUT[t.status] >= 1)) {
+      const c = katDari(t); if (!c) continue;
+      if (rows.some(r => r.k === a.R.k && r.kat === c.lbl)) continue;
+      rows.push({ k: a.R.k, kat: c.lbl, status: t.status, apa: polos(t), aksi: tindakan(t), target: ARTI[t.status].target });
+    }
+    rows.sort((a, b) => URUT[b.status] - URUT[a.status]);
+    const nPantau = rows.filter(r => r.status === 'pantau').length, utama = rows.filter(r => URUT[r.status] >= 2);
+    if (utama.length) { rows.length = 0; rows.push(...utama); }
+    if (rows.length) L.tabelV2(['No', 'Area', 'Status', 'Isu', 'Tindakan', 'PIC', 'Target'],
+      rows.map((r, i) => [String(i + 1), { content: r.k, bold: true }, { badge: r.status }, `${r.kat}: ${r.apa}`, r.aksi, `Manager ${r.k}`, r.target]),
+      [8, 13, 24, 0, 48, 20, 19], { size: 8, sorot: i => rows[i].status === 'kritis' });
+    else L.para('Tidak ada tindak lanjut khusus; lanjutkan pemantauan rutin.', { indent: 0 });
+    if (utama.length && nPantau) L.catatan(`Selain itu ada ${nPantau} butir berstatus Pantau yang ditangani melalui pemantauan rutin Manager Area (rinciannya di laporan area masing-masing).`);
+
+    L.subjudul('Tren titik panas di sekitar aset');
+    const tr = trenHarian(X, null);
+    if (tr.hari.length) L.grafik(tr.hari, tr.seri, 'Jumlah titik panas dalam radius 5 km dari aset Pertagas, seluruh area');
+
+    L.subjudul('Arti status');
+    L.legendaStatus();
+
+
+    // LAMPIRAN
+    L.halamanBaru();
+    L.subjudul('Lampiran A — Penentu status per area (teknis)');
+    L.tabelV2(['Area', 'Status', 'Skor', 'Pemicu (bahasa teknis dashboard)'], ord.map(a => [{ content: a.R.k, bold: true }, { badge: a.R.status }, a.R.R ? String(a.R.R) : '–', a.R.A.pemicu ? bersih(a.R.A.pemicu.teks) : 'Tidak ada temuan']), [16, 24, 12, 0], { size: 8 });
+    L.catatan('Skor = Peluang (1–5) × Konsekuensi (1–5) dari klasifikasi multi-bahaya dashboard. Kritis 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2.');
+    lampiranSumber(L, X, 'Lampiran B — Status sumber data');
+    L.selesai(`Laporan_Situasi_Harian_PERTAGAS_WASPADA_${stamp(now)}.pdf`, `${tglPendek(now)} ${jamWIB(now)}`);
+  }
+
+  // ================================================================ LAPORAN AREA UNTUK MANAGER (v2)
+  function laporanAreaV2(X, k) {
+    const now = X.now, I = isuArea(X, k), R = I.R;
+    const L = new Laporan(`Laporan Area ${k}`, `Laporan Area ${k} — PERTAGAS WASPADA — ${tglPanjang(now)}`);
+    L.X = X;
+    L.kepala(`LAPORAN AREA · UNTUK MANAGER ${k}`, `${bersih(R.nama)} (${k})`, 'Situasi geohazard & lingkungan di sekitar jalur pipa dan fasilitas',
+      [`${tglPanjang(now)}, pukul ${jamWIB(now)} · disusun otomatis oleh Fungsi HSSE dari dashboard PERTAGAS WASPADA`, `Keandalan data: ${kalimatSumber(X)}`]);
+    const JUDUL = { kritis: 'PERLU TINDAKAN SEGERA', waspada: 'PERLU VERIFIKASI LAPANGAN', pantau: 'TERKENDALI — DIPANTAU', normal: 'AMAN' };
+    const t = trenArea(X, k), top = I.semua[0];
+    const lokasiCek = I.semua.filter(x => x.jenis === 'hotspot' && x.ref && URUT[x.status] >= 1);
+    L.kotakKesimpulan(R.status, `${ST[R.status].label} — ${JUDUL[R.status]}`, [
+      top ? `Isu utama: **${polos(top)}**.` : 'Tidak ada ancaman terdeteksi di sekitar aset.',
+      top && URUT[R.status] >= 1 ? `Tindakan: **${tindakan(top)}** Target: ${ARTI[R.status].target}.` : null,
+      `Titik panas dalam radius 5 km dari aset: **${t.kini}** (${panah(t.kini, t.kemarin) || 'data kemarin belum ada'})${lokasiCek.length ? `; ${lokasiCek.length} lokasi masuk daftar cek lapangan` : ''}.`,
+    ]);
+
+    L.subjudul('Kondisi per jenis bahaya');
+    L.tabelV2(['Bahaya', 'Status', 'Kondisi saat ini', 'Tindakan yang disarankan'],
+      KAT.map(c => { const ts = I.perKat[c.id] || [], u = ts.slice().sort((a, b) => URUT[b.status] - URUT[a.status] || b.R - a.R)[0];
+        return [{ content: c.lbl, bold: true }, u ? { badge: u.status } : { badge: 'normal' }, u ? polos(u) + (ts.length > 1 && c.id !== 'kebakaran' ? '' : '') : 'Tidak ada ancaman terdeteksi.', u && URUT[u.status] >= 1 ? tindakan(u) : '–']; }),
+      [32, 24, 0, 60], { size: 8.4 });
+
+    L.subjudul('Lokasi yang perlu dicek di lapangan', lokasiCek.length ? 'klik koordinat untuk membuka Google Maps' : '');
+    if (lokasiCek.length) {
+      const tampil = lokasiCek.slice(0, 8), d = L.d;
+      L.tabelV2(['No', 'Status', 'Lokasi', 'Aset terdekat', 'Keterangan', 'Koordinat', 'Hasil cek lapangan'],
+        tampil.map((x, i) => { const h = x.ref; return [String(i + 1), { badge: x.status }, lokasiHs(h), `${bersih(h.aset)}\n±${nf(x.jMin ?? h.jarak_km, 1)} km`,
+          `${x.n > 1 ? `${x.n} titik` : '1 titik'}${h.tutupan ? `, ${bersih(String(h.tutupan.label || '').split(' (')[0]).toLowerCase()}` : ''}${h.persisten ? `, berulang ${h.berulang_hari} hari` : ''}`,
+          { content: `${nf(h.lat, 4)}, ${nf(h.lon, 4)}`, link: mapsUrl(h.lat, h.lon) }, '□ Ada api\n□ Tidak ada api\n□ Tak terjangkau']; }),
+        [8, 23, 0, 34, 30, 22, 25], { size: 7.8, sorot: i => tampil[i].status === 'kritis',
+          link: true });
+      if (lokasiCek.length > tampil.length) L.catatan(`${lokasiCek.length - tampil.length} lokasi lain berstatus pantau tercantum di lampiran.`);
+      void d;
+    } else L.para('Tidak ada lokasi yang perlu dicek hari ini.', { indent: 0 });
+
+    // HALAMAN 2
+    L.halamanBaru();
+    L.subjudul('Peta situasi');
+    L.peta(X, k, R);
+    L.subjudul('Prakiraan hujan 3 hari di titik pantau');
+    if (R.wx.length) {
+      const tg = (R.wx[0].prakiraan || []).slice(0, 3).map(p => p.tanggal), kat = mm => mm == null ? '–' : mm < 0.5 ? 'Tidak hujan' : mm < 20 ? 'Hujan ringan' : mm < 50 ? 'Hujan sedang' : mm < 100 ? 'Hujan lebat' : 'Sangat lebat';
+      L.tabelV2(['Titik pantau', ...tg.map(hariTgl), 'Kualitas udara'],
+        R.wx.map(w => [{ content: bersih(w.nama), bold: true }, ...tg.map((_, i) => { const p = (w.prakiraan || [])[i] || {}; return `${kat(num(p.hujan_mm))}\n${nf(p.hujan_mm, 0)} mm, peluang ${nf(p.peluang_hujan)}%`; }),
+          num(w.aqi_us) == null ? '–' : `${aqiKat(+w.aqi_us).replace('tidak sehat bagi kelompok sensitif', 'kurang sehat')} (${nf(w.aqi_us)})`]),
+        [46, 0, 0, 0, 32], { size: 8, warna: (r, c) => (c === 4 && num(R.wx[r].aqi_us) > 150 ? C.kritis : null) });
+    }
+    L.subjudul('Checklist tindak lanjut Manager Area');
+    const ck = [];
+    for (const x of I.semua.filter(x => URUT[x.status] >= 1)) { const a = tindakan(x); if (!ck.some(c => c.a === a)) ck.push({ a, st: x.status, kat: (katDari(x) || {}).lbl }); }
+    ck.push({ a: 'Laporkan hasil pengecekan ke Fungsi HSSE.', st: 'normal', kat: 'Pelaporan' });
+    L.tabelV2(['', 'Tindakan', 'Terkait', 'Target', 'Paraf'], ck.map(c => ['□', c.a, c.kat, ARTI[c.st].target, '']), [7, 0, 34, 30, 18], { size: 8.4 });
+
+    // LAMPIRAN
+    L.halamanBaru();
+    L.subjudul('Lampiran A — Daftar titik panas ≤ 5 km dari aset');
+    if (R.h.length) {
+      const hs = R.h.slice().sort((a, b) => (URUT[X.hsSt(b)] || 0) - (URUT[X.hsSt(a)] || 0) || a.jarak_km - b.jarak_km).slice(0, 40);
+      L.tabelV2(['No', 'Status', 'Jarak', 'Aset terdekat', 'Lokasi', 'Satelit · waktu', 'Koordinat'],
+        hs.map((h, i) => [String(i + 1), { badge: ST[X.hsSt(h)] ? X.hsSt(h) : 'normal' }, `${nf(h.jarak_km, 2)} km`, bersih(h.aset), lokasiHs(h), `${bersih(String(h.sumber || '').replace('NASA-', ''))} · ${waktu(h.waktu_utc)}`, { content: `${nf(h.lat, 4)}, ${nf(h.lon, 4)}`, link: mapsUrl(h.lat, h.lon) }]),
+        [8, 23, 14, 38, 0, 30, 22], { size: 7.4 });
+      if (R.h.length > 40) L.catatan(`Ditampilkan 40 dari ${R.h.length} titik.`);
+    } else L.para('Tidak ada titik panas dalam radius 5 km.', { indent: 0 });
+    L.subjudul('Lampiran B — Penentu status (teknis)');
+    L.tabelV2(['Jenis', 'Status', 'Skor (P × K)', 'Keterangan teknis'], kelompok((R.A.temuan || []).filter(x => x.R >= 1)).slice(0, 12).map(x => [JL[x.jenis] || x.jenis, { badge: x.status }, `${x.P} × ${x.K} = ${x.R}`, bersih(x.teks)]), [34, 24, 22, 0], { size: 7.8 });
+    L.catatan('P = peluang bahaya mengenai aset (1–5); K = konsekuensi menurut jenis aset (1–5). Kritis 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2.');
+    lampiranSumber(L, X, 'Lampiran C — Status sumber data');
+    L.selesai(`Laporan_Area_${k}_PERTAGAS_WASPADA_${stamp(now)}.pdf`, `${tglPendek(now)} ${jamWIB(now)}`);
+  }
+
   const stamp = d => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { ...tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d).map(x => [x.type, x.value])); return `${p.year}-${p.month}-${p.day}_${p.hour}${p.minute}`; };
   const tglPendek = d => d.toLocaleDateString('id-ID', { ...tz, day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -719,7 +1065,7 @@
       await siapkan();
       const X = konteks();
       if (!X.AREAS.length) throw new Error('data dashboard belum dimuat');
-      if (target && X.AREAS.includes(target)) laporanArea(X, target); else laporanRingkasan(X);
+      if (target && X.AREAS.includes(target)) laporanAreaV2(X, target); else laporanRingkasanV2(X);
     } catch (e) {
       console.error('laporan PDF', e);
       alert('Laporan PDF gagal dibuat: ' + (e && e.message ? e.message : e));
