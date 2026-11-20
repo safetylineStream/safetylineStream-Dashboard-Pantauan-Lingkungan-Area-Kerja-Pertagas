@@ -1,0 +1,70 @@
+[
+{
+"lat": 5.22453,
+"lon": 97.07201,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-20T07:09:00.000000Z",
+"waktu": "Jumat, 20 November 2026 14:09:00",
+"prov": "Aceh",
+"kab": "Kota Lhokseumawe",
+"kec": "Muara Satu",
+"desa": "Meuria Paloh",
+"jarak_km": 0.67,
+"area": "ONSA",
+"aset": "Jalur Pipa ONSA #32",
+"jenis_aset": "pipa",
+"fasilitas": "SM Arun",
+"jarak_fasilitas_km": 0.7,
+"status": "kritis",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.715,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.715,
+"30": 0.222,
+"50": 0.049,
+"80": 0.014
+}
+}
+},
+{
+"lat": -7.09257,
+"lon": 110.62215,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-19T18:30:00.000000Z",
+"waktu": "Jumat, 20 November 2026 01:30:00",
+"prov": "Jawa Tengah",
+"kab": "Grobogan",
+"kec": "Tanggungharjo",
+"desa": "Kaliwenang",
+"jarak_km": 4.22,
+"area": "OEJA",
+"aset": "Pipa OEJA 28\"",
+"jenis_aset": "pipa",
+"fasilitas": "Arkof Station",
+"jarak_fasilitas_km": 20.3,
+"status": "pantau",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.406,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.406,
+"10": 0.36,
+"30": 0.176,
+"60": 0.046
+}
+}
+}
+]
