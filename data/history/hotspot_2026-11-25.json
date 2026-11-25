@@ -1,5 +1,73 @@
 [
 {
+"lat": -3.10134,
+"lon": 104.70306,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-24T18:36:00.000000Z",
+"waktu": "Rabu, 25 November 2026 01:36:00",
+"prov": "Sumatera Selatan",
+"kab": "Ogan Ilir",
+"kec": "Indralaya Utara",
+"desa": "Soak Batok",
+"jarak_km": 0.0,
+"area": "OSSA",
+"aset": "[SBS] SIMPANGY - SRIMULYO",
+"jenis_aset": "pipa",
+"fasilitas": "Meter Feed & Lean OBP",
+"jarak_fasilitas_km": 0.1,
+"status": "kritis",
+"berulang_hari": 4,
+"persisten": true,
+"tutupan": {
+"kode": 30,
+"label": "Padang rumput/alang-alang",
+"porsi": 0.646,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"30": 0.646,
+"10": 0.161,
+"50": 0.15,
+"60": 0.022
+}
+}
+},
+{
+"lat": -3.1008,
+"lon": 104.70147,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-24T17:51:00.000000Z",
+"waktu": "Rabu, 25 November 2026 00:51:00",
+"prov": "Sumatera Selatan",
+"kab": "Ogan Ilir",
+"kec": "Indralaya Utara",
+"desa": "Soak Batok",
+"jarak_km": 0.1,
+"area": "OSSA",
+"aset": "[SBS] SIMPANGY - SRIMULYO",
+"jenis_aset": "pipa",
+"fasilitas": "Meter Feed & Lean OBP",
+"jarak_fasilitas_km": 0.3,
+"status": "kritis",
+"berulang_hari": 4,
+"persisten": true,
+"tutupan": {
+"kode": 30,
+"label": "Padang rumput/alang-alang",
+"porsi": 0.641,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"30": 0.641,
+"10": 0.179,
+"50": 0.156,
+"60": 0.022
+}
+}
+},
+{
 "lat": -3.05589,
 "lon": 104.70049,
 "conf": "medium",
