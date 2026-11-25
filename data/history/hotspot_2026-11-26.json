@@ -1,0 +1,170 @@
+[
+{
+"lat": -7.58966,
+"lon": 112.75021,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-25T05:31:00.000000Z",
+"waktu": "Rabu, 25 November 2026 12:31:00",
+"prov": "Jawa Timur",
+"kab": "Pasuruan",
+"kec": "Beji",
+"desa": "Beji",
+"jarak_km": 0.62,
+"area": "OEJA",
+"aset": "Pipa OEJA 18\"",
+"jenis_aset": "pipa",
+"fasilitas": "Stasiun Porong",
+"jarak_fasilitas_km": 5.4,
+"status": "kritis",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.489,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.489,
+"40": 0.307,
+"30": 0.106,
+"10": 0.095
+}
+}
+},
+{
+"lat": 3.65656,
+"lon": 98.66528,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-25T06:33:00.000000Z",
+"waktu": "Rabu, 25 November 2026 13:33:00",
+"prov": "Sumatera Utara",
+"kab": "Kota Medan",
+"kec": "Medan Deli",
+"desa": "Mabar",
+"jarak_km": 1.94,
+"area": "ONSA",
+"aset": "Jalur Pipa ONSA #16",
+"jenis_aset": "pipa",
+"fasilitas": "SM KIM",
+"jarak_fasilitas_km": 2.5,
+"status": "waspada",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.767,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.767,
+"10": 0.193,
+"30": 0.023,
+"60": 0.014
+}
+}
+},
+{
+"lat": -6.00527,
+"lon": 105.98374,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-25T06:29:00.000000Z",
+"waktu": "Rabu, 25 November 2026 13:29:00",
+"prov": "Banten",
+"kab": "Kota Cilegon",
+"kec": "Ciwandan",
+"desa": "Kubangsari",
+"jarak_km": 2.55,
+"area": "OWJA",
+"aset": "Jalur Pipa OWJA #26",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 22 Cisem",
+"jarak_fasilitas_km": 241.0,
+"status": "waspada",
+"berulang_hari": 6,
+"persisten": true,
+"tutupan": {
+"kode": 50,
+"label": "Lahan terbangun (permukiman/industri)",
+"porsi": 0.879,
+"kategori": "non_vegetasi",
+"kategori_label": "Non-vegetasi (terbangun, terbuka, air)",
+"persen": {
+"50": 0.879,
+"40": 0.043,
+"60": 0.027,
+"30": 0.025
+}
+}
+},
+{
+"lat": -3.25525,
+"lon": 104.48447,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-25T07:13:00.000000Z",
+"waktu": "Rabu, 25 November 2026 14:13:00",
+"prov": "Sumatera Selatan",
+"kab": "Muara Enim",
+"kec": "Gelumbang",
+"desa": "Tambangan Kelekar",
+"jarak_km": 3.03,
+"area": "OSSA",
+"aset": "[SBS] LEMBAK - SIMPANG Y",
+"jenis_aset": "pipa",
+"fasilitas": "Meter Arwana Keramik",
+"jarak_fasilitas_km": 17.5,
+"status": "pantau",
+"berulang_hari": 2,
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 1.0,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 1.0,
+"30": 0.0
+}
+}
+},
+{
+"lat": -7.43813,
+"lon": 112.73949,
+"conf": "medium",
+"sumber": "NASA-NOAA21",
+"waktu_utc": "2026-11-25T05:31:00.000000Z",
+"waktu": "Rabu, 25 November 2026 12:31:00",
+"prov": "Jawa Timur",
+"kab": "Sidoarjo",
+"kec": "Buduran",
+"desa": "Siwalanpanji",
+"jarak_km": 4.26,
+"area": "OEJA",
+"aset": "Pipa OEJA 28\"",
+"jenis_aset": "pipa",
+"fasilitas": "Wunut Station",
+"jarak_fasilitas_km": 9.8,
+"status": "pantau",
+"berulang_hari": 1,
+"persisten": false,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.288,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.288,
+"50": 0.265,
+"30": 0.24,
+"10": 0.063
+}
+}
+}
+]
