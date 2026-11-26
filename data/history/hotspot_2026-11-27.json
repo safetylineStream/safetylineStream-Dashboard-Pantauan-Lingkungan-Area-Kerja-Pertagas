@@ -1,0 +1,34 @@
+[
+{
+"lat": 0.06033,
+"lon": 117.42169,
+"conf": "medium",
+"sumber": "NASA-MODIS",
+"waktu_utc": "2026-11-25T20:16:00.000000Z",
+"waktu": "Kamis, 26 November 2026 03:16:00",
+"prov": "Kalimantan Timur",
+"kab": "Kota Bontang",
+"kec": "Bontang Selatan",
+"desa": "Kelurahan Bontang Lestari",
+"jarak_km": 3.39,
+"area": "OKA",
+"aset": "Jalur Pipa OKA #18",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 1 SENBAL",
+"jarak_fasilitas_km": 125.4,
+"status": "pantau",
+"berulang_hari": 2,
+"persisten": false,
+"tutupan": {
+"kode": 10,
+"label": "Tutupan pohon (hutan/kebun berkayu)",
+"porsi": 0.515,
+"kategori": "vegetasi_lebat",
+"kategori_label": "Vegetasi lebat (hutan, kebun, semak, rawa, mangrove)",
+"persen": {
+"10": 0.515,
+"30": 0.485
+}
+}
+}
+]
