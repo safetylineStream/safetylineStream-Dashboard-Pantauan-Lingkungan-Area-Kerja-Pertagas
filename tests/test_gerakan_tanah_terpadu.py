@@ -59,6 +59,10 @@ def test_lantai_pvmbg_dan_tingkat_akhir():
     assert mgt.tingkat_akhir(2, 1, "menengah", 2) == "rendah"
     # lahan datar di zona tinggi: dibatasi rendah walau hujan melampaui ambang
     assert mgt.tingkat_akhir(2, 2, "tinggi", 1) == "rendah"
+    # lahan datar di zona menengah dengan hujan di bawah ambang: tidak ada (cegah alarm palsu di rawa/dataran)
+    assert mgt.tingkat_akhir(1, 1, "menengah", 1) is None
+    # lahan datar di zona tinggi dengan hujan di bawah ambang: hanya "zona"
+    assert mgt.tingkat_akhir(1, 1, "tinggi", 1) == "zona"
     # alur banjir bandang tidak dibatasi lereng
     assert mgt.tingkat_akhir(2, 2, "bandang", 1) == "tinggi"
     # lahan datar di luar zona PVMBG tidak dinilai model harian

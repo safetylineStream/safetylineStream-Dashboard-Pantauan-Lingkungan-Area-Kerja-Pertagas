@@ -32,8 +32,9 @@
   };
   const PW = 210, PH = 297, M = 15, CW = PW - 2 * M, TOP1 = 12, TOPN = 24, BOT = PH - 18, IND = 7;
   const JL = { hotspot: 'Hotspot', gempa: 'Gempa/tsunami', gerakan_tanah: 'Gerakan tanah/longsor', cuaca: 'Cuaca/udara',
-    cuaca_ekstrem: 'Peringatan dini BMKG', banjir: 'Banjir sungai (model)', gdacs: 'Siklon/gunung api (GDACS)' };
-  const LVL = { tinggi: 'Tinggi', sedang: 'Sedang', rendah: 'Rendah', menengah: 'Menengah', bandang: 'Banjir bandang', sangat_rendah: 'Sangat rendah' };
+    cuaca_ekstrem: 'Peringatan dini BMKG', banjir: 'Banjir sungai (model)', gdacs: 'Siklon/gunung api (GDACS)', petir: 'Petir di stasiun (model)' };
+  const LVL = { sangat_tinggi: 'Sangat tinggi', tinggi: 'Tinggi', sedang: 'Sedang', rendah: 'Rendah', menengah: 'Menengah', bandang: 'Banjir bandang', sangat_rendah: 'Sangat rendah', zona: 'Zona rawan (belum terpicu hujan)' };
+  const MGT_LV = ['sangat_tinggi', 'tinggi', 'sedang', 'rendah'];
 
   // ---------------------------------------------------------------- utilitas
   const G = n => { try { return window.eval(n); } catch (e) { return undefined; } }; // akses let/const global index.html
@@ -85,6 +86,10 @@
       TL: G('TL') || {}, sumber: (G('sources') || (() => []))(),
       pdArea: G('pdArea') || (() => []), lsArea: (k, p) => ((((G('LS') || {}).produk || {})[p] || {}).per_area || {})[k] || null,
       bjArea: k => { const B = G('BJ'); return (B && B.per_area && B.per_area[k]) || null; },
+      TP: G('TP'), PT: G('PT'),
+      tpArea: (k, p) => ((((G('TP') || {}).produk || {})[p] || {}).per_area || {})[k] || null,
+      ptFas: k => (((G('PT') || {}).fasilitas) || []).filter(f => f.area === k),
+      ptArea: (k, p) => ((((G('PT') || {}).produk || {})[p] || {}).per_area || {})[k] || null,
       now: new Date(),
     };
   }
@@ -107,11 +112,24 @@
       hjMin: hj.length ? Math.min(...hj) : null, hjMax: hj.length ? Math.max(...hj) : null,
       q, pk, P, lsH: X.lsArea(k, 'hari_ini'), lsB: X.lsArea(k, 'besok'),
       pd: X.pdArea(k), bj: X.bjArea(k), gd,
+      tpH: X.tpArea(k, 'hari_ini'), tpB: X.tpArea(k, 'besok'), pt: X.ptFas(k), ptH: X.ptArea(k, 'hari_ini'), ptB: X.ptArea(k, 'besok'),
       provinsi: (D.hotspot && D.hotspot.provinsi_area && D.hotspot.provinsi_area[k]) || {},
     };
   }
   const rentang = (a, b, d = 0, u = '') => (a == null ? '–' : (nf(a, d) === nf(b, d) ? nf(a, d) : `${nf(a, d)}–${nf(b, d)}`) + u);
   const kmLv = (o, lv) => num(o && o.pipa_km && o.pipa_km[lv]) || 0;
+  const kmMgt = o => MGT_LV.reduce((a, lv) => a + kmLv(o, lv), 0);
+  const nFasMgt = o => ((o && o.fasilitas) || []).filter(f => MGT_LV.includes(f.level)).length;
+  function teksMgt(o) { // ringkasan satu produk model terpadu untuk satu area
+    if (!o) return 'tidak tersedia';
+    if (!o.terburuk) return 'tidak ada indikasi';
+    if (o.terburuk === 'zona') return `belum terpicu hujan — ${nf(kmLv(o, 'zona'), 1)} km pipa di zona rawan PVMBG`;
+    const nf_ = nFasMgt(o);
+    return `**${LVL[o.terburuk]}** — ${nf(kmMgt(o), 1)} km pipa${nf_ ? ` dan ${nf_} fasilitas` : ''} berindikasi (hujan anteseden maks. ${nf((o.rasio_maks || 0) * 100)}% ambang)`;
+  }
+  const jamRawan = j => { const idx = [...String(j || '')].map((x, h) => x !== '-' && +x >= 2 ? h : -1).filter(h => h >= 0); if (!idx.length) return null;
+    const out = []; let a = idx[0]; for (let i = 0; i < idx.length; i++) { if (idx[i + 1] !== idx[i] + 1) { out.push(`${String(a).padStart(2, '0')}–${String(idx[i] + 1).padStart(2, '0')}`); a = idx[i + 1]; } } return out.join(', ') + ' WIB'; };
+  const PT_LV = { tinggi: 'Tinggi', sedang: 'Sedang', rendah: 'Rendah' };
   const aqiKat = v => v == null ? '' : v <= 50 ? 'baik' : v <= 100 ? 'sedang' : v <= 150 ? 'tidak sehat bagi kelompok sensitif' : v <= 200 ? 'tidak sehat' : v <= 300 ? 'sangat tidak sehat' : 'berbahaya';
   function lokasiHs(h) { return bersih([h.desa, h.kec, h.kab].filter(Boolean).join(', ').replace(/Kelurahan |Desa /g, '')); }
   // temuan hotspot yang berdekatan (≤ 3 km, satu area) digabung menjadi satu klaster agar tabel & rekomendasi tidak berulang
@@ -453,7 +471,10 @@
     const hsTop = kelompok(top.filter(t => t.jenis === 'hotspot' && t.ref)).slice(0, 3);
     if (hsTop.length) out.push(`**Verifikasi lapangan hotspot** di ${hsTop.map(t => `${t.ref.kec ? bersih(t.ref.kec) + ', ' + bersih(t.ref.kab) : lokasiHs(t.ref)} (${t.n > 1 ? `${t.n} titik, ` : ''}${nf(t.jMin ?? t.ref.jarak_km, 2)} km dari ${bersih(t.ref.aset)})`).join('; ')}; koordinasikan dengan Manggala Agni/Daops dan BPBD setempat bila api terkonfirmasi.`);
     if (top.some(t => t.jenis === 'gempa')) out.push(`**Cek visual ROW dan fasilitas** di sekitar ${R.q ? bersih(R.q.per_area[R.k].aset) : 'aset terdekat'} pasca gempa.`);
-    if ((A.temuan || []).some(t => t.jenis === 'gerakan_tanah' && t.R >= 6)) out.push('**Siagakan patroli lereng** pada ruas zona prakiraan gerakan tanah tinggi PVMBG / indikasi longsor model, terutama saat hujan lebat.');
+    const gtT = (A.temuan || []).filter(t => t.jenis === 'gerakan_tanah' && t.R >= 6).sort((a, b) => b.R - a.R)[0];
+    if (gtT) out.push(`**Siagakan patroli lereng/ROW** ${gtT.fokus && gtT.fokus.judul ? `di ${bersih(gtT.fokus.judul)}${Number.isFinite(+gtT.fokus.lat) ? ` (${koor(gtT.fokus.lat, gtT.fokus.lon)})` : ''}` : 'pada ruas berindikasi gerakan tanah'}: cek retakan, amblesan, patok miring dan rembesan, terutama saat/sesudah hujan lebat.`);
+    const ptT = (A.temuan || []).filter(t => t.jenis === 'petir' && t.R >= 6)[0];
+    if (ptT) out.push(`**Terapkan prosedur cuaca petir** di stasiun yang ditandai (${bersih(ptT.teks)}): jadwalkan hot work dan pekerjaan di ketinggian di luar jam rawan, gunakan aturan 30-30.`);
     if (R.pd.length) out.push(`**Teruskan ${R.pd.length} peringatan dini BMKG yang aktif** ke tim lapangan; tunda pekerjaan di ketinggian dan di ruang terbuka selama peringatan berlaku.`);
     if (R.bj && ['tinggi', 'sedang'].includes(R.bj.terburuk)) out.push('**Pantau crossing sungai** yang dilintasi pipa: potensi debit tinggi menurut model GloFAS.');
     if (R.gd.length) out.push(`**Siaga kejadian GDACS:** ${R.gd.map(e => bersih(e.jenis_nama + (e.nama ? ' ' + e.nama : ''))).join(', ')}.`);
@@ -499,7 +520,8 @@
     L.h2('1.3', 'Gempa, longsor & gerakan tanah');
     L.butir([
       R.q ? `Gempa terdekat 7 hari: **M ${nf(R.q.mag, 1)}** (${waktu(R.q.datetime)}), ${nf(qd.jarak_km)} km dari ${bersih(qd.aset)}; ${R.q.tsunami ? '**berpotensi tsunami**' : 'tidak berpotensi tsunami'}.` : 'Tidak ada gempa tercatat dalam 7 hari terakhir.',
-      `Indikasi longsor (model): hari ini ${R.lsH && R.lsH.terburuk ? `**${LVL[R.lsH.terburuk]}** pada ${nf(kmLv(R.lsH, 'tinggi') + kmLv(R.lsH, 'sedang') + kmLv(R.lsH, 'rendah'), 1)} km pipa` : 'tidak ada indikasi'}; besok ${R.lsB && R.lsB.terburuk ? `**${LVL[R.lsB.terburuk]}** pada ${nf(kmLv(R.lsB, 'tinggi') + kmLv(R.lsB, 'sedang') + kmLv(R.lsB, 'rendah'), 1)} km pipa` : 'tidak ada indikasi'}.`,
+      X.TP ? `Gerakan tanah & longsor (model terpadu PVMBG + LHASA + tutupan lahan): hari ini ${teksMgt(R.tpH)}; besok ${teksMgt(R.tpB)}.`
+        : `Indikasi longsor (model): hari ini ${R.lsH && R.lsH.terburuk ? `**${LVL[R.lsH.terburuk]}** pada ${nf(kmLv(R.lsH, 'tinggi') + kmLv(R.lsH, 'sedang') + kmLv(R.lsH, 'rendah'), 1)} km pipa` : 'tidak ada indikasi'}; besok ${R.lsB && R.lsB.terburuk ? `**${LVL[R.lsB.terburuk]}** pada ${nf(kmLv(R.lsB, 'tinggi') + kmLv(R.lsB, 'sedang') + kmLv(R.lsB, 'rendah'), 1)} km pipa` : 'tidak ada indikasi'}.`,
       R.pk ? `Prakiraan gerakan tanah PVMBG (${bersih(R.P.periode || '')}): ${nf(kmLv(R.pk, 'tinggi'), 1)} km pipa zona tinggi, ${nf(kmLv(R.pk, 'menengah'), 1)} km menengah${kmLv(R.pk, 'bandang') ? `, ${nf(kmLv(R.pk, 'bandang'), 1)} km berpotensi banjir bandang` : ''}.` : 'Prakiraan gerakan tanah PVMBG belum tersedia untuk wilayah ini.',
     ]);
     L.h2('1.4', 'Cuaca, udara & peringatan');
@@ -507,6 +529,7 @@
       R.wx.length ? `Prakiraan hujan hari ini ${rentang(R.hjMin, R.hjMax, 1, ' mm')} di ${R.wx.length} titik pantau; US AQI ${rentang(R.aqiMin, R.aqiMax)} (maks. ${aqiKat(R.aqiMax)}).` : 'Data cuaca tidak tersedia.',
       R.pd.length ? `**${R.pd.length} peringatan dini BMKG aktif** mengenai aset: ${R.pd.map(w => bersih(w.event || w.judul)).join('; ')}.` : 'Tidak ada peringatan dini cuaca BMKG yang aktif mengenai aset.',
       `Banjir sungai: ${R.bj && R.bj.terburuk ? LVL[R.bj.terburuk] : 'tidak ada'}${R.gd.length ? ` · GDACS: ${R.gd.length} kejadian relevan` : ''}.`,
+      X.PT ? (R.pt.length ? `Petir di stasiun (model): ${['hari_ini', 'besok'].map(p => { const a = p === 'besok' ? R.ptB : R.ptH; return `${p === 'besok' ? 'besok' : 'hari ini'} ${a && a.terburuk ? `**${PT_LV[a.terburuk]}**${a.jam_rawan ? ` (jam rawan ${a.jam_rawan})` : ''}` : p === 'besok' && X.PT._geser ? 'belum tersedia' : 'tidak ada'}`; }).join('; ')} — ${R.pt.length} stasiun kompresor/metering/booster dipantau.` : 'Petir: tidak ada stasiun kompresor/metering/booster yang dipantau di wilayah ini.') : null,
     ]);
 
     // 2. PENENTU STATUS
@@ -549,16 +572,35 @@
     else L.para('Tidak ada gempa tercatat dalam 7 hari terakhir.');
 
     // 6. LONGSOR & GERAKAN TANAH
-    L.h1(6, 'Longsor & gerakan tanah');
-    L.h2('6.1', 'Indikasi longsor harian (model LHASA)');
+    L.h1(6, 'Gerakan tanah & longsor');
+    let sub6 = 0;
+    if (X.TP) {
+      sub6++; L.h2(`6.${sub6}`, 'Model terpadu (PVMBG + LHASA + tutupan lahan)');
+      L.butir([
+        `Hari ini (${hariTgl(X.TP.produk?.hari_ini?.tanggal)}): ${teksMgt(R.tpH)}.`,
+        `Besok (${hariTgl(X.TP.produk?.besok?.tanggal)}): ${teksMgt(R.tpB)}.`,
+        R.tpH ? `Kerentanan statis (SK 1–5) sepanjang ${nf(R.tpH.total_pipa_km, 1)} km pipa: ${['5', '4', '3', '2', '1'].map(c => `SK${c} ${nf((R.tpH.kerentanan_km || {})[c] || 0, 1)} km`).join(' · ')}.` : null,
+      ]);
+      const ruasT = [...((R.tpH && R.tpH.ruas) || []).filter(r => r.level !== 'zona').map(r => ({ ...r, hari: 'Hari ini' })),
+        ...((R.tpB && R.tpB.ruas) || []).filter(r => r.level !== 'zona').map(r => ({ ...r, hari: 'Besok' }))].slice(0, 12);
+      if (ruasT.length) L.tabel(['Hari', 'Ruas pipa', 'Tingkat', 'km', 'SK', 'Faktor penentu', 'Koordinat'],
+        ruasT.map(r => [r.hari, bersih(r.aset), LVL[r.level] || r.level, nf(r.km, 2), String(r.SK ?? '–'), bersih(r.faktor || ''), koor(r.lat, r.lon)]), [15, 34, 17, 11, 9, 0, 28], { size: 7.6 });
+      const fasT = [...((R.tpH && R.tpH.fasilitas) || []).map(f => ({ ...f, hari: 'Hari ini' })), ...((R.tpB && R.tpB.fasilitas) || []).map(f => ({ ...f, hari: 'Besok' }))]
+        .filter(f => MGT_LV.includes(f.level)).slice(0, 8);
+      if (fasT.length) L.tabel(['Hari', 'Fasilitas', 'Tingkat', 'SK', 'Faktor penentu', 'Koordinat'],
+        fasT.map(f => [f.hari, bersih(f.aset), LVL[f.level] || f.level, String(f.SK ?? '–'), bersih(f.faktor || ''), koor(f.lat, f.lon)]), [15, 38, 17, 9, 0, 28], { size: 7.6 });
+      L.catatan('Kerentanan SK = (3·geologi PVMBG + 3·lereng DEM + 2·tutupan lahan ESA WorldCover) ÷ 8, mengikuti bobot SNI 13-7124-2005; pemicu = hujan anteseden 7 hari ÷ ambang ARI95 (model NASA LHASA 1.1). Tingkat akhir = matriks SK × pemicu, tidak lebih rendah dari prakiraan bulanan PVMBG di titik itu. Indikasi model, bukan pengganti informasi resmi PVMBG.');
+    }
+    sub6++; L.h2(`6.${sub6}`, X.TP ? 'Rincian sumber: indikasi longsor harian (model LHASA)' : 'Indikasi longsor harian (model LHASA)');
     const ruas = [...((R.lsH && R.lsH.ruas) || []).map(r => ({ ...r, hari: 'Hari ini' })), ...((R.lsB && R.lsB.ruas) || []).map(r => ({ ...r, hari: 'Besok' }))];
     L.butir([
       `Hari ini (${hariTgl(X.LS?.produk?.hari_ini?.tanggal)}): ${R.lsH && R.lsH.terburuk ? `${LVL[R.lsH.terburuk]} — tinggi ${nf(kmLv(R.lsH, 'tinggi'), 1)} km, sedang ${nf(kmLv(R.lsH, 'sedang'), 1)} km, rendah ${nf(kmLv(R.lsH, 'rendah'), 1)} km pipa` : 'tidak ada indikasi'}; rasio hujan anteseden maks. ${nf((R.lsH?.rasio_maks || 0) * 100)}% ambang.`,
       `Besok (${hariTgl(X.LS?.produk?.besok?.tanggal)}): ${R.lsB && R.lsB.terburuk ? `${LVL[R.lsB.terburuk]} — ${nf(kmLv(R.lsB, 'tinggi') + kmLv(R.lsB, 'sedang') + kmLv(R.lsB, 'rendah'), 1)} km pipa` : 'tidak ada indikasi'}.`,
     ]);
-    if (ruas.length) L.tabel(['Hari', 'Ruas pipa', 'Tingkat', 'Panjang (km)', 'Rasio hujan', 'Kerentanan', 'Koordinat'],
+    if (ruas.length && !X.TP) L.tabel(['Hari', 'Ruas pipa', 'Tingkat', 'Panjang (km)', 'Rasio hujan', 'Kerentanan', 'Koordinat'],
       ruas.slice(0, 10).map(r => [r.hari, bersih(r.aset), LVL[r.level] || r.level, nf(r.km, 2), `${nf((r.rasio || 0) * 100)}%`, String(r.kerentanan ?? '–'), koor(r.lat, r.lon)]), [16, 0, 18, 18, 18, 18, 30], { size: 8 });
-    L.h2('6.2', `Prakiraan gerakan tanah PVMBG${R.P.periode ? ' — ' + bersih(R.P.periode) : ''}`);
+    sub6++;
+    L.h2(`6.${sub6}`, `${X.TP ? 'Rincian sumber: p' : 'P'}rakiraan gerakan tanah PVMBG${R.P.periode ? ' — ' + bersih(R.P.periode) : ''}`);
     if (R.pk) {
       const fas = (R.pk.fasilitas || []).filter(f => ['tinggi', 'bandang', 'menengah'].includes(f.level));
       L.butir([
@@ -591,6 +633,17 @@
       `Banjir sungai (GloFAS): ${R.bj ? (R.bj.terburuk ? `${LVL[R.bj.terburuk]} — ${nf(kmLv(R.bj, R.bj.terburuk), 1)} km pipa di ${nf(R.bj.sel_sungai)} sel sungai` : `tidak ada potensi (${nf(R.bj.sel_sungai)} sel sungai dipantau)`) : 'tidak tersedia'}.`,
       R.gd.length ? `GDACS: ${R.gd.map(e => `${bersih(e.jenis_nama)}${e.nama ? ' ' + bersih(e.nama) : ''} (${e.level}) — ${bersih(e.per_area[k].ket)}`).join('; ')}.` : 'GDACS: tidak ada siklon tropis atau erupsi gunung api yang relevan.',
     ]);
+    if (X.PT) {
+      L.h2('8.3', 'Potensi petir di stasiun kompresor, metering & booster (model)');
+      const urut = { tinggi: 0, sedang: 1, rendah: 2 }, sk = f => Math.min(urut[f.hari_ini?.level] ?? 9, urut[f.besok?.level] ?? 9);
+      const pt = R.pt.filter(f => f.hari_ini?.level || f.besok?.level).sort((a, b) => sk(a) - sk(b)).slice(0, 14);
+      if (pt.length) L.tabel(['Stasiun', 'Jenis', 'Hari ini', 'Besok', 'Jam rawan', 'CAPE maks (J/kg)'],
+        pt.map(f => [bersih(f.aset), ((X.PT.jenis_nama || {})[f.jenis] || f.jenis), PT_LV[f.hari_ini?.level] || '–', PT_LV[f.besok?.level] || '–',
+          [jamRawan(f.hari_ini?.jam), jamRawan(f.besok?.jam) ? 'besok ' + jamRawan(f.besok?.jam) : null].filter(Boolean).join('; ') || '–',
+          nf(Math.max(num(f.hari_ini?.cape_maks) || 0, num(f.besok?.cape_maks) || 0))]), [0, 30, 16, 16, 34, 20], { size: 7.8 });
+      else L.para(R.pt.length ? `Tidak ada potensi petir di ${R.pt.length} stasiun yang dipantau.` : 'Tidak ada stasiun kompresor/metering/booster yang dipantau di wilayah ini.');
+      L.catatan('Prakiraan model cuaca (CAPE, kode cuaca & hujan per jam Open-Meteo, grid ±11 km) — bukan deteksi sambaran. Di lapangan tetap gunakan aturan 30-30 dan peringatan dini BMKG.');
+    }
 
     // 9. TREN
     L.h1(9, 'Tren hotspot');
@@ -648,9 +701,12 @@
       : ['Tidak ada area berstatus Waspada atau Kritis.']);
     L.h2('1.3', 'Geohazard');
     const ls = Rs.filter(r => r.lsH && r.lsH.terburuk), gt = Rs.filter(r => r.pk && (kmLv(r.pk, 'tinggi') + kmLv(r.pk, 'bandang')) > 0);
+    const tp = Rs.filter(r => r.tpH && r.tpH.terburuk && r.tpH.terburuk !== 'zona').sort((a, b) => MGT_LV.indexOf(a.tpH.terburuk) - MGT_LV.indexOf(b.tpH.terburuk) || kmMgt(b.tpH) - kmMgt(a.tpH));
+    const tpB = Rs.filter(r => r.tpB && r.tpB.terburuk && r.tpB.terburuk !== 'zona');
     L.butir([
       qMin ? `Gempa terdekat 7 hari: **M ${nf(qMin.mag, 1)}** ${bersih(qMin.wilayah)} (${waktu(qMin.datetime)}), ${nf(qMin.jarak_km)} km dari ${bersih(qMin.aset)} (${qMin.area}); ${X.qs.some(g => g.tsunami) ? '**ada gempa berpotensi tsunami**' : 'tidak ada potensi tsunami'}.` : 'Tidak ada gempa tercatat dalam 7 hari terakhir.',
-      ls.length ? `Indikasi longsor hari ini (model): ${ls.map(r => `${r.k} ${LVL[r.lsH.terburuk].toLowerCase()} (${nf(kmLv(r.lsH, 'tinggi') + kmLv(r.lsH, 'sedang') + kmLv(r.lsH, 'rendah'), 1)} km)`).join(', ')}.` : 'Model longsor tidak memberi indikasi hari ini.',
+      X.TP ? (tp.length ? `Gerakan tanah & longsor hari ini (model terpadu): ${tp.map(r => `${r.k} ${LVL[r.tpH.terburuk].toLowerCase()} (${nf(kmMgt(r.tpH), 1)} km${nFasMgt(r.tpH) ? `, ${nFasMgt(r.tpH)} fasilitas` : ''})`).join(', ')}${tpB.length ? `; besok: ${tpB.map(r => `${r.k} ${LVL[r.tpB.terburuk].toLowerCase()}`).join(', ')}` : ''}.` : `Model gerakan tanah terpadu tidak memberi indikasi hari ini${tpB.length ? `; besok: ${tpB.map(r => `${r.k} ${LVL[r.tpB.terburuk].toLowerCase()}`).join(', ')}` : ''}.`)
+        : ls.length ? `Indikasi longsor hari ini (model): ${ls.map(r => `${r.k} ${LVL[r.lsH.terburuk].toLowerCase()} (${nf(kmLv(r.lsH, 'tinggi') + kmLv(r.lsH, 'sedang') + kmLv(r.lsH, 'rendah'), 1)} km)`).join(', ')}.` : 'Model longsor tidak memberi indikasi hari ini.',
       gt.length ? `Prakiraan gerakan tanah PVMBG zona tinggi/banjir bandang: ${gt.map(r => `${r.k} ${nf(kmLv(r.pk, 'tinggi') + kmLv(r.pk, 'bandang'), 1)} km`).join(', ')}.` : 'Tidak ada pipa di zona prakiraan gerakan tanah tinggi PVMBG.',
     ]);
     L.h2('1.4', 'Cuaca, udara & peringatan dini');
@@ -659,6 +715,8 @@
       aqi150.length ? `Udara tidak sehat (US AQI > 150) di ${aqi150.length} area: ${aqi150.sort((a, b) => b.aqiMax - a.aqiMax).map(r => `${r.k} ${nf(r.aqiMax)}`).join(', ')}.` : 'Tidak ada area dengan US AQI > 150.',
       nPd ? `Peringatan dini BMKG aktif mengenai aset: ${Rs.filter(r => r.pd.length).map(r => `${r.k} ${r.pd.length}`).join(', ')}.` : 'Tidak ada peringatan dini cuaca BMKG yang aktif mengenai aset.',
       `Banjir sungai sedang/tinggi: ${bj.length ? bj.map(r => r.k).join(', ') : 'tidak ada'}${gdA.length ? ` · GDACS relevan: ${gdA.map(r => r.k).join(', ')}` : ''}.`,
+      X.PT ? (() => { const a = Rs.filter(r => (r.ptH && ['tinggi', 'sedang'].includes(r.ptH.terburuk)) || (r.ptB && ['tinggi', 'sedang'].includes(r.ptB.terburuk)));
+        return a.length ? `Potensi petir sedang/tinggi di stasiun: ${a.map(r => { const h = r.ptH?.terburuk, b = r.ptB?.terburuk; return `${r.k} (${[h && h !== 'rendah' ? `hari ini ${PT_LV[h].toLowerCase()}` : null, b && b !== 'rendah' ? `besok ${PT_LV[b].toLowerCase()}` : null].filter(Boolean).join(', ')})`; }).join(', ')}.` : 'Tidak ada potensi petir sedang/tinggi di stasiun kompresor/metering/booster.'; })() : null,
     ]);
 
     // 2. STATUS PER AREA

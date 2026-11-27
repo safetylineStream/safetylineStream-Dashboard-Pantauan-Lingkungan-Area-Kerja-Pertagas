@@ -449,7 +449,14 @@ footer{padding:10px 4px 28px;line-height:1.6}
 .tile .hint{font-size:12px;color:var(--ink-2);margin-top:4px;line-height:1.45}
 div.tile{cursor:default}
 /* matriks area × jenis bahaya */
-.mx{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:12.5px;min-width:980px;table-layout:fixed}
+.mx{width:max(100%,980px);border-collapse:separate;border-spacing:0 6px;font-size:12.5px;table-layout:fixed}
+@media (max-width:720px){
+  .mx,.mx tbody{display:block;width:100%;min-width:0!important}.mx colgroup,.mx thead{display:none}
+  .mx tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:0 0 12px;margin-bottom:12px;border-bottom:1px solid var(--grid)}
+  .mx td{display:block;padding:0!important}.mx td:last-child{grid-column:1/-1}
+  .mx .c{min-height:0}.mx .c::before{content:attr(data-lbl);display:block;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .mx .rain3{grid-template-columns:auto repeat(3,40px);justify-content:start}.mx .rain3::before{content:'Hujan 3 hari (mm)';font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-right:6px;align-self:center}
+}
 .mx th{background:none;border:0;padding:4px 8px;font-size:11px;position:static}
 .mx th .h{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
 .mx th svg{width:16px;height:16px}
@@ -511,7 +518,7 @@ div.tile{cursor:default}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--page);padding:9px 16px;border-radius:10px;font-weight:600;font-size:13px;z-index:3000;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 .map-full #mapCard{position:fixed;inset:10px;z-index:2000;margin:0;display:flex;flex-direction:column}
 .map-full #mapCard .fold-body{flex:1;display:flex;flex-direction:column;min-height:0}
-.map-full #map{flex:1;height:auto!important}
+.map-full #mapCard{overflow:auto}
 .map-slot{min-width:0}
 .hal>.map-slot{margin-bottom:14px}
 .jam24{display:inline-grid;grid-template-columns:repeat(24,5px);gap:1px;vertical-align:middle}
@@ -867,6 +874,9 @@ async function loadData(){
   [PD,PDG,BJ,GD,GDG,PT,TP,TPR,RIW]=await Promise.all([getJSON('data/peringatan_cuaca/peringatan.json'),getJSON('data/peringatan_cuaca/poligon.geojson'),
     getJSON('data/banjir/banjir.json'),getJSON('data/gdacs/gdacs.json'),getJSON('data/gdacs/geometri.geojson'),getJSON('data/petir_model/petir.json'),
     getJSON('data/lhasa/terpadu.json'),getJSON('data/lhasa/terpadu_ruas.geojson'),getJSON('data/history/status_area.json')]);
+  // lewat tengah malam sebelum workflow berikutnya: produk "besok" sudah menjadi hari ini
+  [LS,TP,PT].forEach(geserHari);
+  for(const [X,F] of [[LS,LSR],[TP,TPR]])if(X?._geser&&F?.features)F.features=F.features.filter(f=>f.properties?.produk==='besok').map(f=>({...f,properties:{...f.properties,produk:'hari_ini'}}));
   // zona kerentanan hanya diunduh bila pipeline menandainya tersedia (hindari 404 yang tidak perlu)
   const Zm=DATA.gerakan_tanah?.zkgt||{};
   if(Zm.tersedia&&Zm.berkas_peta==='prakiraan.geojson'&&GT.prakiraan){
@@ -880,6 +890,12 @@ async function loadData(){
   AREAS.forEach((k,i)=>areaColor[k]=AREA_COLORS[i%AREA_COLORS.length]);
   try{KLAS=window.KlasifikasiWaspada?KlasifikasiWaspada.hitung({data:DATA,lhasa:LS,ruasLhasa:LSR,terpadu:TP,dikenal:DIKENAL,now:new Date(),tambahan:{peringatan:PD,banjir:BJ,petir:PT,gdacs:GD}}):null;}
   catch(e){console.error('klasifikasi',e);KLAS=null;LOADERR['klasifikasi status (klasifikasi.js)']=e.message;}
+}
+function geserHari(X){
+  const P=X&&X.produk,h=P&&P.hari_ini,b=P&&P.besok,today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'});
+  if(!h||!b||!h.tanggal||h.tanggal>=today||b.tanggal!==today)return;
+  P.hari_ini=b;P.besok={tanggal:null,stale:true,per_area:{},belum:true};X._geser=true;
+  for(const f of (X.fasilitas||[])){f.hari_ini=f.besok||null;f.besok=null;}
 }
 async function load(){
   await loadData();
@@ -1114,17 +1130,26 @@ function initMap(){
   // tombol reset tampilan
   const Reset=L.Control.extend({options:{position:'topleft'},onAdd(){const d=L.DomUtil.create('div','leaflet-bar');
     d.innerHTML='<a href="#" role="button" title="Reset tampilan peta ke wilayah aktif" aria-label="Reset peta" style="font-size:15px">⌂</a>';
-    L.DomEvent.on(d.firstChild,'click',e=>{L.DomEvent.preventDefault(e);fitArea();});L.DomEvent.disableClickPropagation(d);return d;}});
+    L.DomEvent.on(d.firstChild,'click',e=>{L.DomEvent.preventDefault(e);fitArea(true);});L.DomEvent.disableClickPropagation(d);return d;}});
   new Reset().addTo(map);
   // layar penuh — peta jadi lebih leluasa saat menelusuri titik
   const Full=L.Control.extend({options:{position:'topleft'},onAdd(){const d=L.DomUtil.create('div','leaflet-bar');
     d.innerHTML='<a href="#" role="button" title="Peta layar penuh (Esc untuk keluar)" aria-label="Peta layar penuh" style="font-size:15px">⛶</a>';
-    L.DomEvent.on(d.firstChild,'click',e=>{L.DomEvent.preventDefault(e);document.body.classList.toggle('map-full');setTimeout(()=>map.invalidateSize(),60);});L.DomEvent.disableClickPropagation(d);return d;}});
+    L.DomEvent.on(d.firstChild,'click',e=>{L.DomEvent.preventDefault(e);petaPenuh(!document.body.classList.contains('map-full'));});L.DomEvent.disableClickPropagation(d);return d;}});
   new Full().addTo(map);
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('map-full')){document.body.classList.remove('map-full');setTimeout(()=>map.invalidateSize(),60);}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('map-full'))petaPenuh(false);});
+  window.addEventListener('resize',()=>{if(document.body.classList.contains('map-full'))petaPenuh(true);});
 }
 let lastBounds=null;
-function fitArea(){if(map&&lastBounds&&lastBounds.isValid())map.fitBounds(lastBounds,{padding:[24,24],maxZoom:11});}
+// layar penuh: <details> tidak meneruskan flex ke isinya, jadi tinggi peta dihitung dari sisa tinggi layar
+function petaPenuh(on){
+  const el=$('#map');document.body.classList.toggle('map-full',on);
+  if(on){bukaPeta();requestAnimationFrame(()=>{el.style.height=Math.max(300,innerHeight-el.getBoundingClientRect().top-14)+'px';map.invalidateSize();});}
+  else{el.style.height='';setTimeout(()=>map.invalidateSize(),30);}
+}
+function fitArea(anim){if(map&&lastBounds&&lastBounds.isValid())map.fitBounds(lastBounds,{padding:[24,24],maxZoom:11,animate:!!anim});}
+// Leaflet mengabaikan setView/fitBounds selama animasi zoom berjalan → tunggu selesai; ukur ulang wadah (peta bisa baru dipindah halaman)
+function petaSiap(fn){if(!map)return;map.invalidateSize({pan:false});if(map._animatingZoom)map.once('zoomend',()=>fn());else fn();}
 // Filter cepat lapisan peta (sinkron dengan kontrol lapisan Leaflet)
 const QUICK=[['pipa','Jalur pipa',['pipa']],['fas','Aset/fasilitas',['fas']],['hs','Hotspot',['hs']],['mgt','Gerakan tanah terpadu',['mgt']],['gt','Zona PVMBG',['gtPrak','gtZona']],['ls','Longsor LHASA',['ls']],['pd','Peringatan BMKG',['pd']],['pt','Petir stasiun',['pt']],['bj','Banjir sungai',['bj']],['eq','Gempa',['eq']],['gd','Siklon/GDACS',['gd']],['lc','Tutupan lahan',['wc','tlKor']]];
 function renderMapTools(){
@@ -1137,7 +1162,7 @@ function renderMapTools(){
      <input id="findAsset" list="assetList" placeholder="Cari aset/fasilitas…" aria-label="Cari aset atau fasilitas"><datalist id="assetList">${[...new Set(names)].slice(0,2000).map(n=>`<option value="${esc(n)}">`).join('')}</datalist>`;
   $('#mapTools').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const q=b.dataset.q;
-    if(q==='reset')return fitArea();
+    if(q==='reset')return fitArea(true);
     const groups=q==='all'?QUICK.filter(x=>!['lc','ls','gt'].includes(x[0])).flatMap(x=>x[2]):QUICK.find(x=>x[0]===q)[2];
     const show=q==='all'?true:!on(groups);
     groups.forEach(k=>{if(!layers[k])return;show?layers[k].addTo(map):map.removeLayer(layers[k]);});
@@ -1429,7 +1454,7 @@ function bukaPeta(){if(!$('#slot-'+state.hal))selectHal('ikhtisar',true);const d
 function focusMap(lat,lon,z,html){
   if(!map)return;
   bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
-  map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);
+  petaSiap(()=>{map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);});
 }
 function renderLists(){
   const eq=quakes(state.eqTab).map(g=>({g,v:eqView(g)}));
@@ -1951,7 +1976,7 @@ function renderMatrix(){
         return `<tr><td><div class="ar" data-area="${a}" role="button" tabindex="0"><b><i class="line" style="background:${css(areaColor[a])};vertical-align:middle;margin-right:6px"></i>${a}</b><small>${esc((DATA.areas[a]?.nama||'').replace('Operation ',''))}</small></div></td>
           <td><div class="ar" data-area="${a}" role="button" tabindex="0" style="background:none"><span style="white-space:nowrap">${badge(A.status==='normal'?null:A.status)}${A.R?` <small style="display:inline">R ${A.R}</small>`:''}</span>${dl}</div></td>`+
           KL_IDS.map(k=>{const x=A.klaster?.[k]||{status:'normal',temuan:[]},t=x.temuan[0];const n=x.status==='normal';
-            return `<td><button type="button" class="c ${n?'n':stCls(x.status)}" data-area="${a}" data-hal="${k}" title="${t?esc(t.teks):'Normal'}"><span class="s">${n?'✓ Normal':`${STATUS[x.status].icon} ${STATUS[x.status].label}`}${x.R&&!n?` <span style="font-weight:600;color:var(--muted)">R ${x.R}</span>`:''}</span><span class="t">${t?esc(t.teks):'Tidak ada temuan'}</span></button></td>`;}).join('')+
+            return `<td><button type="button" class="c ${n?'n':stCls(x.status)}" data-area="${a}" data-hal="${k}" data-lbl="${KLAS_NAMA[k]}" title="${t?esc(t.teks):'Normal'}"><span class="s">${n?'✓ Normal':`${STATUS[x.status].icon} ${STATUS[x.status].label}`}${x.R&&!n?` <span style="font-weight:600;color:var(--muted)">R ${x.R}</span>`:''}</span><span class="t">${t?esc(t.teks):'Tidak ada temuan'}</span></button></td>`;}).join('')+
           `<td>${hujan3(a)}</td></tr>`;}).join('')+`</tbody></table></div>`;
     el.querySelectorAll('.ar[data-area]').forEach(b=>{b.onclick=()=>selectTab(b.dataset.area);b.onkeydown=e=>{if(e.key==='Enter')selectTab(b.dataset.area);};});
     el.querySelectorAll('.c[data-hal]').forEach(b=>b.onclick=()=>{state.hal=b.dataset.hal;selectTab(b.dataset.area);});
@@ -2033,13 +2058,15 @@ function fokusTemuan(t){
   bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
   const c=css((STATUS[t.status]||STATUS.pantau).v);
   sorot(+f.lat,+f.lon,c,f.garis);
-  if(Array.isArray(f.garis)&&f.garis.length>1)map.fitBounds(L.latLngBounds(f.garis.map(([x,y])=>[y,x])),{padding:[60,60],maxZoom:f.zoom||15});
-  else map.setView([+f.lat,+f.lon],f.zoom||13);
-  L.popup({maxWidth:340}).setLatLng([+f.lat,+f.lon]).setContent(popupLokasi(t)).openOn(map);
+  petaSiap(()=>{
+    if(Array.isArray(f.garis)&&f.garis.length>1)map.fitBounds(L.latLngBounds(f.garis.map(([x,y])=>[y,x])),{padding:[60,60],maxZoom:f.zoom||15});
+    else map.setView([+f.lat,+f.lon],f.zoom||13);
+    L.popup({maxWidth:340}).setLatLng([+f.lat,+f.lon]).setContent(popupLokasi(t)).openOn(map);});
 }
 function fokusTautan(f){
-  if(!map||!f)return;bukaPeta();sorot(f.lat,f.lon,css('--brand'));map.setView([f.lat,f.lon],f.zoom||14);
-  L.popup().setLatLng([f.lat,f.lon]).setContent(`<div class="pop"><b>Lokasi yang dibagikan</b>${popRows([['Koordinat',`${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}`]])}<div class="pop-act"><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.lat},${f.lon}">Google Maps ↗</a></div></div>`).openOn(map);
+  if(!map||!f)return;bukaPeta();sorot(f.lat,f.lon,css('--brand'));
+  petaSiap(()=>{map.setView([f.lat,f.lon],f.zoom||14);
+  L.popup().setLatLng([f.lat,f.lon]).setContent(`<div class="pop"><b>Lokasi yang dibagikan</b>${popRows([['Koordinat',`${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}`]])}<div class="pop-act"><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.lat},${f.lon}">Google Maps ↗</a></div></div>`).openOn(map);});
   setTimeout(()=>$('#map').scrollIntoView({behavior:'smooth',block:'center'}),300);
 }
 
@@ -2063,6 +2090,7 @@ function renderPT(){
   const st=freshOf(PT.diambil,FRESH.enamjam,PT.status?.ok===false),A=PT.ambang||{};
   $('#ptNote').innerHTML=`<span class="tag">Prakiraan model</span> <b>Bukan deteksi sambaran petir.</b> Hanya fasilitas yang memiliki peralatan di atas tanah & pekerjaan luar ruang: <b>stasiun kompresor gas, stasiun metering/regulasi, booster/pompa</b> (${fmt(PT.n_fasilitas)} stasiun; pipa tertanam tidak dinilai). Open-Meteo: CAPE, kode cuaca & hujan per jam di sel ±11 km yang memuat stasiun · ${frBadge(st,'dihitung '+when(PT.diambil))}. <b>Tinggi</b> = model memprakirakan badai petir & CAPE ≥ ${fmt(A.cape_tinggi)} J/kg · <b>Sedang</b> = model memprakirakan badai petir, atau CAPE ≥ ${fmt(A.cape_tinggi)} + hujan ≥ ${fmt(A.hujan_sedang_mm,1)} mm/jam · <b>Rendah</b> = CAPE ≥ ${fmt(A.cape_rendah)} + hujan ≥ ${fmt(A.hujan_rendah_mm,1)} mm/jam. Hanya tingkat Tinggi hari ini yang memengaruhi status (Pantau). Daftar stasiun dapat dikoreksi di config/monitoring.json → petir_model.fasilitas.`;
   const p=state.pt,fs=(PT.fasilitas||[]).filter(f=>isOV()||f.area===state.tab);
+  if(PT._geser&&p==='besok'){body.innerHTML=`<div class="info">Sudah lewat tengah malam: prakiraan yang kemarin berlabel "besok" kini ditampilkan sebagai <b>hari ini</b>. Prakiraan untuk besok tersedia setelah pembaruan data berikutnya (4× sehari).</div>`;return;}
   const rank={tinggi:0,sedang:1,rendah:2};
   const tampil=fs.slice().sort((a,b)=>(rank[a[p]?.level]??9)-(rank[b[p]?.level]??9)||a.area.localeCompare(b.area)||a.aset.localeCompare(b.aset));
   let h=gagalInfo(PT);
@@ -2070,7 +2098,7 @@ function renderPT(){
   const n=lv=>tampil.filter(f=>f[p]?.level===lv).length;
   const pa=(PT.produk?.[p]?.per_area)||{};
   h+=`<div class="gt-stats"><div><div class="n" style="color:${css('--critical')}">${n('tinggi')}</div><div class="k">Stasiun tingkat <b>Tinggi</b> (${LS_PROD[p]})</div></div><div><div class="n">${n('sedang')}</div><div class="k">Tingkat <b>Sedang</b></div></div><div><div class="n">${n('rendah')}</div><div class="k">Tingkat <b>Rendah</b></div></div>
-    <div><div class="n">${(isOV()?AREAS:[state.tab]).map(a=>pa[a]?.jam_rawan?`${a} ${pa[a].jam_rawan}`:'').filter(Boolean).slice(0,2).join(' · ')||'–'}</div><div class="k">Jam rawan (tingkat ≥ sedang)</div></div></div>
+    <div><div class="n" style="font-size:16px;line-height:1.35;padding-top:4px">${(isOV()?AREAS:[state.tab]).map(a=>pa[a]?.jam_rawan?`${a} ${pa[a].jam_rawan}`:'').filter(Boolean).slice(0,3).join('<br>')||'–'}</div><div class="k">Jam rawan (tingkat ≥ sedang)</div></div></div>
     <div class="tbl" style="margin-top:0;max-height:420px"><table><thead><tr>${isOV()?'<th>Wilayah</th>':''}<th>Stasiun</th><th>Jenis</th><th>Tingkat</th><th>Per jam 00–23 WIB</th><th>Jam rawan</th><th class="num">CAPE maks. (J/kg)</th></tr></thead><tbody>`+
     tampil.map((f,i)=>{const v=f[p]||{};return `<tr class="link" data-i="${i}">${isOV()?`<td>${esc(f.area)}</td>`:''}<td><b>${esc(f.aset)}</b></td><td>${esc((PT.jenis_nama||{})[f.jenis]||f.jenis)}</td><td>${lsBadge(v.level)}</td><td>${jam24(v.jam)}</td><td style="white-space:nowrap">${esc(jamRawan(v.jam)||'–')}</td><td class="num">${fmt(v.cape_maks)}</td></tr>`;}).join('')+
     `</tbody></table></div><div class="note" style="padding:6px 0 0">Klik baris untuk menuju stasiun di peta.</div>`;
@@ -2094,8 +2122,8 @@ function fokusMgt(r,area){if(!map||r.lat==null)return;
   if(!$('#slot-'+state.hal))selectHal('tanah',true);
   bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
   sorot(+r.lat,+r.lon,css(MGT_INFO[r.level]?.v||'--serious'),r.garis);
-  if(Array.isArray(r.garis)&&r.garis.length>1)map.fitBounds(L.latLngBounds(r.garis.map(([x,y])=>[y,x])),{padding:[60,60],maxZoom:15});else map.setView([r.lat,r.lon],15);
-  L.popup({maxWidth:360}).setLatLng([r.lat,r.lon]).setContent(mgtPopup(r,area)).openOn(map);}
+  petaSiap(()=>{if(Array.isArray(r.garis)&&r.garis.length>1)map.fitBounds(L.latLngBounds(r.garis.map(([x,y])=>[y,x])),{padding:[60,60],maxZoom:15});else map.setView([r.lat,r.lon],15);
+  L.popup({maxWidth:360}).setLatLng([r.lat,r.lon]).setContent(mgtPopup(r,area)).openOn(map);});}
 function metodeMgt(){
   const M=TP?.metode;if(!M)return '';
   const w=M.bobot||{},b=M.batas_pemicu||[.75,1,1.5],mx=M.matriks||{};
@@ -2105,7 +2133,7 @@ function metodeMgt(){
     <p style="margin:4px 0"><b>2. Pemicu hujan (PH 0–3)</b> — hujan anteseden 7 hari ÷ ambang ARI95 NASA (model LHASA): &lt; ${fmt(b[0]*100)}% → 0 · ${fmt(b[0]*100)}–${fmt(b[1]*100)}% → 1 · ${fmt(b[1]*100)}–${fmt(b[2]*100)}% → 2 · ≥ ${fmt(b[2]*100)}% → 3.</p>
     <p style="margin:4px 0"><b>3. Matriks bahaya harian</b> (perluasan pohon keputusan LHASA 1.1; lahan datar &lt; 5° tidak dinilai):</p>
     <table><thead><tr><th>SK \\ PH</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead><tbody>${[1,2,3,4,5].map(k=>`<tr><td><b>SK ${k}</b></td>${(mx[k]||[]).map(sel).map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table>
-    <p style="margin:4px 0"><b>4. Lantai resmi PVMBG</b> — prakiraan bulanan berlaku "bila curah hujan di atas normal": zona tinggi/banjir bandang + PH ≥ 2 → tinggi, PH 1 → sedang, PH 0 → <i>zona (belum terpicu)</i>; zona menengah + PH ≥ 2 → sedang, PH 1 → rendah. <b>Sangat tinggi</b> = model harian tinggi <i>dan</i> titik berada di zona prakiraan tinggi PVMBG.</p>
+    <p style="margin:4px 0"><b>4. Lantai resmi PVMBG</b> — prakiraan bulanan berlaku "bila curah hujan di atas normal": zona tinggi/banjir bandang + PH ≥ 2 → tinggi, PH 1 → sedang, PH 0 → <i>zona (belum terpicu)</i>; zona menengah + PH ≥ 2 → sedang, PH 1 → rendah. Lahan datar &lt; 5° (kecuali alur banjir bandang): hanya PH ≥ 2 yang dinaikkan, maks. rendah. <b>Sangat tinggi</b> = model harian tinggi <i>dan</i> titik berada di zona prakiraan tinggi PVMBG.</p>
     <p style="margin:4px 0;color:var(--muted)">Rujukan: ${(M.rujukan||[]).map(esc).join(' · ')}. Bobot & matriks dapat diubah di config/monitoring.json → gerakan_tanah_terpadu.</p></details>`;
 }
 function renderMGT(){
@@ -2118,8 +2146,9 @@ function renderMGT(){
   const P=TP.produk[state.mgt]||{},tg=P.tanggal?lsDay(P.tanggal):'';
   $('#mgtTabs').querySelector('[data-k="hari_ini"]').textContent=`Hari ini${TP.produk.hari_ini?.tanggal?' · '+lsDay(TP.produk.hari_ini.tanggal):''}`;
   $('#mgtTabs').querySelector('[data-k="besok"]').textContent=`Besok${TP.produk.besok?.tanggal?' · '+lsDay(TP.produk.besok.tanggal):''} (prakiraan hujan)`;
+  if(P.belum){body.innerHTML=`<div class="info">Sudah lewat tengah malam: hasil model yang kemarin berlabel "besok" kini ditampilkan sebagai <b>hari ini</b>. Prakiraan untuk besok tersedia setelah workflow <i>Update Potensi Longsor</i> berikutnya.</div>`;return;}
   if(!P.per_area){body.innerHTML='<div class="empty">Belum ada data untuk produk ini.</div>';return;}
-  const legend=`<div class="note" style="padding:0 0 8px">${MGT_LV.map(l=>mgtBadge(l)).join(' ')} · "Tidak ada indikasi" = model tidak memicu, bukan jaminan lereng aman.</div>`;
+  const legend=`<div class="note" style="padding:0 0 8px">${MGT_LV.map(l=>mgtBadge(l)).join(' ')} · "Tidak ada indikasi" = model tidak memicu (mis. hujan tinggi tetapi lahan datar atau kerentanan rendah), bukan jaminan lereng aman.</div>`;
   if(isOV()){
     $('#mgtTitle').textContent='Gerakan tanah & longsor terpadu — perbandingan antarwilayah';
     const rows=AREAS.map(k=>{const a=P.per_area[k];if(!a)return '';const b=mgtArea(k,state.mgt==='hari_ini'?'besok':'hari_ini'),km=a.pipa_km||{},sk=a.kerentanan_km||{};

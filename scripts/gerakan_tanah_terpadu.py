@@ -35,8 +35,9 @@ Tahap 3 — Tingkat bahaya harian = matriks SK × PH (perluasan pohon keputusan 
 Tahap 4 — Lantai resmi PVMBG (prakiraan bulanan berlaku "bila curah hujan di atas normal" → dipicu PH):
               zona tinggi / banjir bandang : PH ≥ 2 → tinggi · PH 1 → sedang · PH 0 → "zona" (potensi, belum terpicu)
               zona menengah                : PH ≥ 2 → sedang · PH 1 → rendah
-          Lahan datar (L = 1) di zona tinggi/menengah dibatasi maks. rendah (poligon PVMBG berskala regional);
-          alur banjir bandang tidak dibatasi (justru mengalir di dasar lembah).
+          Lahan datar (L = 1) di zona tinggi/menengah: hanya PH ≥ 2 yang dinaikkan, maks. rendah; PH < 2 → "zona"
+          (zona tinggi) atau tidak ada (zona menengah) — poligon PVMBG berskala regional, mencegah alarm palsu di
+          rawa/dataran. Alur banjir bandang tidak dibatasi (justru mengalir di dasar lembah).
           Tingkat akhir = yang terberat dari tahap 3 & 4; "sangat tinggi" bila model harian tinggi DAN titik berada
           di zona prakiraan tinggi/banjir bandang PVMBG (dua penilaian independen sepakat di tempat yang sama).
 
@@ -126,8 +127,14 @@ def lantai_pvmbg(prak, ph, L):
         lv = "sedang" if ph >= 2 else "rendah" if ph == 1 else None
     else:
         return None
-    if prak != "bandang" and L <= 1 and lv in ("tinggi", "sedang"):
-        lv = "rendah"
+    if prak != "bandang" and L <= 1:
+        # lahan datar (< 5°): poligon PVMBG berskala regional, lereng lokal tidak mendukung longsor.
+        # Hanya hujan yang melampaui ambang (PH ≥ 2) yang dinaikkan, itu pun maks. rendah;
+        # di bawah ambang cukup "zona" (zona tinggi) atau tidak ada (zona menengah).
+        if ph >= 2:
+            lv = "rendah"
+        else:
+            lv = "zona" if prak == "tinggi" else None
     return lv
 
 
