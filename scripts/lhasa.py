@@ -268,7 +268,7 @@ def hujan_sel(xs, ys):
     data, tanggal = {}, None
     for i in range(0, len(keys), 100):
         part = keys[i:i + 100]
-        for coba in range(3):
+        for coba in range(5):
             try:
                 r = requests.get(CFG["openmeteo_url"], params={
                     "latitude": ",".join(str(k[1]) for k in part), "longitude": ",".join(str(k[0]) for k in part),
@@ -278,10 +278,10 @@ def hujan_sel(xs, ys):
                 js = r.json()
                 break
             except Exception as e:  # noqa
-                if coba == 2:
+                if coba == 4:
                     raise
-                log("  ulang:", str(e)[:120])
-                time.sleep(10)
+                log(f"  ulang ({coba + 1}/4):", str(e)[:120])
+                time.sleep(10 * 2 ** coba)  # 10, 20, 40, 80 dtk — Open-Meteo kadang lambat sesaat
         js = js if isinstance(js, list) else [js]
         for k, j in zip(part, js):
             d = j["daily"]

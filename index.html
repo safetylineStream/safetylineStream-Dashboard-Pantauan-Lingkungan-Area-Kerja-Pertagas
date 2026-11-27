@@ -449,7 +449,7 @@ footer{padding:10px 4px 28px;line-height:1.6}
 .tile .hint{font-size:12px;color:var(--ink-2);margin-top:4px;line-height:1.45}
 div.tile{cursor:default}
 /* matriks area × jenis bahaya */
-.mx{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:12.5px;min-width:900px}
+.mx{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:12.5px;min-width:980px;table-layout:fixed}
 .mx th{background:none;border:0;padding:4px 8px;font-size:11px;position:static}
 .mx th .h{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
 .mx th svg{width:16px;height:16px}
@@ -480,13 +480,13 @@ div.tile{cursor:default}
 .lnk{appearance:none;border:0;background:none;padding:0;color:var(--brand);font-weight:700;cursor:pointer;font-size:12px}
 .lnk:hover{text-decoration:underline;background:none}
 /* prioritas & lokasi */
-.prio{max-height:none!important}
-.pi{border:1px solid var(--grid);border-left:4px solid var(--st,var(--axis));border-radius:10px;padding:9px 11px;margin-bottom:8px;background:var(--surface)}
+.prio{max-height:640px!important;overflow:auto!important;padding-right:4px}
+.pi{border:1px solid var(--grid);border-left:4px solid var(--st,var(--axis));border-radius:10px;padding:8px 10px;margin-bottom:7px;background:var(--surface)}
 .pi .top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
 .pi .top svg{width:15px;height:15px;color:var(--ink-2)}
-.pi .t{font-weight:700;font-size:13px;margin-top:4px;line-height:1.4}
-.pi .sar{font-size:12px;color:var(--ink-2);margin-top:4px}
-.pi .loc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:6px;font-size:12px}
+.pi .t{font-weight:700;font-size:12.5px;margin-top:3px;line-height:1.38;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pi .sar{font-size:11.5px;color:var(--ink-2);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pi .loc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:5px;font-size:11.5px}.pi .loc a{white-space:nowrap}
 .pi .loc code{font-size:11.5px;background:var(--surface-2);padding:1px 6px;border-radius:5px;color:var(--ink)}
 .pi .go{font-weight:700;padding:3px 10px;font-size:12px;border-radius:999px;background:var(--navy);color:#fff;border-color:var(--navy)}
 .pi .go:hover{background:#0a4f94}
@@ -1945,11 +1945,11 @@ function renderMatrix(){
     $('#matrixTitle').textContent='Matriks risiko: area × jenis bahaya';
     $('#matrixNote').innerHTML=`9 modul data dirangkum menjadi 4 jenis bahaya. Setiap sel = temuan terberat jenis bahaya itu di area tersebut (sel abu-abu = normal). Klik sel untuk membuka halaman rinciannya, klik nama area untuk ikhtisar area. Kolom hujan = prakiraan hujan harian di titik pantau terbasah (kategori BMKG).`;
     const ord=AREAS.slice().sort((a,b)=>ST_URUT[KLAS.area[b].status]-ST_URUT[KLAS.area[a].status]||KLAS.area[b].R-KLAS.area[a].R);
-    el.innerHTML=`<div class="tbl" style="max-height:none;overflow-x:auto"><table class="mx"><thead><tr><th>Area</th><th>Status</th>${KL_IDS.map(k=>`<th><span class="h">${IKON[k]}${KLAS_NAMA[k]}</span></th>`).join('')}<th>Hujan 3 hari (mm)</th></tr></thead><tbody>`+
+    el.innerHTML=`<div class="tbl" style="max-height:none;overflow-x:auto"><table class="mx"><colgroup><col style="width:128px"><col style="width:124px">${KL_IDS.map(()=>'<col>').join('')}<col style="width:150px"></colgroup><thead><tr><th>Area</th><th>Status</th>${KL_IDS.map(k=>`<th><span class="h">${IKON[k]}${KLAS_NAMA[k]}</span></th>`).join('')}<th>Hujan 3 hari (mm)</th></tr></thead><tbody>`+
       ord.map(a=>{const A=KLAS.area[a];let dl='';
         if(K0&&K0.area?.[a]){const s0=K0.area[a].status,d=ST_URUT[A.status]-ST_URUT[s0];dl=d>0?`<div class="dl up">▲ dari ${STATUS[s0].label}</div>`:d<0?`<div class="dl down">▼ dari ${STATUS[s0].label}</div>`:`<div class="dl same">= kemarin</div>`;}
         return `<tr><td><div class="ar" data-area="${a}" role="button" tabindex="0"><b><i class="line" style="background:${css(areaColor[a])};vertical-align:middle;margin-right:6px"></i>${a}</b><small>${esc((DATA.areas[a]?.nama||'').replace('Operation ',''))}</small></div></td>
-          <td><div class="ar" data-area="${a}" role="button" tabindex="0" style="background:none">${badge(A.status==='normal'?null:A.status)}${A.R?` <small style="display:inline">R ${A.R}</small>`:''}${dl}</div></td>`+
+          <td><div class="ar" data-area="${a}" role="button" tabindex="0" style="background:none"><span style="white-space:nowrap">${badge(A.status==='normal'?null:A.status)}${A.R?` <small style="display:inline">R ${A.R}</small>`:''}</span>${dl}</div></td>`+
           KL_IDS.map(k=>{const x=A.klaster?.[k]||{status:'normal',temuan:[]},t=x.temuan[0];const n=x.status==='normal';
             return `<td><button type="button" class="c ${n?'n':stCls(x.status)}" data-area="${a}" data-hal="${k}" title="${t?esc(t.teks):'Normal'}"><span class="s">${n?'✓ Normal':`${STATUS[x.status].icon} ${STATUS[x.status].label}`}${x.R&&!n?` <span style="font-weight:600;color:var(--muted)">R ${x.R}</span>`:''}</span><span class="t">${t?esc(t.teks):'Tidak ada temuan'}</span></button></td>`;}).join('')+
           `<td>${hujan3(a)}</td></tr>`;}).join('')+`</tbody></table></div>`;
@@ -1978,7 +1978,7 @@ function renderPrio(){
   el.innerHTML=tampil.map((x,i)=>{const f=x.fokus,ok=f&&Number.isFinite(+f.lat);
     return `<div class="pi ${stCls(x.status)}"><div class="top">${badge(x.status==='normal'?null:x.status)}<b>${x.area}</b>${IKON[x.klaster]||''}<span style="color:var(--ink-2)">${esc(JENIS_LBL[x.jenis]||x.jenis)}</span><span style="margin-left:auto;color:var(--muted)">R ${x.R}</span></div>
       <div class="t">${esc(x.teks)}</div><div class="sar">${esc(saran(x))}</div>
-      ${f?`<div class="loc">${ok?`<code>${(+f.lat).toFixed(5)}, ${(+f.lon).toFixed(5)}</code>`:''}<button type="button" class="go" data-i="${i}">↗ Peta</button>${ok?`<a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+f.lat},${+f.lon}">Google Maps</a><a href="#" data-salin="${esc(lokasiUrl(f))}">Salin tautan</a>`:''}</div>`:''}</div>`;}).join('');
+      ${f?`<div class="loc">${ok?`<code>${(+f.lat).toFixed(5)}, ${(+f.lon).toFixed(5)}</code>`:''}<button type="button" class="go" data-i="${i}">↗ Peta</button>${ok?`<a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+f.lat},${+f.lon}" title="Buka di Google Maps">Maps ↗</a><a href="#" data-salin="${esc(lokasiUrl(f))}" title="Salin tautan lokasi untuk dibagikan">Salin tautan</a>`:''}</div>`:''}</div>`;}).join('');
   el.querySelectorAll('.go').forEach(b=>b.onclick=()=>fokusTemuan(tampil[+b.dataset.i]));
 }
 
