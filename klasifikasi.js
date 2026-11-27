@@ -8,9 +8,16 @@
  *   Status AREA = R tertinggi di area itu (+ eskalasi bila ≥ 2 jenis bahaya Waspada berdekatan).
  *   Status satu area tidak memengaruhi area lain.
  *
- * Modul tambahan (peringatan dini BMKG, banjir sungai GloFAS, GDACS) hanya dihitung
- * bila datanya mengenai/mendekati aset wilayah itu; skornya sengaja konservatif (maks. Waspada, kecuali
- * siklon tropis yang zona anginnya mengenai aset).
+ * Gerakan tanah & longsor dinilai PER TITIK oleh model terpadu (scripts/gerakan_tanah_terpadu.py:
+ * zona PVMBG + model LHASA + tutupan lahan, bobot SNI 13-7124-2005); bila data terpadu belum ada, dipakai
+ * rumusan lama per area (prakiraan PVMBG + LHASA).
+ *
+ * Modul tambahan (peringatan dini BMKG, banjir sungai GloFAS, potensi petir di stasiun kompresor/metering/
+ * booster, GDACS) hanya dihitung bila datanya mengenai/mendekati aset wilayah itu; skornya sengaja konservatif
+ * (maks. Waspada, kecuali siklon tropis yang zona anginnya mengenai aset).
+ *
+ * Setiap temuan membawa `klaster` (api · air · tanah · gempa) untuk matriks area × jenis bahaya dan, bila
+ * lokasinya diketahui, `fokus` {lat, lon, judul} supaya peringatan bisa langsung dituju di peta.
  *
  * Hotspot hanya dianggap titik api lahan bila berada di lahan bervegetasi. Hotspot di kawasan
  * terbangun/terbuka/air (ESA WorldCover) = sumber panas non-vegetasi: P maks. 2, tidak bisa memicu Kritis.
@@ -40,16 +47,36 @@
       K: { pipa: 2, fasilitas: 4, fasilitasKm: 1 },
     },
     gempa: { magMin: 5, jam: 72, K: 3 },
-    gerakanTanah: { K: { pipa: 3, fasilitas: 4 }, hujanPemicuMm: 50 },
+    gerakanTanah: { K: { pipa: 3, fasilitas: 4 }, hujanPemicuMm: 50,
+      // model terpadu: tingkat → P (zona = di zona prakiraan PVMBG tinggi, hujan belum memicu)
+      Pterpadu: { sangat_tinggi: 5, tinggi: 4, sedang: 3, rendah: 2, zona: 1 } },
     cuaca: { K: 2 },
     // Modul tambahan (semua berbasis lokasi aset). Tidak ikut aturan gabungan.
     peringatan: { P: { biasa: 3, parah: 4 }, K: 2 },          // peringatan dini BMKG aktif yang poligonnya mengenai aset
     banjir: { P: { tinggi: 4, sedang: 3, rendah: 2 }, K: 3 }, // model GloFAS di sel sungai yang dilintasi pipa
+    petir: { P: { tinggi: 3 }, K: 2 },                        // prakiraan model di stasiun kompresor/metering/booster; hanya Tinggi
     gdacs: { K: 3 },                                          // P dihitung pipeline (scripts/gdacs.py)
-    tanpaGabungan: ['cuaca', 'cuaca_ekstrem', 'banjir', 'gdacs'],
+    tanpaGabungan: ['cuaca', 'cuaca_ekstrem', 'banjir', 'petir', 'gdacs'],
     gabungan: { radiusKm: 5 },
   };
   const URUT = { normal: 0, pantau: 1, waspada: 2, kritis: 3 };
+  // Empat jenis bahaya (klaster) yang menggantikan 9 modul terpisah di tampilan
+  const KLASTER = {
+    api: { nama: 'Api & Udara', isi: 'Hotspot karhutla, tutupan lahan, kualitas udara' },
+    air: { nama: 'Hujan, Petir & Banjir', isi: 'Peringatan dini BMKG, hujan ekstrem, petir di stasiun, banjir sungai, siklon' },
+    tanah: { nama: 'Tanah & Longsor', isi: 'Model terpadu PVMBG + LHASA + tutupan lahan' },
+    gempa: { nama: 'Gempa & Tsunami', isi: 'Gempa BMKG, potensi tsunami, gunung api' },
+  };
+  function klasterDari(t) {
+    if (t.jenis === 'hotspot') return 'api';
+    if (t.jenis === 'gempa') return 'gempa';
+    if (t.jenis === 'gerakan_tanah') return 'tanah';
+    if (t.jenis === 'cuaca') return /udara|AQI/i.test(t.teks || '') ? 'api' : 'air';
+    if (t.jenis === 'gdacs') return t.gdJenis === 'VO' ? 'gempa' : 'air';
+    return 'air';
+  }
+  const LV_RANK = { sangat_tinggi: 0, tinggi: 1, sedang: 2, rendah: 3, zona: 4 };
+  const LV_LBL = { sangat_tinggi: 'sangat tinggi', tinggi: 'tinggi', sedang: 'sedang', rendah: 'rendah', zona: 'zona PVMBG (belum terpicu)' };
   const NAIK = { normal: 'pantau', pantau: 'waspada', waspada: 'kritis', kritis: 'kritis' };
 
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -139,7 +166,7 @@
   }
 
   /* ------------------------------------------------------------ utama */
-  function hitung({ data, lhasa, ruasLhasa, dikenal, now, tambahan }) {
+  function hitung({ data, lhasa, ruasLhasa, terpadu, dikenal, now, tambahan }) {
     data = data || {};
     now = now instanceof Date ? now.getTime() : (now || Date.now());
     const hs = (data.hotspot && data.hotspot.dekat_aset) || [];
@@ -150,7 +177,7 @@
       dikenal: (dikenal || []).filter(s => !s.berlaku_sampai || String(s.berlaku_sampai) >= today),
     };
     const temuan = Object.fromEntries(areas.map(a => [a, []]));
-    const tambah = (a, t) => { (temuan[a] = temuan[a] || []).push({ ...t, R: t.P * t.K, status: statusDariR(t.P * t.K) }); };
+    const tambah = (a, t) => { (temuan[a] = temuan[a] || []).push({ ...t, klaster: t.klaster || klasterDari(t), R: t.P * t.K, status: statusDariR(t.P * t.K) }); };
 
     // A. Hotspot
     for (const h of hs) {
@@ -159,6 +186,7 @@
       if (r.status === 'luar') continue;
       const lahan = h.tutupan ? `, ${String(h.tutupan.label || '').split(' (')[0].toLowerCase()}` : '';
       tambah(h.area, { jenis: 'hotspot', P: r.P, K: r.K, lokasi: [[+h.lat, +h.lon]], ref: h,
+        fokus: { lat: +h.lat, lon: +h.lon, zoom: 14, judul: `Hotspot ${f(+h.jarak_km, 2)} km dari ${h.aset}` },
         teks: `Hotspot ${f(+h.jarak_km, 2)} km dari ${h.aset}${lahan}${h.persisten ? `, berulang ${h.berulang_hari} hari` : ''}` });
     }
     // B. Gempa & tsunami
@@ -167,13 +195,56 @@
         const j = num(p.jarak_km); if (j == null) continue;
         const P = pGempa(+q.mag, j, !!q.tsunami && j <= 300, q.kedalaman);
         if (P) tambah(a, { jenis: 'gempa', P, K: ATURAN.gempa.K, lokasi: null,
+          fokus: num(q.lat) != null ? { lat: +q.lat, lon: +q.lon, zoom: 7, judul: `Episentrum gempa M ${f(+q.mag)}` } : null,
           teks: `${q.tsunami ? 'Gempa berpotensi tsunami' : 'Gempa'} M ${f(+q.mag)} berjarak ${f(j, 0)} km dari aset` });
       }
     }
-    // C. Gerakan tanah (PVMBG) & longsor (LHASA)
+    // C. Gerakan tanah & longsor
+    const TP = terpadu && terpadu.produk && (terpadu.produk.hari_ini || terpadu.produk.besok) ? terpadu.produk : null;
+    const PRODL = { hari_ini: 'hari ini', besok: 'besok' };
+    if (TP) {
+      // C1. Model terpadu per titik: tingkat terberat hari ini/besok; fasilitas K = 4, pipa K = 3
+      const G = ATURAN.gerakanTanah;
+      for (const a of areas) {
+        let best = null;
+        for (const prod of ['hari_ini', 'besok']) {
+          const v = TP[prod] && TP[prod].per_area && TP[prod].per_area[a];
+          if (!v) continue;
+          const kand = [];
+          const r0 = (v.ruas || [])[0];
+          if (r0 && G.Pterpadu[r0.level]) kand.push({ jenisAset: 'pipa', lv: r0.level, item: r0, P: G.Pterpadu[r0.level], K: G.K.pipa });
+          const f0 = (v.fasilitas || [])[0];
+          if (f0 && G.Pterpadu[f0.level]) kand.push({ jenisAset: 'fasilitas', lv: f0.level, item: f0, P: G.Pterpadu[f0.level], K: G.K.fasilitas });
+          for (const k of kand) {
+            k.prod = prod; k.v = k.v || v; k.R = k.P * k.K;
+            if (!best || k.R > best.R || (k.R === best.R && LV_RANK[k.lv] < LV_RANK[best.lv])) best = k;
+          }
+        }
+        if (!best) continue;
+        const v = best.v, lv = best.lv, it = best.item;
+        const kmLv = num((v.pipa_km || {})[lv]) || 0;
+        const fasLv = (v.fasilitas || []).filter(x => x.level === lv).map(x => x.aset);
+        const pct = num(it.rasio) != null ? `${f(it.rasio * 100, 0)}% ambang` : '';
+        let teks;
+        if (lv === 'zona') {
+          teks = `${fasLv.length ? fasLv.slice(0, 3).join(', ') + ' dan ' : ''}${f(kmLv)} km pipa di zona prakiraan ${it.prak === 'bandang' ? 'banjir bandang' : 'tinggi'} PVMBG — hujan belum memicu${pct ? ` (${pct})` : ''}`;
+        } else if (best.jenisAset === 'fasilitas') {
+          teks = `${fasLv.slice(0, 3).join(', ')}${fasLv.length > 3 ? ` +${fasLv.length - 3}` : ''} — gerakan tanah ${LV_LBL[lv]} ${PRODL[best.prod]}${kmLv ? ` · ${f(kmLv)} km pipa` : ''} (${it.faktor || 'model terpadu'})`;
+        } else {
+          teks = `${f(kmLv)} km pipa gerakan tanah ${LV_LBL[lv]} ${PRODL[best.prod]} — ${it.aset}: ${it.faktor || 'model terpadu'}`;
+        }
+        const lok = [];
+        for (const r of (v.ruas || []).filter(x => x.level === lv)) for (const c of r.garis || []) lok.push([+c[1], +c[0]]);
+        for (const x of (v.fasilitas || []).filter(x => x.level === lv)) lok.push([+x.lat, +x.lon]);
+        tambah(a, { jenis: 'gerakan_tanah', P: best.P, K: best.K, lokasi: lok.length ? lok : null, tingkat: lv, produk: best.prod,
+          fokus: num(it.lat) != null ? { lat: +it.lat, lon: +it.lon, zoom: 14, garis: it.garis || null, judul: `${it.aset} — gerakan tanah ${LV_LBL[lv]}` } : null,
+          teks });
+      }
+    }
+    // C2. Rumusan lama per area (prakiraan PVMBG + LHASA) — hanya bila data model terpadu belum ada
     const PK = (data.gerakan_tanah && data.gerakan_tanah.prakiraan) || {};
     const LV = { tinggi: 2, sedang: 1 };
-    for (const a of areas) {
+    for (const a of TP ? [] : areas) {
       const pk = (PK.per_area || {})[a] || {};
       const ter = pk.terburuk, tinggi = ter === 'tinggi' || ter === 'bandang';
       const la = ['hari_ini', 'besok'].map(k => lhasa?.produk?.[k]?.per_area?.[a]?.terburuk || null)
@@ -202,8 +273,9 @@
         if (pr.area !== a || (LV[pr.level] || 0) < 1 || !['hari_ini', 'besok'].includes(pr.produk || 'hari_ini')) continue;
         for (const c of (ft.geometry && ft.geometry.coordinates) || []) if (Array.isArray(c) && c.length >= 2) lok.push([+c[1], +c[0]]);
       }
+      const s0 = seg[0] || fas[0];
       tambah(a, { jenis: 'gerakan_tanah', P, K: fas.length ? ATURAN.gerakanTanah.K.fasilitas : ATURAN.gerakanTanah.K.pipa,
-        lokasi: lok.length ? lok : null, teks });
+        lokasi: lok.length ? lok : null, fokus: s0 && num(s0.lat) != null ? { lat: +s0.lat, lon: +s0.lon, zoom: 14, garis: s0.garis || null, judul: s0.aset } : null, teks });
     }
     // D. Cuaca & kualitas udara (dampak pada pekerjaan lapangan → K = 2)
     for (const a of areas) {
@@ -220,10 +292,11 @@
         else if (aqi > 100) c.push([2, `Kualitas udara kurang sehat (US AQI ${f(aqi, 0)}) di ${w.nama}`]);
         for (const x of c) if (!best || x[0] > best.P || (x[0] === best.P && aqi > best.aqi)) best = { P: x[0], teks: x[1], aqi, lokasi: [[+w.lat, +w.lon]] };
       }
-      if (best) tambah(a, { jenis: 'cuaca', P: best.P, K: ATURAN.cuaca.K, lokasi: null, teks: best.teks });
+      if (best) tambah(a, { jenis: 'cuaca', P: best.P, K: ATURAN.cuaca.K, lokasi: null, teks: best.teks,
+        fokus: best.lokasi && num(best.lokasi[0][0]) != null ? { lat: best.lokasi[0][0], lon: best.lokasi[0][1], zoom: 11, judul: 'Titik pantau cuaca' } : null });
     }
 
-    // E–G. Modul tambahan berbasis lokasi aset
+    // E–H. Modul tambahan berbasis lokasi aset
     const T = tambahan || {};
     const jamWIB = iso => { const t = Date.parse(iso); return Number.isFinite(t) ? new Date(t + 7 * 3.6e6).toISOString().slice(11, 16) + ' WIB' : ''; };
     // E. Peringatan dini cuaca ekstrem BMKG yang masih berlaku dan poligonnya mengenai aset
@@ -235,6 +308,7 @@
         if (!(a in temuan)) continue;
         const nf = v.n_fasilitas || (v.fasilitas || []).length;
         tambah(a, { jenis: 'cuaca_ekstrem', P: parah ? ATURAN.peringatan.P.parah : ATURAN.peringatan.P.biasa, K: ATURAN.peringatan.K, lokasi: null,
+          fokus: { pd: w.kode, judul: w.event || w.judul },
           teks: `Peringatan dini BMKG: ${w.event || w.judul} — ${f(num(v.pipa_km) || 0)} km pipa${nf ? ` & ${nf} fasilitas` : ''} di wilayah peringatan${w.berakhir ? ` (s.d. ${jamWIB(w.berakhir)})` : ''}` });
       }
     }
@@ -243,15 +317,30 @@
       const P = ATURAN.banjir.P[v.terburuk];
       if (!P || !(a in temuan)) continue;
       const n = (v.sel || {})[v.terburuk] || 0, km = (v.pipa_km || {})[v.terburuk] || 0;
+      const sp = String(v.sel_puncak || '').split(',').map(Number);
       tambah(a, { jenis: 'banjir', P, K: ATURAN.banjir.K, lokasi: null,
+        fokus: sp.length === 2 && sp.every(Number.isFinite) ? { lat: sp[0], lon: sp[1], zoom: 11, judul: 'Sel sungai puncak debit (model GloFAS)' } : null,
         teks: `Model banjir sungai ${v.terburuk}: ${n} sel sungai, ${f(km)} km pipa${num(v.rasio_maks) != null ? ` (puncak ${f(v.rasio_maks, 2)}× maksimum 5 tahun)` : ''}` });
     }
-    // G. Siklon tropis & gunung api (GDACS)
+    // G. Potensi petir hari ini (prakiraan model) — hanya stasiun kompresor, metering/regulasi & booster/pompa
+    const PTF = (T.petir && T.petir.fasilitas) || [];
+    for (const [a, v] of Object.entries((T.petir && T.petir.produk && T.petir.produk.hari_ini && T.petir.produk.hari_ini.per_area) || {})) {
+      const P = ATURAN.petir.P[v.terburuk];
+      if (!P || !(a in temuan)) continue;
+      const nama = ((v.fasilitas || {})[v.terburuk] || []);
+      const f0 = PTF.find(x => x.area === a && x.aset === nama[0]);
+      tambah(a, { jenis: 'petir', P, K: ATURAN.petir.K, lokasi: null,
+        fokus: f0 ? { lat: +f0.lat, lon: +f0.lon, zoom: 13, judul: `${f0.aset} — potensi petir ${v.terburuk}` } : null,
+        teks: `Potensi petir ${v.terburuk} hari ini (model) di ${nama.slice(0, 3).join(', ')}${nama.length > 3 ? ` +${nama.length - 3} stasiun` : ''}${v.jam_rawan ? ` · jam rawan ${v.jam_rawan}` : ''}` });
+    }
+    // H. Siklon tropis & gunung api (GDACS)
     for (const k of (T.gdacs && T.gdacs.kejadian) || []) {
       for (const [a, v] of Object.entries(k.per_area || {})) {
         const P = clamp(num(v.P) || 0, 0, 5);
         if (!P || !(a in temuan)) continue;
-        tambah(a, { jenis: 'gdacs', P, K: ATURAN.gdacs.K, lokasi: null, teks: `${k.jenis_nama}${k.nama ? ' ' + k.nama : ''} (GDACS ${k.level}): ${v.ket}` });
+        tambah(a, { jenis: 'gdacs', gdJenis: k.jenis, P, K: ATURAN.gdacs.K, lokasi: null,
+          fokus: num(k.lat) != null ? { lat: +k.lat, lon: +k.lon, zoom: k.jenis === 'TC' ? 5 : 8, judul: k.jenis_nama } : null,
+          teks: `${k.jenis_nama}${k.nama ? ' ' + k.nama : ''} (GDACS ${k.level}): ${v.ket}` });
       }
     }
 
@@ -270,12 +359,17 @@
         const pasang = w.some((x, i) => w.some((y, k) => k > i && x.jenis !== y.jenis && dekat(x, y)));
         if (pasang) { eskalasi = `${jenis.length} jenis bahaya ≥ Waspada berdekatan (${jenis.join(', ')})`; status = NAIK[status]; }
       }
-      area[a] = { status, R, pemicu: t[0] || null, temuan: t, eskalasi };
+      const klaster = {};
+      for (const k of Object.keys(KLASTER)) {
+        const tk = t.filter(x => x.klaster === k);
+        klaster[k] = { status: tk.length ? tk[0].status : 'normal', R: tk.length ? tk[0].R : 0, temuan: tk };
+      }
+      area[a] = { status, R, pemicu: t[0] || null, temuan: t, eskalasi, klaster };
     }
     const rekap = { kritis: [], waspada: [], pantau: [], normal: [] };
     for (const a of areas) rekap[area[a].status].push(a);
     return { aturan: ATURAN, area, rekap };
   }
 
-  return { ATURAN, URUT, hitung, nilaiHotspot, statusDariR, pGempa };
+  return { ATURAN, URUT, KLASTER, hitung, nilaiHotspot, statusDariR, pGempa, klasterDari };
 });
