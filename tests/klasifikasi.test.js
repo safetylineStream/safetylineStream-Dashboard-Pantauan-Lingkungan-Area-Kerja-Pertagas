@@ -62,7 +62,7 @@ assert.strictEqual(r.area.A.R, 8);
 assert.strictEqual(r.area.A.status, 'kritis');
 assert.ok(r.area.A.eskalasi);
 
-// 10. Modul tambahan berbasis lokasi aset (peringatan BMKG, banjir sungai, petir model, GDACS)
+// 10. Modul tambahan berbasis lokasi aset (peringatan BMKG, banjir sungai, GDACS)
 const tb = (tambahan) => run([], { args: { tambahan } });
 const akan = new Date(now + 3.6e6).toISOString(), lewat = new Date(now - 3.6e6).toISOString();
 r = tb({ peringatan: { aktif: [{ event: 'Hujan Lebat', severity: 'Moderate', berakhir: akan, per_area: { A: { pipa_km: 12.3, fasilitas: ['X'] } } }] } });
@@ -76,16 +76,51 @@ r = tb({ banjir: { per_area: { A: { terburuk: 'tinggi', sel: { tinggi: 2 }, pipa
 assert.strictEqual(r.area.A.R, 12); assert.strictEqual(r.area.A.status, 'waspada'); assert.strictEqual(r.area.B.status, 'normal');
 r = tb({ banjir: { per_area: { A: { terburuk: 'rendah', sel: { rendah: 1 }, pipa_km: { rendah: 1 } } } } });
 assert.strictEqual(r.area.A.R, 6);
-r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'tinggi', pipa_km: { tinggi: 30 }, n_fasilitas: { tinggi: 2 } } } }, besok: { per_area: { B: { terburuk: 'tinggi' } } } } } });
-assert.strictEqual(r.area.A.R, 6); assert.strictEqual(r.area.B.status, 'normal', 'hanya produk hari ini yang dihitung');
-r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'sedang', pipa_km: { sedang: 9 } } } } } } });
+// potensi petir (model) — hanya stasiun kompresor/metering/booster, hanya tingkat Tinggi, hanya hari ini
+const petir = { fasilitas: [{ area: 'A', aset: 'SKG X', lat: -1.1, lon: 117.2 }],
+  produk: { hari_ini: { per_area: { A: { terburuk: 'tinggi', fasilitas: { tinggi: ['SKG X'] }, jam_rawan: '13–17 WIB' } } }, besok: { per_area: { B: { terburuk: 'tinggi' } } } } };
+r = tb({ petir });
+assert.strictEqual(r.area.A.R, 6); assert.strictEqual(r.area.A.status, 'pantau'); assert.strictEqual(r.area.B.status, 'normal', 'hanya produk hari ini');
+assert.ok(/SKG X/.test(r.area.A.pemicu.teks) && /13–17 WIB/.test(r.area.A.pemicu.teks));
+assert.deepStrictEqual([r.area.A.pemicu.fokus.lat, r.area.A.pemicu.fokus.lon], [-1.1, 117.2], 'petir menunjuk ke fasilitas');
+assert.strictEqual(r.area.A.pemicu.klaster, 'air');
+r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'sedang', fasilitas: { sedang: ['SM Y'] } } } } } } });
 assert.strictEqual(r.area.A.status, 'normal', 'petir sedang tidak mengubah status');
-r = tb({ petir: { produk: { hari_ini: { per_area: { A: { terburuk: 'rendah' } } } } } });
-assert.strictEqual(r.area.A.status, 'normal');
 r = tb({ gdacs: { kejadian: [{ jenis_nama: 'Siklon tropis', nama: 'X', level: 'Red', per_area: { A: { P: 5, ket: 'aset berada di zona angin ≥ 120 km/jam' }, B: { P: 0, ket: 'jauh' } } }] } });
 assert.strictEqual(r.area.A.R, 15); assert.strictEqual(r.area.A.status, 'kritis'); assert.strictEqual(r.area.B.status, 'normal');
 // modul tambahan tidak memicu eskalasi gabungan
 r = run([hs({ tutupan: { kategori: 'vegetasi_rendah' } })], { args: { tambahan: { banjir: { per_area: { A: { terburuk: 'tinggi', sel: { tinggi: 1 }, pipa_km: { tinggi: 1 } } } } } } });
 assert.strictEqual(r.area.A.R, 12); assert.strictEqual(r.area.A.status, 'waspada'); assert.strictEqual(r.area.A.eskalasi, null);
+
+
+// 11. Model gerakan tanah terpadu (per titik) menggantikan rumusan per area
+const tp = (pa, pb) => ({ produk: { hari_ini: { per_area: { A: pa } }, besok: { per_area: { A: pb || { ruas: [], fasilitas: [] } } } } });
+const ruas = (level, o) => ({ aset: 'Pipa A #3', level, km: 2.5, lat: -1.05, lon: 117.05, garis: [[117.04, -1.05], [117.06, -1.05]], rasio: 1.1, faktor: 'hujan anteseden 110% ambang · lereng 15–25°', ...o });
+// zona PVMBG tinggi tanpa pemicu hujan = P 1 (bukan lagi P 2 per area); fasilitas → K 4 → Pantau
+r = run([], { data: { gerakan_tanah: gt }, args: { terpadu: tp({ terburuk: 'zona', pipa_km: { zona: 10.2 }, ruas: [ruas('zona', { prak: 'tinggi', rasio: 0.54 })], fasilitas: [{ aset: 'LBCV 2', level: 'zona', lat: -1.0, lon: 116.98, prak: 'tinggi' }] }) } });
+assert.strictEqual(r.area.A.R, 4); assert.strictEqual(r.area.A.status, 'pantau');
+assert.ok(/LBCV 2/.test(r.area.A.pemicu.teks) && /belum memicu/.test(r.area.A.pemicu.teks), r.area.A.pemicu.teks);
+// rumusan lama tidak ikut dihitung bila data terpadu ada (gt per area 'tinggi' + LHASA tinggi seharusnya 15)
+r = run([], { data: { gerakan_tanah: gt }, args: { lhasa: { produk: { hari_ini: { per_area: { A: { terburuk: 'tinggi' } } } } }, terpadu: tp({ terburuk: null, pipa_km: {}, ruas: [], fasilitas: [] }) } });
+assert.strictEqual(r.area.A.status, 'normal');
+// sedang di pipa (3 × 3 = 9) vs rendah di fasilitas (2 × 4 = 8) → yang R-nya tertinggi
+r = run([], { args: { terpadu: tp({ terburuk: 'sedang', pipa_km: { sedang: 2.5 }, ruas: [ruas('sedang')], fasilitas: [{ aset: 'MS Y', level: 'rendah', lat: -1, lon: 117 }] }) } });
+assert.strictEqual(r.area.A.R, 9); assert.strictEqual(r.area.A.pemicu.klaster, 'tanah');
+assert.strictEqual(r.area.A.pemicu.fokus.lat, -1.05, 'temuan menunjuk ke ruas pipa'); assert.ok(Array.isArray(r.area.A.pemicu.fokus.garis));
+// besok lebih berat dari hari ini → dipakai (horizon 24–72 jam)
+r = run([], { args: { terpadu: tp({ terburuk: 'rendah', pipa_km: { rendah: 1 }, ruas: [ruas('rendah')], fasilitas: [] }, { terburuk: 'tinggi', pipa_km: { tinggi: 1 }, ruas: [ruas('tinggi')], fasilitas: [] }) } });
+assert.strictEqual(r.area.A.R, 12); assert.strictEqual(r.area.A.pemicu.produk, 'besok');
+// sangat tinggi di fasilitas → Kritis
+r = run([], { args: { terpadu: tp({ terburuk: 'sangat_tinggi', pipa_km: {}, ruas: [], fasilitas: [{ aset: 'SKG Z', level: 'sangat_tinggi', lat: -1, lon: 117, faktor: 'x' }] }) } });
+assert.strictEqual(r.area.A.R, 20); assert.strictEqual(r.area.A.status, 'kritis');
+
+// 12. Ringkasan per jenis bahaya (matriks area × klaster)
+r = run([hs({ tutupan: { kategori: 'vegetasi_rendah' } })], { args: { tambahan: { banjir: { per_area: { A: { terburuk: 'rendah', sel: { rendah: 1 }, pipa_km: { rendah: 1 }, sel_puncak: '-1.2,117.3' } } } } } });
+assert.strictEqual(r.area.A.klaster.api.status, 'waspada'); assert.strictEqual(r.area.A.klaster.air.status, 'pantau');
+assert.strictEqual(r.area.A.klaster.tanah.status, 'normal'); assert.strictEqual(r.area.A.klaster.gempa.R, 0);
+assert.deepStrictEqual([r.area.A.klaster.air.temuan[0].fokus.lat, r.area.A.klaster.air.temuan[0].fokus.lon], [-1.2, 117.3]);
+assert.strictEqual(K.klasterDari({ jenis: 'cuaca', teks: 'Kualitas udara tidak sehat (US AQI 172)' }), 'api');
+assert.strictEqual(K.klasterDari({ jenis: 'cuaca', teks: 'Prakiraan hujan 60 mm' }), 'air');
+assert.strictEqual(K.klasterDari({ jenis: 'gdacs', gdJenis: 'VO' }), 'gempa');
 
 console.log('klasifikasi.test.js: semua uji lulus');

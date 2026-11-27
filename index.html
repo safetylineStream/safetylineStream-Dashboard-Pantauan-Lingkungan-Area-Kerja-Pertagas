@@ -106,6 +106,7 @@ button:hover{background:var(--surface-2)}
 .line{width:16px;height:3px;border-radius:2px;display:inline-block}
 .side{display:flex;flex-direction:column;gap:12px;min-width:0}
 .list{max-height:250px;overflow:auto;padding:8px 6px 10px}
+.side #eqList{max-height:460px}
 .item{display:flex;gap:10px;padding:8px;border-radius:8px;cursor:pointer}
 .item:hover{background:var(--surface-2)}
 .item .t{font-weight:600;font-size:13px}
@@ -330,6 +331,9 @@ details[open]>summary .chev{transform:rotate(180deg)}
 .note-more{appearance:none;border:0;background:none;box-shadow:none;padding:2px 16px 0;font-size:12px;font-weight:700;color:var(--brand);cursor:pointer}
 .note-more:hover{background:none;text-decoration:underline}
 .fold-body>.tbl{margin-top:10px}
+/* sub-bagian di dalam satu kartu (mis. Gerakan tanah & longsor) */
+.subsec{border-top:1px solid var(--grid);margin-top:12px}
+.subsec-h{font-size:13.5px;font-weight:700;margin:0;padding:12px 16px 4px;color:var(--ink)}
 details.fold.sub{margin:0 14px 10px;border:1px solid var(--grid);border-radius:10px;background:var(--surface-2)}
 details.fold.sub>summary{padding:7px 8px 7px 12px;border-radius:10px}
 details.fold.sub .sub-t{flex:1;font-size:12.5px;font-weight:700;color:var(--ink-2)}
@@ -405,16 +409,131 @@ footer{padding:10px 4px 28px;line-height:1.6}
   .tbl>table{min-width:620px}
   .tbl{overflow-x:auto}
 }
-/* Modul tambahan: strip per jam, pin GDACS */
-.jam-strip{display:inline-grid;grid-template-columns:repeat(24,7px);gap:1px;vertical-align:middle}
-.jam-strip i{display:block;height:14px;border-radius:2px;background:var(--surface-2)}
-.jam-strip i.lewat,.jam-lewat{background:repeating-linear-gradient(135deg,var(--grid) 0 2px,transparent 2px 4px)!important}
-.jam-lewat{display:inline-block;width:11px;height:11px;border-radius:2px;border:1px solid var(--border)}
-.jam-strip.besar{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px}
-.jam-strip.besar i{height:22px;border-radius:3px}
+/* Modul tambahan: pin GDACS */
 .gd-pin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font:800 10px/1 var(--font);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);font-style:normal}
 .gt-stats .n .badge{font-size:13px;padding:3px 10px}
 @media print{.tabbar,.tools,.maptools,.chev,.note-more{display:none!important}.note.clamp{display:block}}
+/* ================= WASPADA 2.0 — Ikhtisar + halaman per jenis bahaya (Nov 2026) ================= */
+.pages-row{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none;padding:1px}
+.pages-row::-webkit-scrollbar{display:none}
+.pg{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:8px 13px;font-weight:650;font-size:13px;white-space:nowrap;color:var(--ink-2);box-shadow:var(--shadow)}
+.pg svg{width:17px;height:17px;flex:none}
+.pg:hover{color:var(--ink)}
+.pg[aria-selected="true"]{color:var(--ink);border-color:var(--navy);box-shadow:inset 0 -3px 0 var(--brand),var(--shadow)}
+:root[data-theme="dark"] .pg[aria-selected="true"]{border-color:var(--brand)}
+.pg .st{width:9px;height:9px;border-radius:50%;flex:none}
+.hal-lbl{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-left:4px}
+.hal-ikon{display:inline-flex}
+.st-kritis{--st:var(--critical)} .st-waspada{--st:var(--serious)} .st-pantau{--st:var(--warning)} .st-normal{--st:var(--good)}
+/* briefing */
+.brief{padding:16px 18px;margin-bottom:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:start;border-top:4px solid var(--st,var(--good))}
+.brief .eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.brief h2{margin:4px 0 0;font-size:24px;line-height:1.2;font-weight:800;letter-spacing:-.01em}
+.brief .chips-st{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.brief .chips-st button{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;padding:5px 10px;border-radius:8px;border:1px solid color-mix(in srgb,var(--st) 45%,transparent);background:color-mix(in srgb,var(--st) 13%,var(--surface));color:var(--ink)}
+.brief ul{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.55;color:var(--ink)}
+.brief li{display:flex;gap:9px}
+.brief li>i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:8px;background:var(--st,var(--axis))}
+.brief .act{display:flex;flex-direction:column;gap:8px;min-width:210px}
+.brief .act button{font-weight:700;padding:9px 14px}
+.brief .act .pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+.brief .act .pri:hover{background:#0a4f94}
+/* ubin ringkas per jenis bahaya */
+.kpis.tiles{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.tile{text-align:left;font:inherit;color:inherit;width:100%;cursor:pointer;padding:13px 14px 13px 18px;position:relative;overflow:hidden}
+.tile::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--st,var(--axis))}
+.tile:hover{border-color:var(--axis);transform:translateY(-1px)}
+.tile .lbl{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.tile .lbl svg{width:17px;height:17px;flex:none;color:var(--ink-2)}
+.tile .val{font-size:20px;font-weight:800;margin-top:6px;line-height:1.2;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tile .hint{font-size:12px;color:var(--ink-2);margin-top:4px;line-height:1.45}
+div.tile{cursor:default}
+/* matriks area × jenis bahaya */
+.mx{width:max(100%,980px);border-collapse:separate;border-spacing:0 6px;font-size:12.5px;table-layout:fixed}
+@media (max-width:720px){
+  .mx,.mx tbody{display:block;width:100%;min-width:0!important}.mx colgroup,.mx thead{display:none}
+  .mx tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:0 0 12px;margin-bottom:12px;border-bottom:1px solid var(--grid)}
+  .mx td{display:block;padding:0!important}.mx td:last-child{grid-column:1/-1}
+  .mx .c{min-height:0}.mx .c::before{content:attr(data-lbl);display:block;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .mx .rain3{grid-template-columns:auto repeat(3,40px);justify-content:start}.mx .rain3::before{content:'Hujan 3 hari (mm)';font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-right:6px;align-self:center}
+}
+.mx th{background:none;border:0;padding:4px 8px;font-size:11px;position:static}
+.mx th .h{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.mx th svg{width:16px;height:16px}
+.mx td{border:0;padding:0 4px;vertical-align:stretch}
+.mx td:first-child{padding-left:0}
+.mx .ar{padding:8px 10px;border-radius:10px;background:var(--surface-2);cursor:pointer;height:100%}
+.mx .ar b{font-size:14.5px}
+.mx .ar small{display:block;color:var(--muted);font-size:11.5px;line-height:1.3}
+.mx .c{display:block;width:100%;height:100%;text-align:left;font:inherit;color:inherit;border-radius:10px;padding:8px 10px;border:1px solid color-mix(in srgb,var(--st) 40%,transparent);background:color-mix(in srgb,var(--st) 11%,var(--surface));min-height:58px}
+.mx .c.n{border-color:var(--grid);background:var(--surface);color:var(--muted)}
+.mx .c .s{display:flex;align-items:center;gap:6px;font-weight:800;font-size:12px}
+.mx .c .t{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.35;margin-top:2px;color:var(--ink-2)}
+.mx .c.n .t{color:var(--muted)}
+.mx .dl{font-size:11px;font-weight:700;margin-top:3px}
+.up{color:var(--critical)} .down{color:var(--good)} .same{color:var(--muted)}
+.rain3{display:grid;grid-template-columns:repeat(3,34px);gap:3px}
+.rain3 span{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;font-weight:800;font-size:12px;height:40px}
+.rain3 small{font-size:9px;font-weight:600;opacity:.85}
+.kprof{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.kp{border:1px solid var(--grid);border-top:4px solid var(--st,var(--grid));border-radius:12px;padding:12px 14px;background:var(--surface)}
+.kp .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:800;font-size:14px}
+.kp .hd span{display:inline-flex;align-items:center;gap:7px}
+.kp .hd svg{width:18px;height:18px}
+.kp ul{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.kp li{font-size:12.5px;line-height:1.4;border-top:1px dashed var(--grid);padding-top:6px}
+.kp li .r{color:var(--muted);font-size:11.5px}
+.kp .more{margin-top:8px;font-size:12px;font-weight:700}
+.lnk{appearance:none;border:0;background:none;padding:0;color:var(--brand);font-weight:700;cursor:pointer;font-size:12px}
+.lnk:hover{text-decoration:underline;background:none}
+/* prioritas & lokasi */
+.prio{max-height:640px!important;overflow:auto!important;padding-right:4px}
+.pi{border:1px solid var(--grid);border-left:4px solid var(--st,var(--axis));border-radius:10px;padding:8px 10px;margin-bottom:7px;background:var(--surface)}
+.pi .top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
+.pi .top svg{width:15px;height:15px;color:var(--ink-2)}
+.pi .t{font-weight:700;font-size:12.5px;margin-top:3px;line-height:1.38;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pi .sar{font-size:11.5px;color:var(--ink-2);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pi .loc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:5px;font-size:11.5px}.pi .loc a{white-space:nowrap}
+.pi .loc code{font-size:11.5px;background:var(--surface-2);padding:1px 6px;border-radius:5px;color:var(--ink)}
+.pi .go{font-weight:700;padding:3px 10px;font-size:12px;border-radius:999px;background:var(--navy);color:#fff;border-color:var(--navy)}
+.pi .go:hover{background:#0a4f94}
+/* berubah sejak kemarin & riwayat */
+.chg .ci{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:8px 6px;border-bottom:1px solid var(--grid);cursor:pointer;border-radius:8px}
+.chg .ci:hover{background:var(--surface-2)}
+.chg .ar{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--surface-2)}
+.chg .ar.up{background:color-mix(in srgb,var(--critical) 14%,transparent)} .chg .ar.down{background:color-mix(in srgb,var(--good) 16%,transparent)}
+.chg .w{font-size:12px;color:var(--ink-2)}
+.hist{display:grid;grid-template-columns:52px minmax(0,1fr) 92px;gap:6px 8px;align-items:center;padding:8px 14px 4px;font-size:12px}
+.hist .sq{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:2px}
+.hist .sq i{display:block;height:18px;border-radius:3px;background:var(--surface-2)}
+.hist .sq i.st-kritis,.hist .sq i.st-waspada,.hist .sq i.st-pantau,.hist .sq i.st-normal{background:var(--st)}
+.hist .sq i.st-normal{opacity:.45}
+.hist .sq i.today{outline:2px solid var(--ink);outline-offset:1px}
+.hist .sum{color:var(--ink-2);font-size:11.5px;white-space:nowrap}
+.hist .ax{grid-column:2;display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+/* peta: fokus titik & salin */
+.pop-act{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px;font-size:12.5px;font-weight:700}
+.leaflet-interactive.pulse{animation:pulse 1.4s ease-out infinite}
+@keyframes pulse{0%{stroke-opacity:1;stroke-width:3}100%{stroke-opacity:0;stroke-width:14}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--page);padding:9px 16px;border-radius:10px;font-weight:600;font-size:13px;z-index:3000;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.map-full #mapCard{position:fixed;inset:10px;z-index:2000;margin:0;display:flex;flex-direction:column}
+.map-full #mapCard .fold-body{flex:1;display:flex;flex-direction:column;min-height:0}
+.map-full #mapCard{overflow:auto}
+.map-slot{min-width:0}
+.hal>.map-slot{margin-bottom:14px}
+.jam24{display:inline-grid;grid-template-columns:repeat(24,5px);gap:1px;vertical-align:middle}
+.jam24 i{height:12px;border-radius:1px;background:var(--surface-2)}
+.jam24 i.l1{background:var(--warning)} .jam24 i.l2{background:var(--serious)} .jam24 i.l3{background:var(--critical)} .jam24 i.lx{background:repeating-linear-gradient(45deg,var(--surface-2) 0 2px,transparent 2px 4px)}
+.pt-pin{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font:800 12px/1 var(--font);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.mgt-met{font-size:12.5px;color:var(--ink-2)}
+.mgt-met table{margin:6px 0 10px;font-size:12px;max-width:620px}
+.mgt-met td,.mgt-met th{padding:4px 8px;text-align:center}
+.mgt-met td:first-child,.mgt-met th:first-child{text-align:left}
+.b-sangat_tinggi{background:var(--critical);color:#fff;border-color:transparent}
+.b-zona{background:var(--surface-2);color:var(--ink-2);border-style:dashed}
+@media (max-width:1100px){.brief{grid-template-columns:1fr}.brief .act{flex-direction:row;flex-wrap:wrap;min-width:0}}
+@media (max-width:560px){.brief h2{font-size:19px}.pg{padding:7px 10px;font-size:12.5px}.hist{grid-template-columns:44px minmax(0,1fr)}.hist .sum{display:none}}
+@media print{.pages-row,.brief .act,.pi .loc button{display:none!important}.hal[hidden]{display:block!important}}
 </style>
 </head>
 <body>
@@ -438,18 +557,19 @@ footer{padding:10px 4px 28px;line-height:1.6}
       <div class="byline">Dashboard by <b>Fungsi HSSE Pertamina Gas</b></div>
     </div>
     <ul class="hero-tags" aria-label="Cakupan pemantauan">
-      <li>Hotspot karhutla <small>satelit</small></li>
-      <li>Gempa bumi &amp; tsunami <small>BMKG</small></li>
-      <li>Gerakan tanah <small>PVMBG</small></li>
-      <li>Potensi longsor harian <small>model LHASA</small></li>
-      <li>Cuaca &amp; kualitas udara <small>model</small></li>
+      <li>Api &amp; Udara <small>satelit · CAMS</small></li>
+      <li>Hujan, Petir &amp; Banjir <small>BMKG · GloFAS · model</small></li>
+      <li>Tanah &amp; Longsor <small>PVMBG + LHASA + tutupan lahan</small></li>
+      <li>Gempa &amp; Tsunami <small>BMKG</small></li>
+      <li>Titik aset di peta <small>pipa &amp; fasilitas</small></li>
     </ul>
   </header>
   <div class="statusbar" id="status"></div>
   <div id="banner"></div>
 
-  <nav class="tabbar" aria-label="Wilayah kerja">
-    <div class="tabs-row" id="tabs" role="tablist"></div>
+  <nav class="tabbar" aria-label="Wilayah kerja dan halaman">
+    <div class="tabs-row" id="tabs" role="tablist" aria-label="Wilayah kerja"></div>
+    <div class="pages-row" id="pages" role="tablist" aria-label="Halaman"></div>
   </nav>
 
   <div class="area-head">
@@ -467,32 +587,32 @@ footer{padding:10px 4px 28px;line-height:1.6}
     </div>
   </div>
 
-  <section class="kpis" id="kpis"></section>
 
-  <details class="card sec fold" id="riskCard" open>
-    <summary><h3 id="riskTitle">Status area operasi — klasifikasi multi-bahaya</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note" id="riskNote"></div>
-    <div class="tbl" style="max-height:none"><table id="riskTable"></table></div>
-    <details class="klas-info"><summary>Cara status dihitung</summary>
+  <!-- ================= Halaman 1: Ikhtisar (satu layar, satu jawaban) ================= -->
+  <section class="hal" data-hal="ikhtisar" aria-label="Ikhtisar">
+    <section class="card brief" id="brief" aria-live="polite"></section>
+    <section class="kpis tiles" id="kpis"></section>
+
+    <details class="card sec fold" id="matrixCard" open>
+      <summary><h3 id="matrixTitle">Matriks risiko: area × jenis bahaya</h3><span class="chev" aria-hidden="true"></span></summary>
+      <div class="fold-body">
+      <div class="note" id="matrixNote"></div>
+      <div id="matrixBody"></div>
+      <details class="klas-info"><summary>Cara status dihitung</summary>
       <ul>
-        <li><b>Skor risiko R = P × K.</b> P (1–5) = peluang bahaya benar-benar mengenai aset dalam 24–72 jam; K (1–5) = konsekuensi bila aset terkena. Kritis R 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2.</li>
-        <li><b>Status area = skor tertinggi di area itu</b> dari hotspot, gempa/tsunami, gerakan tanah PVMBG + model longsor LHASA, serta cuaca &amp; kualitas udara. Status satu area tidak memengaruhi area lain. Bila ≥ 2 jenis bahaya berstatus Waspada berdekatan (≤ 5 km), status naik satu tingkat.</li>
-        <li><b>Hotspot:</b> jarak hanya titik awal (≤ 0,5 km = 4 · ≤ 1 km = 3 · ≤ 3 km = 2 · ≤ 5 km = 1), lalu dikoreksi keyakinan satelit (±1), kondisi kering (+1), hujan (−1), klaster ≥ 3 titik (+1), berulang ≥ 3 hari di lokasi sama (−2) dan tutupan lahan.</li>
-        <li><b>Tutupan lahan (ESA WorldCover 10 m, radius 500 m):</b> vegetasi lebat +1; pertanian/rumput 0; <b>kawasan terbangun, lahan terbuka atau air = sumber panas non-vegetasi</b> — P maks. 2, sehingga tidak bisa memicu Kritis (biasanya flare, cerobong industri, pembakaran sampah).</li>
-        <li><b>Konsekuensi hotspot:</b> api permukaan jarang merusak pipa tertanam → K = 2; fasilitas dalam 1 km → K = 4. Lokasi yang sudah diverifikasi area sebagai sumber panas (config/sumber_panas_dikenal.json) diberi P = 1.</li>
-        <li><b>Gerakan tanah:</b> prakiraan bulanan PVMBG tanpa pemicu hujan maks. P = 2; naik bila model LHASA sedang/tinggi atau prakiraan hujan ≥ 50 mm. <b>Gempa</b> dihitung bila M ≥ 5 dalam 72 jam. <b>Cuaca/udara</b> berdampak pada pekerjaan lapangan (K = 2).</li>
-        <li><b>Modul tambahan (hanya bila mengenai aset wilayah itu):</b> peringatan dini BMKG aktif yang poligonnya mengenai aset P = 3 (tingkat <i>Severe/Extreme</i> = 4), K = 2 · banjir sungai model GloFAS di sel sungai yang dilalui pipa: tinggi/sedang/rendah P = 4/3/2, K = 3 · potensi petir model hari ini: hanya tingkat tinggi yang dihitung, P = 3, K = 2 · GDACS: siklon tropis dengan zona angin mengenai aset P = 3–5, kerucut lintasan 2, banjir/erupsi dekat aset 1–3, K = 3. Keempatnya tidak ikut aturan kenaikan gabungan.</li>
+        <li><b>Skor risiko R = P × K.</b> P (1–5) = peluang bahaya benar-benar mengenai aset dalam 24–72 jam; K (1–5) = konsekuensi bila aset terkena. Kritis R 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2. Status area = skor tertinggi di area itu; status satu area tidak memengaruhi area lain. Bila ≥ 2 jenis bahaya berstatus Waspada berdekatan (≤ 5 km), status naik satu tingkat.</li>
+        <li><b>Api &amp; Udara — hotspot:</b> jarak ke aset hanya titik awal (≤ 0,5 km = 4 · ≤ 1 km = 3 · ≤ 3 km = 2 · ≤ 5 km = 1), lalu dikoreksi keyakinan satelit (±1), kondisi kering (+1), hujan (−1), klaster ≥ 3 titik (+1), berulang ≥ 3 hari (−2) dan tutupan lahan (vegetasi lebat +1; kawasan terbangun/terbuka/air = sumber panas non-vegetasi, P maks. 2). Pipa tertanam K = 2, fasilitas ≤ 1 km K = 4. Sumber panas yang sudah diverifikasi (config/sumber_panas_dikenal.json) P = 1. Kualitas udara tidak sehat K = 2.</li>
+        <li><b>Tanah &amp; Longsor — model terpadu per titik 250 m:</b> kerentanan (geologi zona PVMBG, lereng Copernicus DEM, tutupan lahan ESA WorldCover; bobot SNI 13-7124-2005) × pemicu hujan anteseden (model LHASA), dengan zona prakiraan PVMBG sebagai tingkat minimum saat hujan memicu. Sangat tinggi P 5 · tinggi 4 · sedang 3 · rendah 2 · zona PVMBG belum terpicu 1; pipa K = 3, fasilitas K = 4.</li>
+        <li><b>Hujan, Petir &amp; Banjir:</b> peringatan dini BMKG yang poligonnya mengenai aset P = 3 (<i>Severe/Extreme</i> 4), K = 2 · banjir sungai model GloFAS di sel sungai yang dilalui pipa: tinggi/sedang/rendah P = 4/3/2, K = 3 · potensi petir model <b>hanya di stasiun kompresor, metering &amp; booster</b>: tinggi P = 3, K = 2 · siklon tropis GDACS P = 3–5, K = 3 · hujan lebat/angin kencang K = 2. Modul ini tidak ikut aturan kenaikan gabungan.</li>
+        <li><b>Gempa &amp; Tsunami:</b> gempa M ≥ 5 dalam 72 jam menurut jarak ke aset (P 1–5), berpotensi tsunami P = 5, K = 3; gunung api GDACS dekat aset P 1–3.</li>
         <li><b>Tindakan:</b> Kritis = verifikasi lapangan ≤ 6 jam · Waspada = patroli/pengecekan ≤ 24 jam · Pantau = pantau di dashboard.</li>
       </ul>
     </details>
-    </div>
-  </details>
+      </div>
+    </details>
 
-  <!-- khusus tab Ringkasan -->
-  <section class="areas" id="ovAreas"></section>
-
-  <section class="grid-main">
+    <section class="grid-main">
+      <div class="map-slot" id="slot-ikhtisar">
     <details class="card fold" id="mapCard" open>
       <summary><h3 id="mapTitle">Peta sebaran hotspot &amp; gempa terhadap aset</h3><span class="chev" aria-hidden="true"></span></summary>
       <div class="fold-body">
@@ -505,14 +625,162 @@ footer{padding:10px 4px 28px;line-height:1.6}
       <div id="map"></div>
       </div>
     </details>
-    <div class="side">
-      <details class="card fold" id="hsListCard" open>
-        <summary><h3>Hotspot terdekat dengan aset</h3><span class="chev" aria-hidden="true"></span></summary>
+      </div>
+      <div class="side">
+        <details class="card fold" id="prioCard" open>
+          <summary><h3 id="prioTitle">Prioritas &amp; lokasi</h3><span class="chev" aria-hidden="true"></span></summary>
+          <div class="fold-body">
+          <div class="note" id="prioNote"></div>
+          <div class="list prio" id="prioList"></div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <details class="card fold" id="chgCard" open>
+        <summary><h3 id="chgTitle">Berubah sejak kemarin</h3><span class="chev" aria-hidden="true"></span></summary>
         <div class="fold-body">
-        <div class="note" id="hsNote"></div>
-        <div class="list" id="hsList"></div>
+        <div class="note" id="chgNote"></div>
+        <div class="list chg" id="chgBody"></div>
         </div>
       </details>
+      <details class="card fold" id="histCard" open>
+        <summary><h3 id="histTitle">Riwayat status 30 hari</h3><span class="chev" aria-hidden="true"></span></summary>
+        <div class="fold-body">
+        <div class="note" id="histNote"></div>
+        <div id="histBody"></div>
+        </div>
+      </details>
+    </section>
+  </section>
+
+  <!-- ================= Halaman 2: Api & Udara ================= -->
+  <section class="hal" data-hal="api" aria-label="Api &amp; Udara" hidden>
+    <section class="kpis tiles" id="kpis-api"></section>
+    <div class="map-slot" id="slot-api"></div>
+  <details class="card sec fold" id="hsCard" open>
+    <summary><h3 id="hsTitle">Hotspot dekat aset</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
+    <div class="note" id="hsNote"></div>
+    <div class="sub-tabs" id="hsTabs">
+      <button type="button" data-k="nilai" class="on">≤ 5 km · dinilai risiko</button>
+      <button type="button" data-k="semua">≤ 25 km · semua tersimpan</button>
+    </div>
+    <div class="tbl"><table id="hsTable"></table></div>
+    </div>
+  </details>
+    <details class="card sec fold" id="aqCard" open>
+      <summary><h3 id="aqTitle">Kualitas udara di titik pantau (model CAMS)</h3><span class="chev" aria-hidden="true"></span></summary>
+      <div class="fold-body">
+      <div class="note" id="aqNote"></div>
+      <div class="tbl"><table id="aqTable"></table></div>
+      </div>
+    </details>
+  <details class="card sec fold" id="trendCard" open>
+    <summary><h3 id="trendTitle">Tren hotspot dekat aset (harian)</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
+    <div class="note" id="trendNote"></div>
+    <div class="chart-box"><canvas id="trend"></canvas></div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ================= Halaman 3: Hujan, Petir & Banjir ================= -->
+  <section class="hal" data-hal="air" aria-label="Hujan, Petir &amp; Banjir" hidden>
+    <section class="kpis tiles" id="kpis-air"></section>
+    <div class="map-slot" id="slot-air"></div>
+  <details class="card sec fold" id="pdCard" open>
+    <summary><h3 id="pdTitle">Peringatan dini cuaca ekstrem (BMKG)</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
+    <div class="note" id="pdNote"></div>
+    <div class="gt-body" id="pdBody"></div>
+    </div>
+  </details>
+    <details class="card sec fold" id="ptCard" open>
+      <summary><h3 id="ptTitle">Potensi petir di stasiun kompresor, metering &amp; booster (prakiraan model)</h3><span class="chev" aria-hidden="true"></span></summary>
+      <div class="fold-body">
+      <div class="note" id="ptNote"></div>
+      <div class="sub-tabs" id="ptTabs">
+        <button type="button" data-k="hari_ini" class="on">Hari ini</button>
+        <button type="button" data-k="besok">Besok</button>
+      </div>
+      <div class="gt-body" id="ptBody"></div>
+      </div>
+    </details>
+  <details class="card sec fold" id="bjCard" open>
+    <summary><h3 id="bjTitle">Indikasi potensi banjir sungai di perlintasan jalur pipa (model GloFAS)</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
+    <div class="note" id="bjNote"></div>
+    <div class="gt-body" id="bjBody"></div>
+    </div>
+  </details>
+  <details class="card sec fold" id="gdCard" open>
+    <summary><h3 id="gdTitle">Siklon tropis &amp; gunung api (GDACS)</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
+    <div class="note" id="gdNote"></div>
+    <div class="gt-body" id="gdBody"></div>
+    </div>
+  </details>
+  <details class="card sec fold" id="wxCard" open>
+    <summary><h3>Cuaca, kelembapan &amp; kualitas udara</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
+    <div class="note" id="wxNote">Data model cuaca & kualitas udara per titik pantau di wilayah ini, plus prakiraan 3 hari</div>
+    <div class="wx-grid" id="wxGrid"></div>
+    </div>
+  </details>
+  <details class="card sec fold" id="wxTableCard">
+    <summary><h3>Cuaca semua titik pantau</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
+    <div class="note" id="wxTableNote">Suhu, kelembapan relatif (RH), angin dan PM2.5 dari model cuaca untuk seluruh wilayah</div>
+    <div class="tbl"><table id="wxTable"></table></div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ================= Halaman 4: Tanah & Longsor ================= -->
+  <section class="hal" data-hal="tanah" aria-label="Tanah &amp; Longsor" hidden>
+    <section class="kpis tiles" id="kpis-tanah"></section>
+    <div class="map-slot" id="slot-tanah"></div>
+    <details class="card sec fold" id="mgtCard" open>
+      <summary><h3 id="mgtTitle">Gerakan tanah &amp; longsor terpadu (PVMBG + LHASA + tutupan lahan)</h3><span class="chev" aria-hidden="true"></span></summary>
+      <div class="fold-body">
+      <div class="note" id="mgtNote"></div>
+      <div class="sub-tabs" id="mgtTabs">
+        <button type="button" data-k="hari_ini" class="on">Hari ini</button>
+        <button type="button" data-k="besok">Besok</button>
+      </div>
+      <div class="gt-body" id="mgtBody"></div>
+      </div>
+    </details>
+  <details class="card sec fold" id="glCard">
+    <summary><h3 id="glTitle">Rincian sumber: model longsor LHASA &amp; zona gerakan tanah PVMBG</h3><span class="chev" aria-hidden="true"></span></summary>
+    <div class="fold-body">
+    <div class="note">Data mentah kedua sumber yang disatukan oleh model terpadu di atas: <b>indikasi harian</b> model LHASA (hujan anteseden × kelas lereng) dan <b>zona resmi bulanan</b> PVMBG. Status area memakai hasil model terpadu, bukan kedua bagian ini secara terpisah.</div>
+    <section class="subsec" aria-labelledby="lsTitle">
+      <h4 class="subsec-h" id="lsTitle">Indikasi longsor harian di jalur pipa (model LHASA)</h4>
+      <div class="note" id="lsNote"></div>
+      <div class="sub-tabs" id="lsTabs">
+        <button type="button" data-k="hari_ini" class="on">Hari ini</button>
+        <button type="button" data-k="besok">Besok</button>
+      </div>
+      <div class="gt-body" id="lsBody"></div>
+    </section>
+    <section class="subsec" aria-labelledby="gtTitle">
+      <h4 class="subsec-h" id="gtTitle">Zona &amp; prakiraan gerakan tanah bulanan (PVMBG)</h4>
+      <div class="note" id="gtNote"></div>
+      <div class="gt-body" id="gtBody"></div>
+    </section>
+    </div>
+  </details>
+  </section>
+
+  <!-- ================= Halaman 5: Gempa & Tsunami ================= -->
+  <section class="hal" data-hal="gempa" aria-label="Gempa &amp; Tsunami" hidden>
+    <section class="kpis tiles" id="kpis-gempa"></section>
+    <section class="grid-main">
+      <div class="map-slot" id="slot-gempa"></div>
+      <div class="side">
       <details class="card fold" id="eqCard" open>
         <summary><h3>Gempa bumi &amp; tsunami (BMKG)</h3><span class="chev" aria-hidden="true"></span></summary>
         <div class="fold-body">
@@ -524,108 +792,30 @@ footer{padding:10px 4px 28px;line-height:1.6}
         <div class="list" id="eqList"></div>
         </div>
       </details>
-    </div>
+      </div>
+    </section>
   </section>
 
-  <details class="card sec fold" id="pdCard" open>
-    <summary><h3 id="pdTitle">Peringatan dini cuaca ekstrem (BMKG)</h3><span class="chev" aria-hidden="true"></span></summary>
+  <!-- ================= Halaman 6: Sumber data & metode ================= -->
+  <section class="hal" data-hal="data" aria-label="Sumber &amp; metode" hidden>
+  <details class="card sec fold" id="riskCard" open>
+    <summary><h3 id="riskTitle">Rincian skor semua temuan (P × K)</h3><span class="chev" aria-hidden="true"></span></summary>
     <div class="fold-body">
-    <div class="note" id="pdNote"></div>
-    <div class="gt-body" id="pdBody"></div>
-    </div>
-  </details>
-
-  <details class="card sec fold" id="ptCard" open>
-    <summary><h3 id="ptTitle">Potensi petir di jalur pipa &amp; fasilitas (prakiraan model)</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note" id="ptNote"></div>
-    <div class="sub-tabs" id="ptTabs">
-      <button type="button" data-k="hari_ini" class="on">Hari ini</button>
-      <button type="button" data-k="besok">Besok</button>
-    </div>
-    <div class="gt-body" id="ptBody"></div>
-    </div>
-  </details>
-
-  <details class="card sec fold" id="bjCard" open>
-    <summary><h3 id="bjTitle">Indikasi potensi banjir sungai di perlintasan jalur pipa (model GloFAS)</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note" id="bjNote"></div>
-    <div class="gt-body" id="bjBody"></div>
-    </div>
-  </details>
-
-  <details class="card sec fold" id="gdCard" open>
-    <summary><h3 id="gdTitle">Siklon tropis &amp; bencana besar (GDACS)</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note" id="gdNote"></div>
-    <div class="gt-body" id="gdBody"></div>
-    </div>
-  </details>
-
-  <!-- khusus tab wilayah -->
-  <details class="card sec fold" id="wxCard" open>
-    <summary><h3>Cuaca, kelembapan &amp; kualitas udara</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note" id="wxNote">Data model cuaca & kualitas udara per titik pantau di wilayah ini, plus prakiraan 3 hari</div>
-    <div class="wx-grid" id="wxGrid"></div>
-    </div>
-  </details>
-
-  <details class="card sec fold" id="gtCard" open>
-    <summary><h3 id="gtTitle">Gerakan tanah &amp; pergeseran tanah (PVMBG)</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note" id="gtNote"></div>
-    <div class="gt-body" id="gtBody"></div>
-    </div>
-  </details>
-
-  <details class="card sec fold" id="lsCard" open>
-    <summary><h3 id="lsTitle">Indikasi potensi bahaya longsor harian terhadap jalur pipa (model LHASA)</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note" id="lsNote"></div>
-    <div class="sub-tabs" id="lsTabs">
-      <button type="button" data-k="hari_ini" class="on">Hari ini</button>
-      <button type="button" data-k="besok">Besok</button>
-    </div>
-    <div class="gt-body" id="lsBody"></div>
-    </div>
-  </details>
-
-  <section class="grid-2">
-    <details class="card fold" id="trendCard" open>
-      <summary><h3 id="trendTitle">Tren hotspot dekat aset (harian)</h3><span class="chev" aria-hidden="true"></span></summary>
-      <div class="fold-body">
-      <div class="note" id="trendNote"></div>
-      <div class="chart-box"><canvas id="trend"></canvas></div>
-      </div>
+    <div class="note" id="riskNote"></div>
+    <div class="tbl" style="max-height:none"><table id="riskTable"></table></div>
+    <details class="klas-info"><summary>Cara status dihitung</summary>
+      <ul>
+        <li><b>Skor risiko R = P × K.</b> P (1–5) = peluang bahaya benar-benar mengenai aset dalam 24–72 jam; K (1–5) = konsekuensi bila aset terkena. Kritis R 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2. Status area = skor tertinggi di area itu; status satu area tidak memengaruhi area lain. Bila ≥ 2 jenis bahaya berstatus Waspada berdekatan (≤ 5 km), status naik satu tingkat.</li>
+        <li><b>Api &amp; Udara — hotspot:</b> jarak ke aset hanya titik awal (≤ 0,5 km = 4 · ≤ 1 km = 3 · ≤ 3 km = 2 · ≤ 5 km = 1), lalu dikoreksi keyakinan satelit (±1), kondisi kering (+1), hujan (−1), klaster ≥ 3 titik (+1), berulang ≥ 3 hari (−2) dan tutupan lahan (vegetasi lebat +1; kawasan terbangun/terbuka/air = sumber panas non-vegetasi, P maks. 2). Pipa tertanam K = 2, fasilitas ≤ 1 km K = 4. Sumber panas yang sudah diverifikasi (config/sumber_panas_dikenal.json) P = 1. Kualitas udara tidak sehat K = 2.</li>
+        <li><b>Tanah &amp; Longsor — model terpadu per titik 250 m:</b> kerentanan (geologi zona PVMBG, lereng Copernicus DEM, tutupan lahan ESA WorldCover; bobot SNI 13-7124-2005) × pemicu hujan anteseden (model LHASA), dengan zona prakiraan PVMBG sebagai tingkat minimum saat hujan memicu. Sangat tinggi P 5 · tinggi 4 · sedang 3 · rendah 2 · zona PVMBG belum terpicu 1; pipa K = 3, fasilitas K = 4.</li>
+        <li><b>Hujan, Petir &amp; Banjir:</b> peringatan dini BMKG yang poligonnya mengenai aset P = 3 (<i>Severe/Extreme</i> 4), K = 2 · banjir sungai model GloFAS di sel sungai yang dilalui pipa: tinggi/sedang/rendah P = 4/3/2, K = 3 · potensi petir model <b>hanya di stasiun kompresor, metering &amp; booster</b>: tinggi P = 3, K = 2 · siklon tropis GDACS P = 3–5, K = 3 · hujan lebat/angin kencang K = 2. Modul ini tidak ikut aturan kenaikan gabungan.</li>
+        <li><b>Gempa &amp; Tsunami:</b> gempa M ≥ 5 dalam 72 jam menurut jarak ke aset (P 1–5), berpotensi tsunami P = 5, K = 3; gunung api GDACS dekat aset P 1–3.</li>
+        <li><b>Tindakan:</b> Kritis = verifikasi lapangan ≤ 6 jam · Waspada = patroli/pengecekan ≤ 24 jam · Pantau = pantau di dashboard.</li>
+      </ul>
     </details>
-    <details class="card fold" id="provCard" open>
-      <summary><h3 id="provTitle">Hotspot per provinsi</h3><span class="chev" aria-hidden="true"></span></summary>
-      <div class="fold-body">
-      <div class="note" id="provNote"></div>
-      <div class="chart-box"><canvas id="prov"></canvas></div>
-      </div>
-    </details>
-  </section>
-
-  <details class="card sec fold" id="wxTableCard">
-    <summary><h3>Cuaca semua titik pantau</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note" id="wxTableNote">Suhu, kelembapan relatif (RH), angin dan PM2.5 dari model cuaca untuk seluruh wilayah</div>
-    <div class="tbl"><table id="wxTable"></table></div>
     </div>
   </details>
-
-  <details class="card sec fold" id="hsTableCard">
-    <summary><h3 id="hsTableTitle">Daftar hotspot dalam radius 25 km dari aset</h3><span class="chev" aria-hidden="true"></span></summary>
-    <div class="fold-body">
-    <div class="note">Urut dari yang paling dekat. Klik baris untuk menuju lokasi di peta.</div>
-    <div class="tbl"><table id="hsTable"></table></div>
-    </div>
-  </details>
-
-  <details class="card sec fold" id="srcCard">
+  <details class="card sec fold" id="srcCard" open>
     <summary><h3>Sumber &amp; status data</h3><span class="chev" aria-hidden="true"></span></summary>
     <div class="fold-body">
     <div class="note">Waktu data = waktu pengamatan/model dari sumber · Pengambilan berhasil = kapan dashboard terakhir berhasil mengambil data. Bila pengambilan gagal, data terakhir yang berhasil tetap ditampilkan dengan tanda.</div>
@@ -633,6 +823,7 @@ footer{padding:10px 4px 28px;line-height:1.6}
     <div class="disclaimer"><b>Penafian.</b> Informasi pada dashboard ini digunakan sebagai sistem pemantauan dan pendukung keputusan (<i>decision support</i>). Data tidak menggantikan informasi/peringatan resmi dari instansi berwenang (BMKG, PVMBG–Badan Geologi, BNPB/BPBD, Kemenhut). Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran; indikasi longsor adalah keluaran model, bukan kepastian kejadian. Selalu verifikasi di lapangan.</div>
     </div>
   </details>
+  </section>
 
   <footer id="foot"></footer>
 </div>
@@ -655,15 +846,14 @@ const bust=()=>'?t='+Date.now();
 const TZ='Asia/Jakarta';
 
 let KLAS=null,DIKENAL=[],TL={ring:null,koridor:null};
-let PD=null,PDG=null,PT=null,BJ=null,GD=null,GDG=null;   // modul tambahan: peringatan BMKG, petir (model), banjir sungai, GDACS
+let PD=null,PDG=null,BJ=null,GD=null,GDG=null,PT=null;   // modul tambahan: peringatan BMKG, banjir sungai, GDACS, petir stasiun
+let TP=null,TPR=null,RIW=null;   // model gerakan tanah terpadu (+ ruas peta) & riwayat status harian
 let DATA={},ASSETS={type:'FeatureCollection',features:[],areas:{}},HIST=[],GT={prakiraan:null,zkgt:null},LS=null,LSR=null,map=null,layers={},areaColor={},charts={},AREAS=[];
 const LOADERR={};          // berkas data yang gagal dimuat → ditampilkan, tidak membuat halaman kosong
 const LIVE={gempa:null,gempaErr:null,wx:{},wxErr:null};  // hasil cek langsung dari browser (opsional)
 const GT_LV=['tinggi','bandang','menengah','rendah','sangat_rendah'];
 const GT_INFO={tinggi:{label:'Tinggi',v:'--critical'},bandang:{label:'Berpotensi banjir bandang',v:'--quake'},menengah:{label:'Menengah',v:'--serious'},rendah:{label:'Rendah',v:'--warning'},sangat_rendah:{label:'Sangat rendah',v:'--axis'}};
-const state={tab:OV,conf:'all',eqTab:'terkini',ls:'hari_ini',gtSeg:'prakiraan',pt:'hari_ini'};
-// menjelang tengah malam produk "hari ini" tinggal 1–2 jam → buka prakiraan besok lebih dulu
-if(+new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',hour12:false})>=21)state.pt='besok';
+const state={tab:OV,hal:'ikhtisar',conf:'all',eqTab:'terkini',hsRad:'nilai',ls:'hari_ini',gtSeg:'prakiraan',mgt:'hari_ini',pt:'hari_ini'};
 const LS_LV=['tinggi','sedang','rendah'];
 const LS_INFO={tinggi:{label:'Tinggi',icon:'▲',v:'--critical'},sedang:{label:'Sedang',icon:'◆',v:'--serious'},rendah:{label:'Rendah',icon:'●',v:'--warning'}};
 const LS_PROD={hari_ini:'hari ini',besok:'besok'};
@@ -681,8 +871,12 @@ async function loadData(){
   if(d)DATA=d;if(a)ASSETS=a;HIST=Array.isArray(h)?h:[];GT.prakiraan=p;LS=ls;LSR=lsr;
   {const [dk,tr,tk]=await Promise.all([getJSON('config/sumber_panas_dikenal.json'),getJSON('data/tutupan_lahan/ringkasan.json'),getJSON('data/tutupan_lahan/koridor.geojson')]);
    DIKENAL=(dk&&Array.isArray(dk.lokasi))?dk.lokasi:[];TL={ring:tr,koridor:tk};}
-  [PD,PDG,PT,BJ,GD,GDG]=await Promise.all([getJSON('data/peringatan_cuaca/peringatan.json'),getJSON('data/peringatan_cuaca/poligon.geojson'),getJSON('data/petir_model/petir.json'),
-    getJSON('data/banjir/banjir.json'),getJSON('data/gdacs/gdacs.json'),getJSON('data/gdacs/geometri.geojson')]);
+  [PD,PDG,BJ,GD,GDG,PT,TP,TPR,RIW]=await Promise.all([getJSON('data/peringatan_cuaca/peringatan.json'),getJSON('data/peringatan_cuaca/poligon.geojson'),
+    getJSON('data/banjir/banjir.json'),getJSON('data/gdacs/gdacs.json'),getJSON('data/gdacs/geometri.geojson'),getJSON('data/petir_model/petir.json'),
+    getJSON('data/lhasa/terpadu.json'),getJSON('data/lhasa/terpadu_ruas.geojson'),getJSON('data/history/status_area.json')]);
+  // lewat tengah malam sebelum workflow berikutnya: produk "besok" sudah menjadi hari ini
+  [LS,TP,PT].forEach(geserHari);
+  for(const [X,F] of [[LS,LSR],[TP,TPR]])if(X?._geser&&F?.features)F.features=F.features.filter(f=>f.properties?.produk==='besok').map(f=>({...f,properties:{...f.properties,produk:'hari_ini'}}));
   // zona kerentanan hanya diunduh bila pipeline menandainya tersedia (hindari 404 yang tidak perlu)
   const Zm=DATA.gerakan_tanah?.zkgt||{};
   if(Zm.tersedia&&Zm.berkas_peta==='prakiraan.geojson'&&GT.prakiraan){
@@ -694,14 +888,21 @@ async function loadData(){
   AREAS=Object.keys(DATA.areas||ASSETS.areas||{});
   if(!DATA.areas)DATA.areas=ASSETS.areas||{};
   AREAS.forEach((k,i)=>areaColor[k]=AREA_COLORS[i%AREA_COLORS.length]);
-  try{KLAS=window.KlasifikasiWaspada?KlasifikasiWaspada.hitung({data:DATA,lhasa:LS,ruasLhasa:LSR,dikenal:DIKENAL,now:new Date(),tambahan:{peringatan:PD,banjir:BJ,petir:PT,gdacs:GD}}):null;}
+  try{KLAS=window.KlasifikasiWaspada?KlasifikasiWaspada.hitung({data:DATA,lhasa:LS,ruasLhasa:LSR,terpadu:TP,dikenal:DIKENAL,now:new Date(),tambahan:{peringatan:PD,banjir:BJ,petir:PT,gdacs:GD}}):null;}
   catch(e){console.error('klasifikasi',e);KLAS=null;LOADERR['klasifikasi status (klasifikasi.js)']=e.message;}
+}
+function geserHari(X){
+  const P=X&&X.produk,h=P&&P.hari_ini,b=P&&P.besok,today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'});
+  if(!h||!b||!h.tanggal||h.tanggal>=today||b.tanggal!==today)return;
+  P.hari_ini=b;P.besok={tanggal:null,stale:true,per_area:{},belum:true};X._geser=true;
+  for(const f of (X.fasilitas||[])){f.hari_ini=f.besok||null;f.besok=null;}
 }
 async function load(){
   await loadData();
-  const fromHash=decodeURIComponent(location.hash.slice(1)).toUpperCase();
-  state.tab=AREAS.includes(fromHash)?fromHash:OV;
+  const H=parseHash();
+  state.tab=H.area;state.hal=H.hal;
   safe('peta',initMap,'#map');render(true);
+  if(H.fokus)safe('fokus tautan',()=>fokusTautan(H.fokus));
   liveChecks();
 }
 
@@ -770,14 +971,17 @@ function sources(){
     rows.push({id:'lhasa',nama:'Indikasi potensi longsor harian',src:'Model internal — algoritma NASA LHASA 1.1',par:'Hujan anteseden 7 hari vs ambang ARI95 NASA × kerentanan lereng',jenis:'Model (indikasi), memakai prakiraan hujan — bukan observasi',jadwal:'2× sehari (05:15 & 16:15 WIB)',
       data:`Hari ini ${LS.produk?.hari_ini?.tanggal||'–'} · besok ${LS.produk?.besok?.tanggal||'–'}`,ok:okk?t:null,st:freshOf(t,FRESH.terjadwal,!okk),pesan:LS.status?.hari_ini?.pesan});}
   else rows.push({id:'lhasa',nama:'Indikasi potensi longsor harian',src:'Model internal — algoritma NASA LHASA 1.1',par:'–',jenis:'Model',jadwal:'2× sehari',data:'Tidak tersedia',ok:null,st:'none',pesan:LOADERR['model longsor (lhasa.json)']});
+  if(TP&&TP.produk){const okk=TP.status?.ok!==false;
+    rows.push({id:'terpadu',nama:'Gerakan tanah & longsor terpadu',src:'Model internal — PVMBG + LHASA + ESA WorldCover (bobot SNI 13-7124-2005)',par:'Kerentanan (geologi, lereng, tutupan lahan) × pemicu hujan anteseden, dengan zona prakiraan PVMBG',jenis:'Model (indikasi) per titik 250 m',jadwal:'Bersama model longsor (2× sehari)',
+      data:`Hari ini ${TP.produk?.hari_ini?.tanggal||'–'} · besok ${TP.produk?.besok?.tanggal||'–'} · cakupan PVMBG ${fmt((TP.cakupan?.pvmbg||0)*100)}%, lahan ${fmt((TP.cakupan?.lahan||0)*100)}%`,ok:okk?TP.diambil:null,st:freshOf(TP.diambil,FRESH.terjadwal,!okk),pesan:TP.status?.pesan});}
   // modul tambahan berbasis lokasi aset
+  rows.push({id:'petir',nama:'Potensi petir di stasiun',src:'Open-Meteo Forecast (CAPE, kode cuaca, hujan per jam)',par:'Tingkat potensi badai petir per jam di stasiun kompresor, metering/regulasi & booster',jenis:'Prakiraan model — bukan deteksi sambaran',jadwal:'4× sehari',
+    data:PT?.fasilitas?`${fmt(PT.n_fasilitas)} stasiun dipantau`:'Belum tersedia',ok:PT?.status?.ok===false?null:PT?.diambil,st:!PT?.diambil?'none':freshOf(PT.diambil,FRESH.enamjam,PT.status?.ok===false),pesan:PT?.status?.pesan});
   rows.push({id:'bmkg_nowcast',nama:'Peringatan dini cuaca ekstrem',src:'BMKG — nowcasting (RSS + CAP)',par:'Wilayah peringatan (poligon), jenis kejadian, masa berlaku vs jalur pipa & fasilitas',jenis:'Peringatan resmi BMKG, berlaku ±1–3 jam',jadwal:'Dicek tiap ±15 menit',
     data:PD?`${pdAktif().filter(w=>w.kena).length} peringatan aktif mengenai aset`:'Belum tersedia',ok:PD?.ok===false?null:PD?.diambil,st:!PD?'none':PD.ok===false?'delayed':freshOf(PD.diambil,FRESH.nowcast),pesan:PD?.pesan});
-  rows.push({id:'petir_model',nama:'Potensi petir (model)',src:'Open-Meteo Forecast (CAPE, kode cuaca, hujan)',par:'Tingkat potensi badai petir per jam per sel ±11 km di jalur pipa',jenis:'Prakiraan model cuaca — bukan deteksi sambaran',jadwal:'4× sehari',
-    data:PT?.produk?.hari_ini?`Hari ini ${PT.produk.hari_ini.tanggal||'–'} · besok ${PT.produk.besok?.tanggal||'–'}`:'Belum tersedia',ok:PT?.status?.ok===false?null:PT?.diambil,st:!PT?.diambil?'none':freshOf(PT.diambil,FRESH.enamjam,PT.status?.ok===false),pesan:PT?.status?.pesan});
   rows.push({id:'banjir_sungai',nama:'Potensi banjir sungai (model)',src:'Open-Meteo Flood API — GloFAS v4 (Copernicus/ECMWF)',par:'Debit sungai harian (m³/s) di sel sungai ±5 km yang dilalui pipa vs riwayat 5 tahun',jenis:'Model hidrologi — bukan pos duga air',jadwal:'4× sehari (model terbit harian)',
     data:BJ?.statis?`${fmt(BJ.statis.sel_sungai)} sel sungai${BJ.statis.lengkap?'':` · ${fmt(BJ.statis.menunggu_ambang)} menunggu ambang`}`:'Belum tersedia',ok:BJ?.status?.ok===false?null:BJ?.diambil,st:!BJ?.diambil?'none':freshOf(BJ.diambil,FRESH.enamjam,BJ.status?.ok===false),pesan:BJ?.status?.pesan});
-  rows.push({id:'gdacs',nama:'Siklon tropis & bencana besar',src:'GDACS (PBB & Komisi Eropa)',par:'Siklon tropis (lintasan, zona angin), banjir besar, erupsi — jarak ke aset',jenis:'Peringatan otomatis global — bukan peringatan resmi BMKG/BNPB',jadwal:'4× sehari',
+  rows.push({id:'gdacs',nama:'Siklon tropis & gunung api',src:'GDACS (PBB & Komisi Eropa)',par:'Siklon tropis (lintasan, zona angin), erupsi gunung api — jarak ke aset',jenis:'Peringatan otomatis global — bukan peringatan resmi BMKG/BNPB',jadwal:'4× sehari',
     data:GD?.diambil?`${gdKejadian().length} kejadian dalam radius pantau`:'Belum tersedia',ok:GD?.status?.ok===false?null:GD?.diambil,st:!GD?.diambil?'none':freshOf(GD.diambil,FRESH.enamjam,GD.status?.ok===false),pesan:GD?.status?.pesan});
   return rows;
 }
@@ -844,7 +1048,7 @@ function renderTabs(){
 }
 function selectTab(id){
   state.tab=id;
-  history.replaceState(null,'',id===OV?location.pathname:'#'+id);
+  syncHash();
   render(true);
   liveWx(id).then(c=>c&&renderLive(true));
   window.scrollTo({top:Math.min(scrollY,$('.tabbar').offsetTop),behavior:'smooth'});
@@ -858,93 +1062,32 @@ $('#tabs').addEventListener('keydown',e=>{
 /* ---------- header ---------- */
 function renderStatus(){
   const rows=sources();
-  const short={hotspot:'Hotspot',gempa:'Gempa',cuaca:'Cuaca',udara:'Udara',pvmbg_prakiraan:'PVMBG prakiraan',pvmbg_zkgt:'PVMBG zona',lhasa:'Model longsor',bmkg_nowcast:'Peringatan BMKG',petir_model:'Petir (model)',banjir_sungai:'Banjir sungai',gdacs:'GDACS'};
+  const short={hotspot:'Hotspot',gempa:'Gempa',cuaca:'Cuaca',udara:'Udara',pvmbg_prakiraan:'PVMBG prakiraan',pvmbg_zkgt:'PVMBG zona',lhasa:'Model longsor',terpadu:'Gerakan tanah terpadu',bmkg_nowcast:'Peringatan BMKG',petir:'Petir stasiun',banjir_sungai:'Banjir sungai',gdacs:'GDACS'};
   const n={fresh:0,delayed:0,stale:0,none:0};rows.forEach(r=>n[r.st]++);
   const wasOpen=$('#status details')?.open;
   const sum=['fresh','delayed','stale','none'].filter(k=>n[k]).map(k=>frBadge(k,`${n[k]} ${FR_LBL[k].toLowerCase()}`)).join('');
   let h=`<details class="src-sum"${wasOpen?' open':''}><summary><span class="src-when" title="Waktu GitHub Actions terakhir memproses data utama">Pemrosesan terakhir <b>${when(DATA.generated_at)}</b></span><span class="src-counts">${sum}</span><span class="src-more">Status per sumber</span><span class="chev" aria-hidden="true"></span></summary><div class="chips">`;
   rows.forEach(r=>{
     h+=`<span class="chip" title="${esc(r.nama)}: ${FR_LBL[r.st]}${r.ok?' · berhasil diambil '+when(r.ok):''}${r.pesan?' · '+esc(r.pesan):''}">${frBadge(r.st,short[r.id]||r.nama)}</span>`;});
+  const late=rows.filter(r=>r.st==='stale'||r.st==='delayed').filter(r=>r.id!=='pvmbg_zkgt');
+  if(late.length)h+=`<span class="chip" style="white-space:normal">Terlambat: ${late.map(r=>`${esc(r.nama)} (${r.ok?lalu(r.ok):'?'})`).join(' · ')} — data terakhir yang berhasil tetap dipakai</span>`;
   h+=`<a class="chip chip-link" href="#srcCard">Rincian sumber data ›</a></div></details>`;
   $('#status').innerHTML=h;
   let b='';
   for(const [k,v] of Object.entries(LOADERR))b+=`<div class="banner"><b>${esc(k)} gagal dimuat</b> (${esc(v)}). Bagian terkait ditampilkan kosong; bagian lain tetap berjalan. Muat ulang halaman beberapa saat lagi.</div>`;
   if(DATA.demo)b+=`<div class="banner"><b>DEMO / DATA CONTOH — BUKAN DATA NYATA.</b> Angka di halaman ini masih data simulasi untuk pratinjau tampilan. Data asli terisi otomatis setelah GitHub Actions menjalankan workflow <i>Update Data Harian</i>.</div>`;
-  const bad=rows.filter(r=>r.st==='stale'&&r.id!=='pvmbg_zkgt');
-  if(bad.length)b+=`<div class="banner"><b>Data tidak refresh:</b> ${bad.map(r=>`${esc(r.nama)} (terakhir berhasil ${r.ok?when(r.ok)+', '+lalu(r.ok):'tidak diketahui'})`).join(' · ')}. Yang ditampilkan adalah data terakhir yang berhasil diterima — lihat tabel <a href="#srcCard">Sumber &amp; status data</a>.</div>`;
+  // sumber yang terlambat cukup ditandai di bar status (bukan banner kuning yang mendominasi halaman)
   $('#banner').innerHTML=b;
 }
 function renderTitle(){
-  if(isOV()){$('#viewTitle').innerHTML='Ringkasan semua wilayah kerja';return;}
+  const lbl=`<span class="hal-lbl">${esc(HAL_NAMA[state.hal]||'')}</span>`;
+  if(isOV()){$('#viewTitle').innerHTML='Semua wilayah kerja '+lbl;return;}
   const k=state.tab;
-  $('#viewTitle').innerHTML=`<span class="sw" style="background:${css(areaColor[k])}"></span>${k} — ${esc(DATA.areas[k].nama)} ${badge(worstOf(k))}`;
+  $('#viewTitle').innerHTML=`<span class="sw" style="background:${css(areaColor[k])}"></span>${k} — ${esc(DATA.areas[k].nama)} ${badge(worstOf(k))} ${lbl}`;
 }
 
 /* ---------- Status saat ini + daftar yang perlu perhatian ---------- */
 const AQI_KAT=v=>v==null?null:v<=50?'Baik':v<=100?'Sedang':v<=150?'Tidak sehat bagi kelompok sensitif':v<=200?'Tidak sehat':v<=300?'Sangat tidak sehat':'Berbahaya';
-/* ---------- KPI ---------- */
-function kpi(lbl,val,hint,color,icon){return `<div class="card kpi"${color?` style="--kc:${css(color)}"`:''}><div class="lbl">${color?`<span style="color:${css(color)}">${icon}</span>`:''}${lbl}</div><div class="val">${val}</div><div class="hint">${hint}</div></div>`}
-function renderKPIs(){
-  const hs=hotspots(),r=DATA.radius.hotspot,area=isOV()?null:state.tab;
-  const qs=quakes('all').map(g=>({...g,...eqView(g)}));
-  const recent=qs.filter(g=>{const a=eqAge(g);return a!=null&&a<=GEMPA_BARU_JAM;});
-  const near=recent.slice().sort((a,b)=>a.jarak_km-b.jarak_km)[0];
-  const tsu=recent.filter(g=>g.tsunami);const last=LIVE.gempa||(DATA.gempa||{}).terbaru;
-  const rep=st=>{const n=hs.filter(h=>(!area||h.area===area)&&h.status===st&&h.persisten).length;return n?` · <b>${n} berulang</b>`:''};
-  const h5=hs.filter(x=>(!area||x.area===area)&&x.status!=='luar');
-  const nRisk=h5.filter(x=>['kritis','waspada'].includes(hsSt(x))).length, nNon=h5.filter(x=>x.risiko?.nonVegetasi).length, nRep=h5.filter(x=>x.persisten).length;
-  let h='';
-  if(KLAS&&isOV()){const rk=KLAS.rekap;
-    h+=kpi('Kondisi area operasi',rk.kritis.length?`${rk.kritis.length} dari ${AREAS.length} Kritis`:'Tidak ada area Kritis',
-      `${rk.waspada.length} Waspada · ${rk.pantau.length} Pantau · ${rk.normal.length} Normal — status dihitung per area${rk.kritis.length?` (Kritis: ${rk.kritis.join(', ')})`:''}`,rk.kritis.length?'--critical':rk.waspada.length?'--serious':'--good',rk.kritis.length?'▲':rk.waspada.length?'◆':'✓');
-  }else if(KLAS){const A=KLAS.area[area]||{};const st=A.status||'normal';
-    h+=kpi(`Status ${area}`,`${STATUS[st].label}${A.R?` <span style="font-size:14px;color:var(--muted)">R ${A.R}</span>`:''}`,A.pemicu?esc(A.pemicu.teks)+(A.eskalasi?` · naik satu tingkat: ${esc(A.eskalasi)}`:''):'Tidak ada temuan bahaya',STATUS[st].v,STATUS[st].icon);}
-  h+=kpi('Hotspot berisiko (Waspada/Kritis)',`${nRisk} <span style="font-size:14px;color:var(--muted)">dari ${h5.length}</span>`,`hotspot ≤ ${r.pantau} km dari aset (≤ ${r.kritis} km: ${countBy(hs,area,'kritis')} · ${r.kritis}–${r.waspada} km: ${countBy(hs,area,'waspada')} · ${r.waspada}–${r.pantau} km: ${countBy(hs,area,'pantau')}) — sisanya Pantau/Normal`,nRisk?'--serious':'--good',nRisk?'◆':'✓')+
-    kpi('Sumber panas non-vegetasi',nNon,`hotspot ≤ ${r.pantau} km di kawasan terbangun/terbuka/air (ESA WorldCover) — bukan titik api lahan${nRep?` · ${nRep} berulang di lokasi sama`:''}`,'--axis','▣');
-  if(isOV()){
-    h+=kpi('Hotspot nasional',fmt(DATA.hotspot?.total_nasional),`${DATA.hotspot?.periode_jam||24} jam s.d. ${jam(DATA.hotspot?.diperbarui)} · ${esc(DATA.hotspot?.sumber||'-')}`);
-  }else{
-    const pa=(DATA.hotspot?.provinsi_area||{})[area]||{};
-    const tot=Object.values(pa).reduce((a,b)=>a+b,0);
-    h+=kpi('Hotspot provinsi wilayah',fmt(tot),Object.keys(pa).length?Object.entries(pa).map(([p,n])=>`${esc(p)} ${n}`).join(' · '):'Atur di config/monitoring.json');
-  }
-  h+=kpi(isOV()?'Gempa terdekat dari aset (7 hari)':`Gempa terdekat dari aset ${area} (7 hari)`,near?`M ${fmt(near.mag,1)}`:'–',near?`${fmt(near.jarak_km)} km dari ${esc(near.aset)}${isOV()?` (${near.area})`:''} · ${when(near.datetime)} (${lalu(near.datetime)})`:'Tidak ada gempa tercatat dalam 7 hari terakhir');
-  const cek=LIVE.gempaOk?`Dicek langsung ke BMKG pukul ${jam(LIVE.gempaOk)}`:`Data BMKG terjadwal per ${when((DATA.gempa||{}).diperbarui||DATA.generated_at)}`;
-  h+=kpi('Potensi tsunami (BMKG)',tsu.length?'<span class="badge b-tsunami">⚠ BERPOTENSI TSUNAMI</span>':'<span style="font-size:18px">Tidak ada indikasi</span>',
-    (tsu.length?`${esc(tsu[0].wilayah)} · ${when(tsu[0].datetime)}`:cek)+`${last?` · gempa terakhir M ${fmt(last.mag,1)}, ${lalu(last.datetime)}`:''}. Peringatan resmi: <a href="https://inatews.bmkg.go.id/" target="_blank" rel="noopener">InaTEWS BMKG</a>`,tsu.length?'--critical':'--axis',tsu.length?'⚠':'○');
-  $('#kpis').innerHTML=h;
-}
-
-/* ---------- Ringkasan: kartu wilayah ---------- */
-function renderOverviewAreas(){
-  const el=$('#ovAreas');el.hidden=!isOV();if(!isOV())return;
-  const hs=allHotspots(),r=DATA.radius.hotspot;
-  el.innerHTML=AREAS.map(k=>{
-    const wx=(DATA.cuaca||[]).filter(w=>w.area===k);
-    const t=wx.map(w=>w.suhu).filter(x=>x!=null),rh=wx.map(w=>w.rh).filter(x=>x!=null);
-    const rng=a=>a.length?(Math.min(...a)===Math.max(...a)?fmt(a[0]):`${fmt(Math.min(...a))}–${fmt(Math.max(...a))}`):'–';
-    const qs=quakes('all').filter(g=>g.per_area&&g.per_area[k]&&(eqAge(g)??1e9)<=GEMPA_BARU_JAM).sort((a,b)=>a.per_area[k].jarak_km-b.per_area[k].jarak_km)[0];
-    const P=(DATA.gerakan_tanah||{}).prakiraan||{},ym=periodeBulan(P),pk=(P.per_area||{})[k];
-    const hk=hs.filter(h=>h.area===k&&h.status!=='luar'&&h.persisten).length;
-    return `<button type="button" class="card area st-${worstOf(k)||'normal'}" data-id="${k}">
-      <div class="area-h"><div><b><i class="line" style="background:${css(areaColor[k])};vertical-align:middle;margin-right:6px"></i>${k}</b><div class="nm">${esc(DATA.areas[k].nama)}</div></div>${badge(worstOf(k))}</div>
-      ${KLAS&&KLAS.area[k]?.pemicu?`<div class="foot"><span><b>R ${KLAS.area[k].R}</b> · ${esc(KLAS.area[k].pemicu.teks)}${KLAS.area[k].eskalasi?' · <b>naik satu tingkat</b> (bahaya gabungan)':''}</span></div>`:''}
-      <div class="counts" title="Jumlah hotspot menurut jarak ke aset (bukan status)">
-        <div><div class="n">${countBy(hs,k,'kritis')}</div><div class="k">hotspot ≤ ${r.kritis} km</div></div>
-        <div><div class="n">${countBy(hs,k,'waspada')}</div><div class="k">${r.kritis}–${r.waspada} km</div></div>
-        <div><div class="n">${hs.filter(h=>h.area===k&&['kritis','waspada'].includes(hsSt(h))).length}</div><div class="k">berisiko (R ≥ 8)</div></div>
-      </div>
-      ${hk?`<div class="foot"><span>↻ ${hk} hotspot berulang di lokasi sama (verifikasi)</span></div>`:''}
-      ${(()=>{const nv=hs.filter(h=>h.area===k&&h.status!=='luar'&&h.risiko?.nonVegetasi).length;return nv?`<div class="foot"><span>▣ ${nv} hotspot di lahan non-vegetasi (bukan titik api lahan)</span></div>`:'';})()}
-      <div class="foot"><span>Suhu ${rng(t)}°C · RH ${rng(rh)}% <span style="color:var(--muted)">(model, ${jam(wx[0]?.waktu)})</span></span></div>
-      <div class="foot"><span>Gerakan tanah (prakiraan ${namaBulan(ym)}${ym&&ym!==bulanIni()?' — bukan bulan ini':''}): ${pk?`${gtBadge(pk.terburuk)} ${fmt(pk.pipa_km?.tinggi,1)} km pipa zona tinggi`:(P.tersedia?'belum dianalisis untuk wilayah ini':'data belum tersedia')}</span></div>
-      <div class="foot"><span>Indikasi longsor hari ini (model): ${(()=>{const a=lsArea(k,'hari_ini');return a?`${lsBadge(a.terburuk)} ${fmt((a.pipa_km.tinggi||0)+(a.pipa_km.sedang||0),1)} km pipa ≥ sedang`:'–'})()}</span></div>
-      <div class="foot"><span>Peringatan BMKG: ${(()=>{const n=pdArea(k).length;return n?`<b>${n} aktif</b>`:'tidak ada';})()} · Petir (model): ${lvBadge(ptArea(k,'hari_ini')?.terburuk)} · Banjir sungai: ${lvBadge(bjArea(k)?.terburuk)}</span></div>
-      <div class="foot"><span>${qs?`Gempa terdekat (7 hari) ${fmt(qs.per_area[k].jarak_km)} km (M ${fmt(qs.mag,1)}, ${lalu(qs.datetime)})`:'Tidak ada gempa tercatat dalam 7 hari'}</span><span class="go">Buka ›</span></div>
-    </button>`;}).join('');
-  el.querySelectorAll('.area').forEach(b=>b.onclick=()=>selectTab(b.dataset.id));
-}
-
 /* ---------- Peta ---------- */
 function initMap(){
   if(typeof L==='undefined')throw new Error('library peta (Leaflet) gagal dimuat dari CDN — periksa koneksi internet');
@@ -957,8 +1100,9 @@ function initMap(){
   map.createPane('gt');map.getPane('gt').style.zIndex=350;
   layers.pipa=L.layerGroup().addTo(map);layers.fas=L.layerGroup().addTo(map);
   layers.gtZona=L.layerGroup();layers.gtPrak=L.layerGroup().addTo(map);
-  layers.pt=L.layerGroup().addTo(map);layers.bj=L.layerGroup().addTo(map);layers.pd=L.layerGroup().addTo(map);layers.gd=L.layerGroup().addTo(map);
-  layers.ls=L.layerGroup().addTo(map);layers.hs=L.layerGroup().addTo(map);layers.eq=L.layerGroup().addTo(map);layers.wx=L.layerGroup().addTo(map);
+  layers.bj=L.layerGroup().addTo(map);layers.pd=L.layerGroup().addTo(map);layers.gd=L.layerGroup().addTo(map);
+  layers.ls=L.layerGroup();layers.hs=L.layerGroup().addTo(map);layers.eq=L.layerGroup().addTo(map);layers.wx=L.layerGroup().addTo(map);
+  layers.mgt=L.layerGroup().addTo(map);layers.pt=L.layerGroup().addTo(map);
   // Tutupan lahan: peta ESA WorldCover 10 m (WMS Terrascope), ruas koridor pipa per kelas, dan penutupan lahan KLHK bila layanannya tersedia
   map.createPane('lc');map.getPane('lc').style.zIndex=250;
   const wms=TL.ring?.wms||{url:'https://services.terrascope.be/wms/v2',layer:'WORLDCOVER_2021_MAP',layer_cadangan:'WORLDCOVER_2020_MAP'};
@@ -966,8 +1110,8 @@ function initMap(){
   {let err=0;layers.wc.on('tileerror',()=>{if(++err===4&&wms.layer_cadangan&&layers.wc.wmsParams.layers!==wms.layer_cadangan)layers.wc.setParams({layers:wms.layer_cadangan});});}
   layers.tlKor=L.layerGroup();
   const ov={'Jalur pipa':layers.pipa,'Fasilitas':layers.fas,'Hotspot':layers.hs,'Gempa':layers.eq,
-    'Prakiraan gerakan tanah (bulan ini)':layers.gtPrak,'Zona kerentanan gerakan tanah':layers.gtZona,'Potensi longsor (model LHASA)':layers.ls,'Label cuaca':layers.wx,
-    'Peringatan dini cuaca (BMKG)':layers.pd,'Potensi petir (model)':layers.pt,'Banjir sungai (model GloFAS)':layers.bj,'Siklon & bencana besar (GDACS)':layers.gd,
+    'Gerakan tanah terpadu (model)':layers.mgt,'Prakiraan gerakan tanah PVMBG (bulan ini)':layers.gtPrak,'Zona kerentanan gerakan tanah PVMBG':layers.gtZona,'Indikasi longsor LHASA (rincian)':layers.ls,'Label cuaca':layers.wx,
+    'Peringatan dini cuaca (BMKG)':layers.pd,'Petir di stasiun (model)':layers.pt,'Banjir sungai (model GloFAS)':layers.bj,'Siklon & gunung api (GDACS)':layers.gd,
     'Tutupan lahan — peta ESA WorldCover 10 m':layers.wc,'Tutupan lahan — sepanjang koridor pipa':layers.tlKor};
   if(TL.ring?.klhk?.url){
     const ArcExport=L.TileLayer.extend({getTileUrl(c){const ts=this.getTileSize(),m=this._map,nw=m.unproject([c.x*ts.x,c.y*ts.y],c.z),se=m.unproject([(c.x+1)*ts.x,(c.y+1)*ts.y],c.z);
@@ -986,13 +1130,28 @@ function initMap(){
   // tombol reset tampilan
   const Reset=L.Control.extend({options:{position:'topleft'},onAdd(){const d=L.DomUtil.create('div','leaflet-bar');
     d.innerHTML='<a href="#" role="button" title="Reset tampilan peta ke wilayah aktif" aria-label="Reset peta" style="font-size:15px">⌂</a>';
-    L.DomEvent.on(d.firstChild,'click',e=>{L.DomEvent.preventDefault(e);fitArea();});L.DomEvent.disableClickPropagation(d);return d;}});
+    L.DomEvent.on(d.firstChild,'click',e=>{L.DomEvent.preventDefault(e);fitArea(true);});L.DomEvent.disableClickPropagation(d);return d;}});
   new Reset().addTo(map);
+  // layar penuh — peta jadi lebih leluasa saat menelusuri titik
+  const Full=L.Control.extend({options:{position:'topleft'},onAdd(){const d=L.DomUtil.create('div','leaflet-bar');
+    d.innerHTML='<a href="#" role="button" title="Peta layar penuh (Esc untuk keluar)" aria-label="Peta layar penuh" style="font-size:15px">⛶</a>';
+    L.DomEvent.on(d.firstChild,'click',e=>{L.DomEvent.preventDefault(e);petaPenuh(!document.body.classList.contains('map-full'));});L.DomEvent.disableClickPropagation(d);return d;}});
+  new Full().addTo(map);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('map-full'))petaPenuh(false);});
+  window.addEventListener('resize',()=>{if(document.body.classList.contains('map-full'))petaPenuh(true);});
 }
 let lastBounds=null;
-function fitArea(){if(map&&lastBounds&&lastBounds.isValid())map.fitBounds(lastBounds,{padding:[24,24],maxZoom:11});}
+// layar penuh: <details> tidak meneruskan flex ke isinya, jadi tinggi peta dihitung dari sisa tinggi layar
+function petaPenuh(on){
+  const el=$('#map');document.body.classList.toggle('map-full',on);
+  if(on){bukaPeta();requestAnimationFrame(()=>{el.style.height=Math.max(300,innerHeight-el.getBoundingClientRect().top-14)+'px';map.invalidateSize();});}
+  else{el.style.height='';setTimeout(()=>map.invalidateSize(),30);}
+}
+function fitArea(anim){if(map&&lastBounds&&lastBounds.isValid())map.fitBounds(lastBounds,{padding:[24,24],maxZoom:11,animate:!!anim});}
+// Leaflet mengabaikan setView/fitBounds selama animasi zoom berjalan → tunggu selesai; ukur ulang wadah (peta bisa baru dipindah halaman)
+function petaSiap(fn){if(!map)return;map.invalidateSize({pan:false});if(map._animatingZoom)map.once('zoomend',()=>fn());else fn();}
 // Filter cepat lapisan peta (sinkron dengan kontrol lapisan Leaflet)
-const QUICK=[['pipa','Jalur pipa',['pipa']],['fas','Aset/fasilitas',['fas']],['hs','Hotspot',['hs']],['eq','Gempa',['eq']],['ls','Longsor (model)',['ls']],['gt','Gerakan tanah',['gtPrak','gtZona']],['pd','Peringatan BMKG',['pd']],['pt','Petir (model)',['pt']],['bj','Banjir sungai',['bj']],['gd','Siklon/GDACS',['gd']],['lc','Tutupan lahan',['wc','tlKor']]];
+const QUICK=[['pipa','Jalur pipa',['pipa']],['fas','Aset/fasilitas',['fas']],['hs','Hotspot',['hs']],['mgt','Gerakan tanah terpadu',['mgt']],['gt','Zona PVMBG',['gtPrak','gtZona']],['ls','Longsor LHASA',['ls']],['pd','Peringatan BMKG',['pd']],['pt','Petir stasiun',['pt']],['bj','Banjir sungai',['bj']],['eq','Gempa',['eq']],['gd','Siklon/GDACS',['gd']],['lc','Tutupan lahan',['wc','tlKor']]];
 function renderMapTools(){
   if(!map){$('#mapTools').innerHTML='';return;}
   const on=keys=>keys.some(k=>layers[k]&&map.hasLayer(layers[k]));
@@ -1003,8 +1162,8 @@ function renderMapTools(){
      <input id="findAsset" list="assetList" placeholder="Cari aset/fasilitas…" aria-label="Cari aset atau fasilitas"><datalist id="assetList">${[...new Set(names)].slice(0,2000).map(n=>`<option value="${esc(n)}">`).join('')}</datalist>`;
   $('#mapTools').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const q=b.dataset.q;
-    if(q==='reset')return fitArea();
-    const groups=q==='all'?QUICK.filter(x=>x[0]!=='lc').flatMap(x=>x[2]):QUICK.find(x=>x[0]===q)[2];
+    if(q==='reset')return fitArea(true);
+    const groups=q==='all'?QUICK.filter(x=>!['lc','ls','gt'].includes(x[0])).flatMap(x=>x[2]):QUICK.find(x=>x[0]===q)[2];
     const show=q==='all'?true:!on(groups);
     groups.forEach(k=>{if(!layers[k])return;show?layers[k].addTo(map):map.removeLayer(layers[k]);});
     renderMapTools();renderLcLegend();});
@@ -1064,6 +1223,7 @@ function drawMap(fit){
       .bindPopup(`<b>${esc(w.nama)}</b><br>${esc(w.cuaca)} · ${fmt(w.suhu,1)}°C · RH ${fmt(w.rh)}%<br>Angin ${fmt(w.angin_kmh)} km/jam dari ${esc(w.angin_arah)} · PM2.5 ${fmt(w.pm25)} µg/m³<br><span style="color:var(--muted)">Data model ${esc(w.sumber)} · ${when(w.waktu)}</span>`).addTo(layers.wx);
   });
   safe('lapisan tambahan',drawTambahan);
+  safe('lapisan terpadu & petir',drawW2);
   {const b=pipa.getBounds();layers.fas.eachLayer(l=>b.extend(l.getLatLng()));lastBounds=b;}
   if(fit)fitArea();
   let lg=(isOV()?AREAS:[state.tab]).map(k=>`<span><i class="line" style="background:${css(areaColor[k])}"></i>${k}</span>`).join('');
@@ -1072,15 +1232,15 @@ function drawMap(fit){
   lg+=`<span><i class="dot" style="background:${css('--surface-2')};outline:2px dashed ${css('--ink')};outline-offset:-1px"></i>Berulang di lokasi sama</span>`;
   lg+=`<span><i class="dot" style="border:2px solid ${css('--quake')};width:10px;height:10px"></i>Episentrum gempa (≤ 7 hari)</span><span><i class="dot" style="border:1px dashed ${css('--quake')};width:10px;height:10px;opacity:.6"></i>Gempa lebih lama</span>`;
   if(GT.prakiraan||GT.zkgt)lg+=`<span style="margin-left:6px">Gerakan tanah:</span>`+GT_LV.map(k=>`<span><i style="display:inline-block;width:12px;height:10px;border-radius:2px;background:${css(GT_INFO[k].v)};opacity:.6"></i>${GT_INFO[k].label}</span>`).join('');
-  if(LSR&&(LSR.features||[]).length)lg+=`<span style="margin-left:6px">Indikasi longsor (model) ${LS_PROD[state.ls]}:</span>`+LS_LV.map(k=>`<span><i class="line" style="height:5px;background:${css(LS_INFO[k].v)}"></i>${LS_INFO[k].label}</span>`).join('');
-  lg+=legendTambahan();
+  if(LSR&&(LSR.features||[]).length&&map.hasLayer(layers.ls))lg+=`<span style="margin-left:6px">Indikasi longsor LHASA ${LS_PROD[state.ls]}:</span>`+LS_LV.map(k=>`<span><i class="line" style="height:5px;background:${css(LS_INFO[k].v)}"></i>${LS_INFO[k].label}</span>`).join('');
+  lg+=legendW2()+legendTambahan();
   $('#legend').innerHTML=lg;
   const r=DATA.radius.hotspot;
   $('#mapTitle').textContent=isOV()?'Peta semua wilayah kerja':`Peta wilayah ${state.tab}`;
   $('#mapNote').textContent=`Warna hotspot = status risiko (R = P × K): jarak ke aset hanya titik awal, lalu dikoreksi tutupan lahan, keyakinan satelit, titik berulang dan cuaca. Hotspot > ${r.pantau} km dari aset tidak dinilai. Aktifkan lapisan "Tutupan lahan" (ikon lapisan kanan atas) lalu klik peta untuk mengidentifikasi tutupan lahan.`;
   renderMapTools();renderLcLegend();
 }
-/* ---------- Modul tambahan berbasis lokasi aset: peringatan dini BMKG, potensi petir (model), banjir sungai (model), GDACS ---------- */
+/* ---------- Modul tambahan berbasis lokasi aset: peringatan dini BMKG, banjir sungai (model), GDACS ---------- */
 const BJ_WARNA={tinggi:'#0b3a8f',sedang:'#2a78d6',rendah:'#7fb3e6'};
 const GD_LV={green:{l:'Green',v:'--good'},orange:{l:'Orange',v:'--serious'},red:{l:'Red',v:'--critical'}};
 const gdLv=k=>GD_LV[String(k||'green').toLowerCase()]||GD_LV.green;
@@ -1114,42 +1274,6 @@ function renderPD(){
   body.querySelectorAll('tr[data-k]').forEach(r=>r.onclick=()=>pdFokus(r.dataset.k));
 }
 
-/* potensi petir (prakiraan model) */
-const ptProd=()=>((PT&&PT.produk)||{})[state.pt]||{};
-const ptArea=(k,prod)=>(((PT||{}).produk||{})[prod||state.pt]||{}).per_area?.[k]||null;
-const PT_WARNA=['var(--surface-2)','var(--warning)','var(--serious)','var(--critical)'];
-function jamStrip(s,besar){if(!s)return '';return `<span class="jam-strip${besar?' besar':''}" role="img" aria-label="Potensi petir per jam">${[...s].map((c,h)=>`<i class="${c==='-'?'lewat':''}" style="${c==='-'?'':'background:'+PT_WARNA[+c]}" title="${String(h).padStart(2,'0')}:00 — ${c==='-'?'sudah lewat':['tidak ada indikasi','rendah','sedang','tinggi'][+c]}"></i>`).join('')}</span>`;}
-function jamRawan(s,min=2){if(!s)return '–';const r=[];let a=null;for(let h=0;h<=24;h++){const on=h<24&&s[h]!=='-'&&+s[h]>=min;if(on&&a===null)a=h;if(!on&&a!==null){r.push(`${String(a).padStart(2,'0')}–${String(h).padStart(2,'0')}`);a=null;}}return r.length?r.join(', ')+' WIB':'–';}
-function ptPopup(s){const p=s[state.pt]||{};return `<div class="pop"><b>Potensi petir ${LS_PROD[state.pt]} — sel ±11 km</b><br><span class="tag">Prakiraan model</span> ${lvBadge(p.level)}${popRows([['Jam rawan (≥ sedang)',jamRawan(p.jam)],['CAPE maks.',p.cape_maks!=null?fmt(p.cape_maks)+' J/kg':'–'],['Hujan maks.',p.hujan_maks!=null?fmt(p.hujan_maks,1)+' mm/jam':'–'],['Pipa',s.pipa.map(x=>`${esc(x.aset)} (${fmt(x.km,1)} km)`).join(', ')],['Fasilitas',s.fas.map(x=>esc(x.aset)).join(', ')]])}<div style="margin-top:5px">${jamStrip(p.jam)}</div><div class="warn">Bukan deteksi sambaran — menunjukkan kapan atmosfer mendukung badai petir menurut model.</div></div>`;}
-function renderPT(){
-  const body=$('#ptBody'),k=state.tab;
-  $('#ptTitle').textContent='Potensi petir di jalur pipa & fasilitas (prakiraan model)'+(isOV()?' — perbandingan antarwilayah':` — ${k}`);
-  document.querySelectorAll('#ptTabs button').forEach(b=>{b.classList.toggle('on',b.dataset.k===state.pt);const t=((PT&&PT.produk)||{})[b.dataset.k]?.tanggal;b.textContent=(b.dataset.k==='hari_ini'?'Hari ini':'Besok')+(t?' · '+new Date(t+'T00:00:00+07:00').toLocaleDateString('id-ID',{timeZone:TZ,weekday:'short',day:'numeric',month:'short'}):'');});
-  if(!PT||!PT.produk||!Object.keys(PT.produk).length){$('#ptNote').textContent='Prakiraan kapan atmosfer mendukung badai petir (model cuaca) per sel ±11 km sepanjang jalur pipa — bukan deteksi sambaran.';body.innerHTML=gagalInfo(PT)+butuhData('Update Bahaya Tambahan (petir, banjir sungai, GDACS)','4× sehari');return;}
-  const A=PT.ambang||{},st=freshOf(PT.diambil,FRESH.enamjam,PT.status?.ok===false);
-  $('#ptNote').innerHTML=`<span class="tag">Prakiraan model</span> <b>Bukan deteksi sambaran petir.</b> Menunjukkan kapan atmosfer mendukung badai petir menurut model cuaca Open-Meteo pada grid ±11 km; hanya sel yang dilalui pipa atau memuat fasilitas yang dihitung (${fmt(PT.sel_total)} sel) · ${frBadge(st,'dihitung '+when(PT.diambil))} ${lalu(PT.diambil)}. Tingkat per jam: <b>Tinggi</b> = model memprakirakan badai petir dan CAPE ≥ ${fmt(A.cape_tinggi)} J/kg · <b>Sedang</b> = model memprakirakan badai petir, atau CAPE ≥ ${fmt(A.cape_tinggi)} J/kg dengan hujan ≥ ${fmt(A.hujan_sedang_mm,1)} mm/jam · <b>Rendah</b> = CAPE ≥ ${fmt(A.cape_rendah)} J/kg dengan hujan ≥ ${fmt(A.hujan_rendah_mm,1)} mm/jam. Ambang adalah pendekatan umum meteorologi, bukan prosedur resmi Pertagas. Untuk keputusan kerja di lapangan gunakan pengamatan langsung (aturan 30-30) dan peringatan dini BMKG.`;
-  const P=ptProd().per_area||{},keys=`<div class="segbar"><div class="keys"><span>Per jam (00–23 WIB):</span>${['Tidak ada indikasi','Rendah','Sedang','Tinggi'].map((l,i)=>`<span><i style="display:inline-block;width:11px;height:11px;border-radius:2px;background:${PT_WARNA[i]};border:1px solid var(--border)"></i>${l}</span>`).join('')}<span><i class="jam-lewat"></i>sudah lewat</span></div></div>`;
-  let h=gagalInfo(PT);
-  if(isOV()){
-    h+=keys+`<div class="tbl" style="margin-top:0"><table><thead><tr><th>Wilayah</th><th>Tingkat tertinggi</th><th class="num">Pipa tinggi (km)</th><th class="num">Pipa sedang (km)</th><th class="num">Fasilitas tinggi/sedang</th><th>Potensi per jam</th><th>Jam rawan (≥ sedang)</th><th class="num">CAPE maks. (J/kg)</th></tr></thead><tbody>`+AREAS.map(a=>{const v=P[a];
-      if(!v)return `<tr class="link" data-id="${a}"><td><i class="line" style="background:${css(areaColor[a])};vertical-align:middle;margin-right:6px"></i><b>${a}</b></td><td colspan="7" style="color:var(--muted)">belum dihitung</td></tr>`;
-      return `<tr class="link" data-id="${a}"><td><i class="line" style="background:${css(areaColor[a])};vertical-align:middle;margin-right:6px"></i><b>${a}</b></td><td>${lsBadge(v.terburuk)}</td><td class="num">${fmt(v.pipa_km.tinggi,1)}</td><td class="num">${fmt(v.pipa_km.sedang,1)}</td><td class="num">${(v.n_fasilitas.tinggi||0)} / ${(v.n_fasilitas.sedang||0)}</td><td>${jamStrip(v.jam)}</td><td style="white-space:nowrap">${jamRawan(v.jam)}</td><td class="num">${fmt(v.cape_maks)}</td></tr>`;}).join('')+`</tbody></table></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Klik baris untuk membuka tab wilayah. Lapisan "Petir (model)" di peta menampilkan sel yang berpotensi.</div>`;
-    body.innerHTML=h;body.querySelectorAll('tr.link').forEach(r=>r.onclick=()=>selectTab(r.dataset.id));return;
-  }
-  const v=P[k];
-  if(!v){body.innerHTML=h+'<div class="empty">Tidak ada aset wilayah ini dalam perhitungan.</div>';return;}
-  const fasl=lv=>(v.fasilitas[lv]||[]),nf=lv=>v.n_fasilitas[lv]||0;
-  h+=`<div class="gt-stats">
-      <div><div class="n">${lsBadge(v.terburuk)}</div><div class="k">Tingkat tertinggi ${LS_PROD[state.pt]} · ${fmt(v.sel_total)} sel dipantau</div></div>
-      <div><div class="n" style="color:${css('--critical')}">${fmt(v.pipa_km.tinggi,1)} km</div><div class="k">Pipa di sel <b>Tinggi</b> · ${nf('tinggi')} fasilitas</div></div>
-      <div><div class="n" style="color:${css('--serious')}">${fmt(v.pipa_km.sedang,1)} km</div><div class="k">Pipa di sel <b>Sedang</b> · ${nf('sedang')} fasilitas</div></div>
-      <div><div class="n">${jamRawan(v.jam)}</div><div class="k">Jam rawan (≥ sedang) · CAPE maks. ${fmt(v.cape_maks)} J/kg</div></div></div>
-    <div class="segbar"><div class="lbl"><b>Potensi petir per jam ${LS_PROD[state.pt]} — tingkat tertinggi di seluruh sel ${k}</b><span>00 → 23 WIB</span></div>${jamStrip(v.jam,true)}</div>${keys}`;
-  const daftar=[...fasl('tinggi').map(f=>[f,'tinggi']),...fasl('sedang').map(f=>[f,'sedang'])];
-  h+=daftar.length?`<div style="font-size:12.5px"><b>Fasilitas di sel berpotensi ≥ sedang:</b> ${daftar.map(([f,lv])=>`${esc(f)} ${lsBadge(lv)}`).join(' · ')}${nf('tinggi')+nf('sedang')>daftar.length?' …':''}</div>`:`<div class="empty" style="padding:6px 0">✓ Tidak ada fasilitas di sel berpotensi sedang/tinggi ${LS_PROD[state.pt]}.</div>`;
-  body.innerHTML=h;
-}
-
 /* banjir sungai (model GloFAS) */
 const bjSel=()=>((BJ&&BJ.sel)||[]).filter(s=>isOV()||s.area.includes(state.tab));
 const bjArea=k=>(BJ&&BJ.per_area&&BJ.per_area[k])||null;
@@ -1158,7 +1282,7 @@ function bjPopup(s){return `<div class="pop"><b>Sel sungai ±5 km</b> ${lvBadge(
 function renderBJ(){
   const body=$('#bjBody'),k=state.tab;
   $('#bjTitle').textContent='Indikasi potensi banjir sungai di perlintasan jalur pipa (model GloFAS)'+(isOV()?' — perbandingan antarwilayah':` — ${k}`);
-  if(!BJ||!BJ.statis){$('#bjNote').textContent='Prakiraan debit sungai (model GloFAS) hanya pada sel sungai yang dilalui jalur pipa, dibandingkan riwayat debit sel itu sendiri.';body.innerHTML=gagalInfo(BJ)+butuhData('Update Bahaya Tambahan (petir, banjir sungai, GDACS)','4× sehari');return;}
+  if(!BJ||!BJ.statis){$('#bjNote').textContent='Prakiraan debit sungai (model GloFAS) hanya pada sel sungai yang dilalui jalur pipa, dibandingkan riwayat debit sel itu sendiri.';body.innerHTML=gagalInfo(BJ)+butuhData('Update Bahaya Tambahan (banjir sungai, GDACS)','4× sehari');return;}
   const S=BJ.statis,st=freshOf(BJ.diambil,FRESH.enamjam,BJ.status?.ok===false),hz=BJ.horizon_hari||7,th=BJ.tahun_riwayat||5,pr=BJ.persentil||{};
   $('#bjNote').innerHTML=`<span class="tag">Indikasi model</span> Bukan pengukuran pos duga air dan bukan peringatan resmi. Debit sungai harian model <b>GloFAS v4</b> (Copernicus/ECMWF, grid ±5 km) via Open-Meteo. <b>Hanya sel sungai yang dilalui jalur pipa</b> yang dinilai — ${fmt(S.sel_sungai)} sel sungai (median debit ≥ ${fmt(BJ.sungai_min_median_m3s)} m³/s) dari ${fmt(S.sel_dilalui_pipa)} sel yang dilalui pipa; sel bukan sungai tidak ditampilkan · ${frBadge(st,'dihitung '+when(BJ.diambil))} ${lalu(BJ.diambil)}. Tingkat = puncak debit prakiraan ${hz} hari dibanding riwayat ${th} tahun model di sel yang sama: <b>Tinggi</b> ≥ maksimum ${th} tahun · <b>Sedang</b> ≥ persentil ${fmt((pr.sedang||.995)*100,1)} · <b>Rendah</b> ≥ persentil ${fmt((pr.rendah||.98)*100)}. Sungai kecil dan genangan lokal tidak terwakili; wajib diverifikasi di lapangan.`;
   let h=gagalInfo(BJ);
@@ -1187,22 +1311,22 @@ function renderBJ(){
 }
 
 /* siklon tropis & bencana besar (GDACS) */
-const GD_SING={TC:'TC',FL:'FL',VO:'VO'};
+const GD_SING={TC:'TC',VO:'VO'};
 const gdKejadian=()=>((GD&&GD.kejadian)||[]);
 // kejadian relevan untuk suatu wilayah bila jaraknya dalam radius pantau jenis itu
 const gdDekat=(e,v)=>v.jarak_km<=((GD.radius_tampil_km||{})[e.jenis]??150);
-function gdPopup(e){return `<div class="pop"><b>${esc(e.jenis_nama)}${e.nama?' — '+esc(e.nama):''}</b><br>${gdBadge(e.level)}${popRows([['Keparahan',esc(e.keparahan||'')],['Periode',`${when(e.mulai+'Z')} – ${when(e.sampai+'Z')}`],['Aset terdekat',Object.entries(e.per_area).sort((a,b)=>a[1].jarak_km-b[1].jarak_km).slice(0,3).map(([a,v])=>`${a}: ${v.jarak_km===0?'di dalam zona':fmt(v.jarak_km)+' km'}`).join(' · ')]])}${e.lokasi_perkiraan?'<div class="warn">Lokasi banjir GDACS adalah titik perkiraan, bukan batas genangan.</div>':''}${e.tautan?`<div style="margin-top:5px"><a href="${esc(e.tautan)}" target="_blank" rel="noopener">Laporan GDACS</a></div>`:''}</div>`;}
+function gdPopup(e){return `<div class="pop"><b>${esc(e.jenis_nama)}${e.nama?' — '+esc(e.nama):''}</b><br>${gdBadge(e.level)}${popRows([['Keparahan',esc(e.keparahan||'')],['Periode',`${when(e.mulai+'Z')} – ${when(e.sampai+'Z')}`],['Aset terdekat',Object.entries(e.per_area).sort((a,b)=>a[1].jarak_km-b[1].jarak_km).slice(0,3).map(([a,v])=>`${a}: ${v.jarak_km===0?'di dalam zona':fmt(v.jarak_km)+' km'}`).join(' · ')]])}${e.tautan?`<div style="margin-top:5px"><a href="${esc(e.tautan)}" target="_blank" rel="noopener">Laporan GDACS</a></div>`:''}</div>`;}
 function renderGD(){
   const body=$('#gdBody'),k=state.tab;
-  $('#gdTitle').textContent='Siklon tropis & bencana besar (GDACS)'+(isOV()?' — jarak ke aset':` — jarak ke aset ${k}`);
-  if(!GD||!GD.diambil){$('#gdNote').textContent='Siklon tropis, banjir besar dan erupsi gunung api dari GDACS, diukur jaraknya ke jalur pipa & fasilitas.';body.innerHTML=gagalInfo(GD)+butuhData('Update Bahaya Tambahan (petir, banjir sungai, GDACS)','4× sehari');return;}
+  $('#gdTitle').textContent='Siklon tropis & gunung api (GDACS)'+(isOV()?' — jarak ke aset':` — jarak ke aset ${k}`);
+  if(!GD||!GD.diambil){$('#gdNote').textContent='Siklon tropis dan erupsi gunung api dari GDACS, diukur jaraknya ke jalur pipa & fasilitas.';body.innerHTML=gagalInfo(GD)+butuhData('Update Bahaya Tambahan (banjir sungai, GDACS)','4× sehari');return;}
   const R=GD.radius_tampil_km||{},st=freshOf(GD.diambil,FRESH.enamjam,GD.status?.ok===false);
-  $('#gdNote').innerHTML=`<span class="tag">Peringatan global</span> Peringatan otomatis <a href="https://www.gdacs.org/" target="_blank" rel="noopener">GDACS</a> (PBB & Komisi Eropa) — bukan peringatan resmi BMKG/BNPB. Hanya kejadian aktif dalam radius pantau aset yang ditampilkan: siklon tropis ≤ ${fmt(R.TC)} km, banjir ≤ ${fmt(R.FL)} km, gunung api ≤ ${fmt(R.VO)} km; untuk siklon, zona angin dan kerucut lintasan ditumpangkan ke aset · ${frBadge(st,'diambil '+when(GD.diambil))} ${lalu(GD.diambil)}. Level Green/Orange/Red adalah perkiraan dampak kemanusiaan GDACS. Gempa dan kebakaran tidak diambil dari GDACS karena sudah dipantau dari BMKG dan SiPongi.`;
+  $('#gdNote').innerHTML=`<span class="tag">Peringatan global</span> Peringatan otomatis <a href="https://www.gdacs.org/" target="_blank" rel="noopener">GDACS</a> (PBB & Komisi Eropa) — bukan peringatan resmi BMKG/BNPB. Hanya kejadian aktif dalam radius pantau aset yang ditampilkan: siklon tropis ≤ ${fmt(R.TC)} km, gunung api ≤ ${fmt(R.VO)} km; untuk siklon, zona angin dan kerucut lintasan ditumpangkan ke aset · ${frBadge(st,'diambil '+when(GD.diambil))} ${lalu(GD.diambil)}. Level Green/Orange/Red adalah perkiraan dampak kemanusiaan GDACS. Gempa, kebakaran dan banjir tidak diambil dari GDACS karena sudah dipantau dari BMKG, SiPongi dan model banjir sungai GloFAS.`;
   const ev=gdKejadian();
   let h=gagalInfo(GD);
-  if(!ev.length){body.innerHTML=h+`<div class="empty">✓ Tidak ada siklon tropis, banjir besar atau erupsi gunung api (GDACS) yang aktif dalam radius pantau aset. ${fmt(GD.global)} kejadian global diperiksa.</div>`;return;}
+  if(!ev.length){body.innerHTML=h+`<div class="empty">✓ Tidak ada siklon tropis atau erupsi gunung api (GDACS) yang aktif dalam radius pantau aset. ${fmt(GD.global)} kejadian global diperiksa.</div>`;return;}
   const baris=ev.map(e=>{const pa=isOV()?Object.entries(e.per_area).sort((a,b)=>(b[1].P-a[1].P)||(a[1].jarak_km-b[1].jarak_km))[0]:[k,e.per_area[k]];return {e,a:pa[0],v:pa[1]};}).filter(x=>x.v&&gdDekat(x.e,x.v)).sort((x,y)=>(y.v.P-x.v.P)||(x.v.jarak_km-y.v.jarak_km));
-  if(!baris.length){body.innerHTML=h+`<div class="empty">✓ Tidak ada siklon tropis, banjir besar atau erupsi gunung api (GDACS) yang aktif dalam radius pantau aset ${k}.</div>`;return;}
+  if(!baris.length){body.innerHTML=h+`<div class="empty">✓ Tidak ada siklon tropis atau erupsi gunung api (GDACS) yang aktif dalam radius pantau aset ${k}.</div>`;return;}
   h+=`<div class="tbl" style="margin-top:0;max-height:340px"><table><thead><tr><th>Jenis</th><th>Kejadian</th><th>Level</th><th class="num">Jarak ke aset${isOV()?' terdekat':' '+k} (km)</th><th>Posisi terhadap aset</th><th>Periode</th><th></th></tr></thead><tbody>`+baris.map(({e,a,v},i)=>
     `<tr class="link" data-i="${i}"><td><b>${esc(e.jenis_nama)}</b></td><td>${esc(e.nama||e.deskripsi)}<div style="font-size:12px;color:var(--muted)">${esc(e.keparahan||'')}</div></td><td>${gdBadge(e.level)}</td><td class="num">${v.jarak_km===0?'<b>0</b>':fmt(v.jarak_km)}${isOV()?` <span style="color:var(--muted)">(${a})</span>`:''}</td><td style="font-size:12.5px">${esc(v.ket)}${e.lokasi_perkiraan?' <span style="color:var(--muted)">(titik perkiraan)</span>':''}</td><td style="white-space:nowrap;font-size:12.5px">${when(e.mulai+'Z').replace(/, \d\d:\d\d WIB/,'')} – ${when(e.sampai+'Z').replace(/, \d\d:\d\d WIB/,'')}</td><td>${e.tautan?`<a href="${esc(e.tautan)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Laporan</a>`:''}</td></tr>`).join('')+
     `</tbody></table></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Klik baris untuk menuju lokasi di peta.</div>`;
@@ -1219,10 +1343,6 @@ function drawTambahan(){
   if(BJ){const u=(BJ.ukuran_sel||.05)/2;
     bjSel().filter(s=>s.level||!isOV()).sort((a,b)=>(a.level?1:0)-(b.level?1:0)).forEach(s=>{const c=BJ_WARNA[s.level];
       L.rectangle([[s.lat-u,s.lon-u],[s.lat+u,s.lon+u]],c?{pane:'gt',color:c,weight:1.5,fillColor:c,fillOpacity:.45}:{pane:'gt',color:BJ_WARNA.rendah,weight:1,opacity:.5,fill:true,fillOpacity:0}).bindPopup(bjPopup(s)).addTo(layers.bj);});}
-  // potensi petir — sel 0,1°
-  if(PT){const u=(PT.ukuran_sel||.1)/2,op={rendah:.14,sedang:.3,tinggi:.5};
-    (PT.sel||[]).filter(s=>inTab(s.area)&&s[state.pt]?.level).forEach(s=>{const lv=s[state.pt].level;
-      L.rectangle([[s.lat-u,s.lon-u],[s.lat+u,s.lon+u]],{pane:'gt',stroke:lv!=='rendah',color:'#b88a00',weight:1,fillColor:'#f5c400',fillOpacity:op[lv]}).bindPopup(ptPopup(s)).addTo(layers.pt);});}
   // GDACS — titik kejadian + lintasan/zona siklon
   if(GD){const ids=new Set(gdKejadian().filter(e=>e.jenis==='TC').map(e=>String(e.id).slice(2)));
     const kc={poly_red:css('--critical'),poly_orange:css('--serious'),poly_green:css('--good'),poly_cones:css('--muted')};
@@ -1236,12 +1356,11 @@ function legendTambahan(){
   let lg='';
   if(PDG&&pdAktif().length)lg+=`<span style="margin-left:6px"><i style="display:inline-block;width:14px;height:10px;border:1.5px dashed ${css('--quake')};background:color-mix(in srgb,${css('--quake')} 18%,transparent)"></i>Wilayah peringatan dini BMKG</span>`;
   if(BJ&&(BJ.sel||[]).length)lg+=`<span style="margin-left:6px">Banjir sungai (model):</span>`+LS_LV.map(k=>`<span><i style="display:inline-block;width:11px;height:11px;border-radius:2px;background:${BJ_WARNA[k]};opacity:.75"></i>${LS_INFO[k].label}</span>`).join('');
-  if(PT&&(PT.sel||[]).length)lg+=`<span style="margin-left:6px">Petir (model) ${LS_PROD[state.pt]}:</span><span><i style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#f5c400;opacity:.3"></i>rendah</span><span><i style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#f5c400;opacity:.55"></i>sedang</span><span><i style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#f5c400"></i>tinggi</span>`;
-  if(GD&&gdKejadian().length)lg+=`<span style="margin-left:6px"><i class="gd-pin" style="display:inline-grid;width:16px;height:16px;font-size:8px;background:${css('--serious')}">TC</i>Kejadian GDACS (TC siklon · FL banjir · VO gunung api)</span>`;
+  if(GD&&gdKejadian().length)lg+=`<span style="margin-left:6px"><i class="gd-pin" style="display:inline-grid;width:16px;height:16px;font-size:8px;background:${css('--serious')}">TC</i>Kejadian GDACS (TC siklon · VO gunung api)</span>`;
   return lg;
 }
 /* ---------- Status area (klasifikasi multi-bahaya) ---------- */
-const JENIS_LBL={hotspot:'Hotspot',gempa:'Gempa/tsunami',gerakan_tanah:'Gerakan tanah/longsor',cuaca:'Cuaca/udara',cuaca_ekstrem:'Peringatan dini BMKG',banjir:'Banjir sungai (model)',petir:'Petir (model)',gdacs:'Siklon/bencana (GDACS)'};
+const JENIS_LBL={hotspot:'Hotspot',gempa:'Gempa/tsunami',gerakan_tanah:'Gerakan tanah/longsor',cuaca:'Cuaca/udara',cuaca_ekstrem:'Peringatan dini BMKG',banjir:'Banjir sungai (model)',petir:'Petir di stasiun (model)',gdacs:'Siklon/gunung api (GDACS)'};
 function renderRisk(){
   const el=$('#riskTable');
   if(!KLAS){$('#riskNote').textContent='Klasifikasi tidak tersedia (klasifikasi.js gagal dimuat). Status memakai kategori jarak hotspot.';el.innerHTML='';return;}
@@ -1264,9 +1383,9 @@ function renderRisk(){
     $('#riskNote').innerHTML=note;
     const t=A.temuan.filter(x=>x.R>=1).slice(0,15);
     el.innerHTML='<thead><tr><th>Jenis bahaya</th><th>Status</th><th class="num">P × K = R</th><th>Keterangan</th></tr></thead><tbody>'+(t.length?t.map((x,i)=>
-      `<tr data-i="${i}"${x.ref?' style="cursor:pointer"':''}><td>${JENIS_LBL[x.jenis]||x.jenis}</td><td>${badge(x.status==='normal'?null:x.status)}</td><td class="num">${x.P} × ${x.K} = <b>${x.R}</b></td><td>${esc(x.teks)}</td></tr>`).join('')
+      `<tr data-i="${i}"${x.ref?' style="cursor:pointer"':''}><td>${IKON[x.klaster]?IKON[x.klaster].replace('<svg','<svg style="width:15px;height:15px;vertical-align:-3px;margin-right:5px"'):''}${JENIS_LBL[x.jenis]||x.jenis}</td><td>${badge(x.status==='normal'?null:x.status)}</td><td class="num">${x.P} × ${x.K} = <b>${x.R}</b></td><td>${esc(x.teks)}</td></tr>`).join('')
       :'<tr><td colspan="4" class="empty">✓ Tidak ada temuan bahaya di wilayah ini.</td></tr>')+'</tbody>';
-    el.querySelectorAll('tr[data-i]').forEach(r=>{const x=t[+r.dataset.i];if(x&&x.ref)r.onclick=()=>focusMap(x.ref.lat,x.ref.lon,13,hsPopup(x.ref));});
+    el.querySelectorAll('tr[data-i]').forEach(r=>{const x=t[+r.dataset.i];if(x&&x.ref)r.onclick=()=>focusMap(x.ref.lat,x.ref.lon,13,hsPopup(x.ref));else if(x&&x.fokus){r.style.cursor='pointer';r.onclick=()=>fokusTemuan({...x,area:k});}});
   }
 }
 /* ---------- Tutupan lahan di peta ---------- */
@@ -1331,27 +1450,13 @@ function eqPopup(g){
 
 /* ---------- Daftar samping ---------- */
 // peta sedang ditutup (collapse)? buka dulu sebelum menuju lokasi
-function bukaPeta(){const d=$('#mapCard');if(d&&!d.open){d.open=true;mapPerluFit=false;if(map)map.invalidateSize();}}
+function bukaPeta(){if(!$('#slot-'+state.hal))selectHal('ikhtisar',true);const d=$('#mapCard');if(d&&!d.open){d.open=true;mapPerluFit=false;if(map)map.invalidateSize();}}
 function focusMap(lat,lon,z,html){
   if(!map)return;
   bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
-  map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);
+  petaSiap(()=>{map.setView([lat,lon],z);if(html)L.popup().setLatLng([lat,lon]).setContent(html).openOn(map);});
 }
 function renderLists(){
-  const hs=hotspots().filter(h=>h.status!=='luar').sort((a,b)=>(hsR(b)??0)-(hsR(a)??0)||a.jarak_km-b.jarak_km),rp=DATA.radius.hotspot.pantau;
-  const nrep=hs.filter(h=>h.persisten).length;
-  const nnv=hs.filter(h=>h.risiko?.nonVegetasi).length;
-  $('#hsNote').textContent=(hs.length?`${hs.length} hotspot dalam radius ${rp} km${isOV()?'':' dari aset '+state.tab}, urut skor risiko${nnv?` · ${nnv} di lahan non-vegetasi`:''}${nrep?` · ${nrep} berulang di lokasi sama`:''} · `:'')+
-    `${DATA.hotspot?.periode_jam||24} jam s.d. ${when(DATA.hotspot?.diperbarui)}`;
-  $('#hsList').innerHTML=hs.length?hs.slice(0,40).map((h,i)=>`<div class="item" data-i="${i}">
-      <div style="min-width:64px">${badge(hsSt(h))}${hsR(h)!=null?`<div class="m" style="margin-top:2px">R ${hsR(h)}</div>`:''}</div>
-      <div><div class="t">${fmt(h.jarak_km,2)} km · ${esc(h.aset)}</div>
-      <div class="m">${isOV()?esc(h.area)+' · ':''}${esc([h.desa,h.kab].filter(x=>x&&x!=='-').join(', ')||h.prov)} · ${esc(h.conf)} · ${esc(hsTime(h))}</div>
-      ${h.tutupan?`<div class="m">${lahanTxt(h.tutupan)}</div>`:''}
-      ${h.persisten||h.risiko?.nonVegetasi?`<div style="margin-top:3px">${nonVegBadge(h)} ${berulangBadge(h)}</div>`:''}</div></div>`).join('')
-    :`<div class="empty">✓ Tidak ada hotspot dalam radius ${rp} km dari aset${isOV()?'':' '+state.tab} pada periode ini.</div>`;
-  document.querySelectorAll('#hsList .item').forEach(el=>el.onclick=()=>{const h=hs[+el.dataset.i];focusMap(h.lat,h.lon,13,hsPopup(h));});
-
   const eq=quakes(state.eqTab).map(g=>({g,v:eqView(g)}));
   if(!isOV())eq.sort((a,b)=>a.v.jarak_km-b.v.jarak_km);
   const g0=DATA.gempa||{};
@@ -1399,19 +1504,26 @@ function renderWeather(){
   }
 }
 
-/* ---------- Tabel hotspot ---------- */
+/* ---------- Tabel hotspot (satu tabel; pilihan radius ≤ 5 km dinilai risiko / ≤ 25 km semua tersimpan) ---------- */
 function renderHsTable(){
-  const hs=hotspots(),keep=25;
-  $('#hsTableTitle').textContent=`Daftar hotspot dalam radius ${keep} km dari aset${isOV()?'':' '+state.tab}`;
+  const rp=DATA.radius.hotspot.pantau,keep=25,nilai=state.hsRad!=='semua';
+  document.querySelectorAll('#hsTabs button').forEach(b=>{b.classList.toggle('on',b.dataset.k===(nilai?'nilai':'semua'));
+    b.textContent=b.dataset.k==='nilai'?`≤ ${rp} km · dinilai risiko`:`≤ ${keep} km · semua tersimpan`;});
+  const all=hotspots(),dekat=all.filter(h=>h.status!=='luar');
+  const hs=nilai?dekat.slice().sort((a,b)=>(hsR(b)??0)-(hsR(a)??0)||a.jarak_km-b.jarak_km):all.slice().sort((a,b)=>a.jarak_km-b.jarak_km);
+  const nrep=dekat.filter(h=>h.persisten).length,nnv=dekat.filter(h=>h.risiko?.nonVegetasi).length;
+  $('#hsTitle').textContent=`Hotspot dekat aset${isOV()?'':' '+state.tab}`;
+  $('#hsNote').textContent=`${fmt(dekat.length)} hotspot ≤ ${rp} km (dinilai risiko${nnv?` · ${nnv} di lahan non-vegetasi`:''}${nrep?` · ${nrep} berulang di lokasi sama`:''}) · ${fmt(all.length)} hotspot ≤ ${keep} km · `+
+    `${nilai?'urut skor risiko':'urut jarak'} · ${DATA.hotspot?.periode_jam||24} jam s.d. ${when(DATA.hotspot?.diperbarui)}. Klik baris untuk menuju lokasi di peta.`;
   $('#hsTable').innerHTML=`<thead><tr><th>Status</th><th class="num">R</th><th class="num">Jarak (km)</th>${isOV()?'<th>Wilayah</th>':''}<th>Tutupan lahan</th><th>Aset terdekat</th><th>Fasilitas terdekat</th><th>Lokasi</th><th>Satelit</th><th>Kepercayaan</th><th>Akuisisi (WIB)</th><th>Berulang</th><th>Koordinat</th></tr></thead><tbody>`+
     (hs.length?hs.map((h,i)=>`<tr data-i="${i}" style="cursor:pointer"><td>${badge(hsSt(h))}</td><td class="num">${hsR(h)??'–'}</td><td class="num">${fmt(h.jarak_km,2)}</td>${isOV()?`<td>${esc(h.area)}</td>`:''}<td>${h.tutupan?lahanTxt(h.tutupan):'–'}</td><td>${esc(h.aset)}</td><td>${h.fasilitas?`${esc(h.fasilitas)} (${fmt(h.jarak_fasilitas_km,1)} km)`:'–'}</td><td>${esc([h.desa,h.kec,h.kab,h.prov].filter(x=>x&&x!=='-').join(', '))}</td><td>${esc(h.sumber)}</td><td>${esc(h.conf)}</td><td style="white-space:nowrap">${esc(hsTime(h))}</td><td>${h.persisten?`↻ ${h.berulang_hari} hari`:(h.berulang_hari>1?`${h.berulang_hari} hari`:'–')}</td><td>${+h.lat}, ${+h.lon}</td></tr>`).join('')
-    :`<tr><td colspan="13" class="empty">Tidak ada hotspot dalam radius ${keep} km dari aset.</td></tr>`)+'</tbody>';
+    :`<tr><td colspan="13" class="empty">✓ Tidak ada hotspot dalam radius ${nilai?rp:keep} km dari aset${isOV()?'':' '+state.tab} pada periode ini.</td></tr>`)+'</tbody>';
   document.querySelectorAll('#hsTable tbody tr[data-i]').forEach(el=>el.onclick=()=>{const h=hs[+el.dataset.i];focusMap(h.lat,h.lon,13,hsPopup(h));});
 }
 
 /* ---------- Grafik ---------- */
 function renderCharts(){
-  if(typeof Chart==='undefined'){['#trend','#prov'].forEach(id=>{const c=$(id);if(c)c.parentElement.innerHTML='<div class="err">Library grafik (Chart.js) gagal dimuat dari CDN — grafik tidak dapat ditampilkan.</div>';});return;}
+  if(typeof Chart==='undefined'){['#trend'].forEach(id=>{const c=$(id);if(c)c.parentElement.innerHTML='<div class="err">Library grafik (Chart.js) gagal dimuat dari CDN — grafik tidak dapat ditampilkan.</div>';});return;}
   Chart.defaults.font.family='system-ui,-apple-system,"Segoe UI",sans-serif';
   Chart.defaults.font.size=12;Chart.defaults.color=css('--ink-2');Chart.defaults.borderColor=css('--grid');
   Object.values(charts).forEach(c=>c.destroy());
@@ -1439,14 +1551,6 @@ function renderCharts(){
   }
   if(!dates.length)$('#trendNote').textContent+=' — riwayat mulai terkumpul setelah update pertama';
   charts.trend=new Chart($('#trend'),cfg);
-
-  const src=isOV()?(DATA.hotspot?.provinsi_pantauan||{}):((DATA.hotspot?.provinsi_area||{})[state.tab]||{});
-  const ent=Object.entries(src).sort((a,b)=>b[1]-a[1]);
-  $('#provTitle').textContent=isOV()?`Hotspot di provinsi wilayah kerja (${DATA.hotspot?.periode_jam||24} jam)`:`Hotspot di provinsi wilayah ${state.tab} (${DATA.hotspot?.periode_jam||24} jam)`;
-  $('#provNote').textContent=isOV()?`Total nasional ${fmt(DATA.hotspot?.total_nasional)} titik; provinsi di luar wilayah kerja: ${fmt(DATA.hotspot?.provinsi_lain)} titik`:'Semua hotspot di provinsi tempat wilayah ini beroperasi, tanpa batas radius';
-  charts.prov=new Chart($('#prov'),{type:'bar',data:{labels:ent.map(e=>e[0]),datasets:[{label:'Hotspot',data:ent.map(e=>e[1]),backgroundColor:css(isOV()?'--s1':areaColor[state.tab]),borderRadius:4,borderSkipped:'start',barPercentage:.7,categoryPercentage:.85,maxBarThickness:36}]},
-    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x} titik`}}},
-      scales:{x:{beginAtZero:true,ticks:{precision:0},grid:{color:css('--grid')}},y:{grid:{display:false}}}}});
 }
 
 /* ---------- Gerakan tanah (PVMBG) ---------- */
@@ -1486,7 +1590,7 @@ function renderGT(){
   const prog=['pvmbg_prakiraan','pvmbg_zkgt'].map(k=>DATA.status_sumber?.[k]).filter(v=>v&&v.sebagian);
   const setup=prog.length?`<div class="info"><b>Data PVMBG sedang diunduh bertahap</b> karena server lambat: ${['pvmbg_prakiraan','pvmbg_zkgt'].filter(k=>DATA.status_sumber?.[k]?.sebagian).map(k=>`${k==='pvmbg_prakiraan'?'Prakiraan':'Zona kerentanan'} ${esc(DATA.status_sumber[k].progres)} bagian`).join(' · ')}. Progres tersimpan dan dilanjutkan otomatis setiap pukul 04:30 WIB (atau jalankan workflow <i>Update Gerakan Tanah (PVMBG)</i> secara manual).</div>`:`<div class="info"><b>Data zona & prakiraan belum masuk.</b> Portal MBG dan layanan GIS ESDM One Map belum bisa diakses otomatis. Isi secret <code>ONEMAP_USERNAME</code>/<code>ONEMAP_PASSWORD</code>, atau unggah peta ke folder <code>gerakan_tanah_raw/</code> (lihat README bagian B7). Status: ${esc((DATA.status_sumber?.pvmbg_prakiraan||{}).pesan||'-')}</div>`;
   if(isOV()){
-    $('#gtTitle').textContent='Gerakan tanah & pergeseran tanah (PVMBG) — perbandingan antarwilayah';
+    $('#gtTitle').textContent='Zona & prakiraan gerakan tanah bulanan (PVMBG) — perbandingan antarwilayah';
     const rows=AREAS.map(k=>{
       const p=(P.per_area||{})[k]||{}, z=(Zk.per_area||{})[k]||{};
       const fasHi=(p.fasilitas||[]).filter(f=>['tinggi','bandang','menengah'].includes(f.level)).length;
@@ -1500,7 +1604,7 @@ function renderGT(){
     return;
   }
   const k=state.tab, p=(P.per_area||{})[k], z=(Zk.per_area||{})[k];
-  $('#gtTitle').textContent=`Gerakan tanah & pergeseran tanah di wilayah ${k} (PVMBG)`;
+  $('#gtTitle').textContent=`Zona & prakiraan gerakan tanah bulanan di wilayah ${k} (PVMBG)`;
   // gabungkan tingkat fasilitas dari prakiraan & zona
   const fmap={};
   (p?.fasilitas||[]).forEach(f=>{fmap[f.aset]={...fmap[f.aset],aset:f.aset,prak:f.level,lat:f.lat,lon:f.lon}});
@@ -1576,7 +1680,7 @@ function renderLS(){
   const legend=`<div class="note" style="padding:0 0 8px">Tingkat indikasi: <b>▲ Tinggi</b> = hujan melampaui ambang NASA & lereng kerentanan sangat tinggi (kelas 5) · <b>◆ Sedang</b> = melampaui ambang & kerentanan sedang–tinggi (kelas 3–4) · <b>● Rendah</b> = hujan ≥ ${fmt((LS.rasio_waspada||.75)*100)}% ambang & kerentanan ≥ kelas 3 (tambahan peringatan dini Pertagas, bukan bagian LHASA). "Tidak ada indikasi" berarti model tidak memicu — bukan jaminan lereng aman.</div>`;
   if(!P.per_area){$('#lsBody').innerHTML=warn||'<div class="empty">Belum ada data untuk produk ini.</div>';return;}
   if(isOV()){
-    $('#lsTitle').textContent='Indikasi potensi bahaya longsor harian terhadap jalur pipa (model LHASA) — perbandingan antarwilayah';
+    $('#lsTitle').textContent='Indikasi longsor harian di jalur pipa (model LHASA) — perbandingan antarwilayah';
     const rows=AREAS.map(k=>{
       const a=P.per_area[k];if(!a)return '';
       const b=lsArea(k,state.ls==='hari_ini'?'besok':'hari_ini'), ker=a.kerentanan_km||{};
@@ -1589,7 +1693,7 @@ function renderLS(){
     return;
   }
   const k=state.tab, a=P.per_area[k];
-  $('#lsTitle').textContent=`Indikasi potensi bahaya longsor harian di jalur pipa ${k} (model LHASA)`;
+  $('#lsTitle').textContent=`Indikasi longsor harian di jalur pipa ${k} (model LHASA)`;
   if(!a){$('#lsBody').innerHTML=warn+'<div class="empty">Tidak ada aset wilayah ini dalam perhitungan.</div>';return;}
   const ruas=a.ruas||[], fas=a.fasilitas||[], ker=a.kerentanan_km||{};
   $('#lsBody').innerHTML=warn+`
@@ -1624,8 +1728,485 @@ function renderSources(){
 function renderFoot(){
   $('#foot').innerHTML=`Sumber data: <a href="https://sipongi.gakkum.kehutanan.go.id/sebaran-titik-panas" target="_blank" rel="noopener">SiPongi+ Kemenhut</a> (satelit NASA MODIS/VIIRS) ·
    <a href="https://inatews.bmkg.go.id/" target="_blank" rel="noopener">BMKG InaTEWS</a> (data.bmkg.go.id) ·
-   Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (<a href="https://vsi.esdm.go.id/portalmbg/" target="_blank" rel="noopener">Portal MBG</a>) · Indikasi longsor: model internal berdasarkan algoritma <a href="https://github.com/nasa/LHASA" target="_blank" rel="noopener">NASA LHASA 1.1</a> (ambang ARI95 NASA, hujan model Open-Meteo, kerentanan lereng NASA/Copernicus DEM) · Cuaca: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (model) · Kualitas udara: CAMS via Open-Meteo (model) · Peringatan dini cuaca: <a href="https://www.bmkg.go.id/cuaca/peringatan-dini-cuaca" target="_blank" rel="noopener">BMKG</a> · Banjir sungai: <a href="https://www.globalfloods.eu/" target="_blank" rel="noopener">GloFAS</a> via Open-Meteo (model) · Potensi petir: Open-Meteo (model) · Siklon & bencana besar: <a href="https://www.gdacs.org/" target="_blank" rel="noopener">GDACS</a> · Aset: KMZ wilayah kerja Pertagas.<br>
+   Gerakan tanah: <a href="https://geologi.esdm.go.id/pvmbg" target="_blank" rel="noopener">PVMBG – Badan Geologi</a> (<a href="https://vsi.esdm.go.id/portalmbg/" target="_blank" rel="noopener">Portal MBG</a>) · Indikasi longsor: model internal berdasarkan algoritma <a href="https://github.com/nasa/LHASA" target="_blank" rel="noopener">NASA LHASA 1.1</a> (ambang ARI95 NASA, hujan model Open-Meteo, kerentanan lereng NASA/Copernicus DEM) · Cuaca: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (model) · Kualitas udara: CAMS via Open-Meteo (model) · Peringatan dini cuaca: <a href="https://www.bmkg.go.id/cuaca/peringatan-dini-cuaca" target="_blank" rel="noopener">BMKG</a> · Banjir sungai: <a href="https://www.globalfloods.eu/" target="_blank" rel="noopener">GloFAS</a> via Open-Meteo (model) · Siklon & gunung api: <a href="https://www.gdacs.org/" target="_blank" rel="noopener">GDACS</a> · Aset: KMZ wilayah kerja Pertagas.<br>
    PERTAGAS WASPADA — dashboard by Fungsi HSSE PT Pertamina Gas. Semua waktu ditampilkan dalam WIB (UTC+7). Jarak = jarak geodesik (Haversine) ke jalur pipa/fasilitas terdekat. Hotspot adalah deteksi titik panas satelit, bukan konfirmasi kebakaran. Untuk peringatan dini tsunami resmi, selalu rujuk BMKG.`;
+}
+
+/* ================= WASPADA 2.0 — Ikhtisar, halaman per jenis bahaya, peta menuju titik ================= */
+const HAL=[['ikhtisar','Ikhtisar'],['api','Api & Udara'],['air','Hujan, Petir & Banjir'],['tanah','Tanah & Longsor'],['gempa','Gempa & Tsunami'],['data','Sumber & metode']];
+const HAL_IDS=HAL.map(x=>x[0]),HAL_NAMA=Object.fromEntries(HAL);
+const KL_IDS=['api','air','tanah','gempa'];
+const SVG=(d,extra='')=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extra}>${d}</svg>`;
+const IKON={
+  ikhtisar:SVG('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  api:SVG('<path d="M12 2.5c.6 3.2 4.9 5.6 4.9 10.4a4.9 4.9 0 0 1-9.8 0c0-2.4 1.3-4 2.4-5 .3 1.9 1.3 3 2.4 3.1-.6-2.9-.4-5.6.1-8.5z"/>'),
+  air:SVG('<path d="M12 2.8s4.6 5 4.6 8.6a4.6 4.6 0 0 1-9.2 0C7.4 7.8 12 2.8 12 2.8z"/><path d="M2.5 19.5c1.6 0 1.6-1.2 3.2-1.2s1.6 1.2 3.2 1.2 1.6-1.2 3.1-1.2 1.6 1.2 3.2 1.2 1.6-1.2 3.2-1.2 1.6 1.2 3.1 1.2"/>'),
+  tanah:SVG('<path d="M2.5 20.5h19L14 6.5l-3.2 5.2-2.3-2.4z"/><path d="M14 6.5l1.6 3.8M16.5 15.5l1.5 2M12.5 16l1 1.8"/>'),
+  gempa:SVG('<path d="M2 12h3.5l2-5.5 3 11 3-8.5 2 3H22"/>'),
+  data:SVG('<path d="M4 6h16M4 12h16M4 18h10"/>'),
+  peta:SVG('<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>'),
+};
+const KLAS_NAMA={api:'Api & Udara',air:'Hujan, Petir & Banjir',tanah:'Tanah & Longsor',gempa:'Gempa & Tsunami'};
+const ST_URUT={normal:0,pantau:1,waspada:2,kritis:3};
+const stCls=s=>'st-'+(s||'normal');
+const MGT_LV=['sangat_tinggi','tinggi','sedang','rendah','zona'];
+const MGT_INFO={sangat_tinggi:{label:'Sangat tinggi',icon:'▲▲',v:'--critical'},tinggi:{label:'Tinggi',icon:'▲',v:'--critical'},sedang:{label:'Sedang',icon:'◆',v:'--serious'},rendah:{label:'Rendah',icon:'●',v:'--warning'},zona:{label:'Zona PVMBG',icon:'◌',v:'--axis'}};
+const mgtBadge=lv=>lv?`<span class="badge b-${lv}" title="${lv==='zona'?'Di zona prakiraan tinggi/banjir bandang PVMBG bulan ini, tetapi hujan belum memicu':''}">${MGT_INFO[lv].icon} ${MGT_INFO[lv].label}</span>`:'<span class="badge b-luar">Tidak ada indikasi</span>';
+const kelasLereng=k=>({1:'< 5°',2:'5–10°',3:'10–15°',4:'15–25°',5:'≥ 25°'})[k]||'–';
+const LAHAN_NAMA={10:'Tutupan pohon',20:'Semak',30:'Rumput',40:'Pertanian',50:'Terbangun',60:'Lahan terbuka',80:'Badan air',90:'Lahan basah',95:'Mangrove',100:'Lumut'};
+
+/* ---------- rute: #AREA/halaman@lat,lon,zoom — bisa dibagikan (mis. lewat WhatsApp) ---------- */
+function parseHash(){
+  const raw=decodeURIComponent(location.hash.slice(1));const [rute,pos]=raw.split('@');
+  let area=OV,hal='ikhtisar',fokus=null;
+  for(const t of (rute||'').split('/')){if(AREAS.includes(t.toUpperCase()))area=t.toUpperCase();else if(HAL_IDS.includes(t.toLowerCase()))hal=t.toLowerCase();}
+  if(pos){const [la,lo,z]=pos.split(',').map(Number);if(Number.isFinite(la)&&Number.isFinite(lo)&&Math.abs(la)<=90&&Math.abs(lo)<=180)fokus={lat:la,lon:lo,zoom:Number.isFinite(z)?z:14};}
+  return {area,hal,fokus};
+}
+function hashDari(area,hal,pos){
+  const p=[];if(area&&area!==OV)p.push(area);if(hal&&hal!=='ikhtisar')p.push(hal);
+  let h=p.join('/');if(pos&&Number.isFinite(+pos.lat))h+=`@${(+pos.lat).toFixed(5)},${(+pos.lon).toFixed(5)},${pos.zoom||14}`;return h;
+}
+function syncHash(){const h=hashDari(state.tab,state.hal);history.replaceState(null,'',h?'#'+h:location.pathname);}
+const lokasiUrl=f=>location.origin+location.pathname+'#'+hashDari(state.tab,state.hal,f);
+function toast(t){const d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2200);}
+async function salin(teks,ok){try{await navigator.clipboard.writeText(teks);toast(ok||'Disalin');}catch(e){window.prompt('Salin teks berikut:',teks);}}
+document.addEventListener('click',e=>{const a=e.target.closest('[data-salin]');if(!a)return;e.preventDefault();salin(a.dataset.salin,'Tautan lokasi disalin — bisa ditempel di WhatsApp');});
+
+/* ---------- halaman ---------- */
+function renderPages(){
+  const sc=isOV()?null:state.tab;
+  $('#pages').innerHTML=HAL.map(([id,nm])=>{
+    let dot='';
+    if(KLAS&&KL_IDS.includes(id)){const s=klasterSt(id,sc).status;if(s!=='normal')dot=`<span class="st" style="background:${css(STATUS[s].v)}" title="${STATUS[s].label}"></span>`;}
+    return `<button type="button" class="pg" role="tab" data-hal="${id}" aria-selected="${state.hal===id}">${IKON[id]||''}${nm}${dot}</button>`;}).join('');
+  $('#pages').querySelectorAll('.pg').forEach(b=>b.onclick=()=>selectHal(b.dataset.hal));
+}
+function selectHal(h,diam){
+  if(!HAL_IDS.includes(h))h='ikhtisar';
+  state.hal=h;syncHash();renderHal();safe('judul',renderTitle,'#viewTitle');safe('halaman',renderPages);
+  if(!diam)window.scrollTo({top:Math.min(scrollY,$('.tabbar').offsetTop),behavior:'smooth'});
+}
+function renderHal(){
+  document.querySelectorAll('.hal').forEach(s=>s.hidden=s.dataset.hal!==state.hal);
+  pindahPeta();terapkanPreset();
+  if(state.hal==='api')safe('grafik',renderCharts);
+  safe('catatan',clampNotes);syncFoldBtn();
+}
+function pindahPeta(){
+  const slot=$('#slot-'+state.hal),mc=$('#mapCard');if(!slot||!mc)return;
+  if(mc.parentElement!==slot){slot.appendChild(mc);if(map)setTimeout(()=>{map.invalidateSize();},30);}
+}
+// lapisan peta mengikuti halaman (tetap bisa diubah lewat tombol lapisan)
+const PRESET={ikhtisar:['pipa','fas','hs','eq','mgt','pd','bj','gd','pt'],api:['pipa','fas','hs','wx'],air:['pipa','fas','pd','bj','gd','pt','wx'],tanah:['pipa','fas','mgt','gtPrak'],gempa:['pipa','fas','eq','gd']};
+function terapkanPreset(){
+  if(!map)return;const on=PRESET[state.hal];if(!on)return;
+  for(const [k,l] of Object.entries(layers)){if(['wc','tlKor','klhk'].includes(k)||!l)continue;
+    const want=on.includes(k);if(want&&!map.hasLayer(l))l.addTo(map);else if(!want&&map.hasLayer(l))map.removeLayer(l);}
+  renderMapTools();renderLcLegend();
+}
+
+/* ---------- ringkasan per jenis bahaya ---------- */
+function klasterSt(k,area){
+  if(!KLAS)return {status:'normal',R:0,temuan:[],areas:[]};
+  const as=area?[area]:AREAS,t=[];let best='normal',R=0;const hit=[];
+  for(const a of as){const x=KLAS.area[a]?.klaster?.[k];if(!x)continue;x.temuan.forEach(y=>t.push({...y,area:a}));
+    if(x.status!=='normal')hit.push(a);if(ST_URUT[x.status]>ST_URUT[best]||(x.status===best&&x.R>R)){best=x.status;R=x.R;}}
+  t.sort((x,y)=>y.R-x.R);return {status:best,R,temuan:t,areas:hit};
+}
+function semuaTemuan(area){
+  if(!KLAS)return [];const out=[];
+  for(const a of area?[area]:AREAS)for(const t of (KLAS.area[a]?.temuan||[]))out.push({...t,area:a});
+  return out.sort((x,y)=>y.R-x.R||ST_URUT[y.status]-ST_URUT[x.status]);
+}
+function saran(t){
+  const s=t.status,cepat=s==='kritis'?'≤ 6 jam':'≤ 24 jam';
+  switch(t.jenis){
+    case 'hotspot':return t.ref?.risiko?.nonVegetasi||t.ref?.persisten?`Konfirmasi sekali ${cepat}; bila sumber panas tetap (flare/industri), catat di daftar sumber panas dikenal.`:`Ground check ${cepat}; bila api nyata koordinasi Manggala Agni/BPBD, siagakan regu & APAR.`;
+    case 'gerakan_tanah':return t.tingkat==='zona'?'Pantau curah hujan; siapkan patroli lereng bila hujan lebat.':`Patroli lereng/ROW ${cepat}: cek retakan, amblesan, patok miring, rembesan; dokumentasikan.`;
+    case 'banjir':return 'Cek crossing sungai, erosi tebing & SBV terdampak; patroli saat puncak debit.';
+    case 'cuaca_ekstrem':return 'Tunda pekerjaan luar ruang/ketinggian di wilayah peringatan sampai berakhir.';
+    case 'petir':return 'Jadwalkan pekerjaan luar ruang di stasiun di luar jam rawan; terapkan aturan 30-30.';
+    case 'cuaca':return /udara|AQI/i.test(t.teks)?'Batasi kerja fisik berat di luar ruang; sediakan masker partikulat.':'Sesuaikan izin kerja (PTW): galian, ketinggian & pengangkatan.';
+    case 'gempa':return 'Inspeksi pasca-gempa fasilitas terdekat sesuai prosedur; laporkan kerusakan.';
+    case 'gdacs':return 'Ikuti informasi resmi BMKG/BNPB; siapkan rencana tanggap darurat area.';
+    default:return 'Verifikasi di lapangan sesuai status.';
+  }
+}
+/* ---------- riwayat status (data/history/status_area.json) ---------- */
+const tglWIB=d=>new Date((d?d.getTime():Date.now())+7*3.6e6).toISOString().slice(0,10);
+function kemarin(){
+  const H=RIW&&RIW.hari;if(!H)return null;const today=tglWIB();
+  const k=Object.keys(H).filter(x=>x<today).sort().pop();return k?{tgl:k,...H[k]}:null;
+}
+const tglPendek=t=>new Date(t+'T00:00:00+07:00').toLocaleDateString('id-ID',{timeZone:TZ,weekday:'short',day:'numeric',month:'short'});
+
+/* ---------- briefing ---------- */
+function teksWA(){
+  if(!KLAS)return '';const rk=KLAS.rekap,K0=kemarin(),now=new Date();
+  const tgl=now.toLocaleDateString('id-ID',{timeZone:TZ,weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const sc=isOV()?AREAS:[state.tab];
+  let t=`*PERTAGAS WASPADA — ${tgl}, ${jam(now.toISOString())}*\n`;
+  if(isOV()){t+=`Status: ${rk.kritis.length} Kritis · ${rk.waspada.length} Waspada · ${rk.pantau.length} Pantau · ${rk.normal.length} Normal`;
+    if(K0){const r=K0.rekap||{};t+=` (kemarin ${r.kritis||0} Kritis · ${r.waspada||0} Waspada · ${r.pantau||0} Pantau)`;}t+='\n';}
+  for(const s of ['kritis','waspada','pantau']){
+    const as=sc.filter(a=>KLAS.area[a].status===s);if(!as.length)continue;
+    t+=`\n*${STATUS[s].label}*\n`+as.map(a=>{const A=KLAS.area[a],f=A.pemicu?.fokus;return `• ${a} — ${A.pemicu?A.pemicu.teks:''}${f&&Number.isFinite(+f.lat)?`\n  Lokasi: https://www.google.com/maps?q=${(+f.lat).toFixed(5)},${(+f.lon).toFixed(5)}`:''}`;}).join('\n')+'\n';
+  }
+  const nor=sc.filter(a=>KLAS.area[a].status==='normal');if(nor.length&&isOV())t+=`\n*Normal:* ${nor.join(', ')}\n`;
+  const g=klasterSt('gempa',isOV()?null:state.tab);
+  t+=g.status==='normal'?'Tidak ada gempa ≥ M5 dekat aset (72 jam) & tidak ada potensi tsunami.\n':`Gempa/tsunami: ${g.temuan[0].teks}\n`;
+  t+=`\nDetail: ${location.origin+location.pathname}${isOV()?'':'#'+state.tab}`;
+  return t;
+}
+function renderBrief(){
+  const el=$('#brief');if(!KLAS){el.innerHTML='<div class="empty">Klasifikasi belum tersedia.</div>';return;}
+  const rk=KLAS.rekap,K0=kemarin(),now=new Date();
+  const tgl=now.toLocaleDateString('id-ID',{timeZone:TZ,weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const eyebrow=`Briefing · ${tgl} · data diproses ${jam(DATA.generated_at)}`;
+  let head,chips='',li=[],st;
+  const delta=a=>{if(!K0||!K0.area?.[a])return '';const d=ST_URUT[KLAS.area[a].status]-ST_URUT[K0.area[a].status];return d>0?' ▲':d<0?' ▼':'';};
+  if(isOV()){
+    st=rk.kritis.length?'kritis':rk.waspada.length?'waspada':rk.pantau.length?'pantau':'normal';
+    head=rk.kritis.length?`${rk.kritis.length} area Kritis: ${rk.kritis.join(', ')}`:`Tidak ada area Kritis — ${rk.waspada.length} Waspada, ${rk.pantau.length} Pantau, ${rk.normal.length} Normal`;
+    const ord=AREAS.slice().sort((a,b)=>ST_URUT[KLAS.area[b].status]-ST_URUT[KLAS.area[a].status]||KLAS.area[b].R-KLAS.area[a].R);
+    chips=`<div class="chips-st">${ord.map(a=>{const s=KLAS.area[a].status;return `<button type="button" class="${stCls(s)}" data-area="${a}" title="${STATUS[s].label}${KLAS.area[a].pemicu?' — '+esc(KLAS.area[a].pemicu.teks):''}">${STATUS[s].icon} ${a}${delta(a)}</button>`;}).join('')}</div>`;
+    for(const s of ['kritis','waspada','pantau']){const as=ord.filter(a=>KLAS.area[a].status===s);if(!as.length)continue;
+      li.push([s,`<b>${STATUS[s].label}</b> — ${as.map(a=>`<b>${a}</b> ${esc((JENIS_LBL[KLAS.area[a].pemicu?.jenis]||'').toLowerCase())}`).join(' · ')}`]);}
+    if(K0){const up=AREAS.filter(a=>K0.area?.[a]&&ST_URUT[KLAS.area[a].status]>ST_URUT[K0.area[a].status]),dn=AREAS.filter(a=>K0.area?.[a]&&ST_URUT[KLAS.area[a].status]<ST_URUT[K0.area[a].status]);
+      li.push([up.length?'waspada':'normal',`Sejak kemarin (${tglPendek(K0.tgl)}): ${up.length?`<b class="up">▲ naik ${up.join(', ')}</b>`:'tidak ada yang naik'}${dn.length?` · <b class="down">▼ turun ${dn.join(', ')}</b>`:''}${K0.metode==='lama'?' <span style="color:var(--muted)">(kemarin dihitung dengan metode gerakan tanah lama)</span>':''}`]);}
+  }else{
+    const k=state.tab,A=KLAS.area[k]||{};st=A.status||'normal';
+    head=`${k} ${STATUS[st].label}${A.R?` (R ${A.R})`:''} — ${A.pemicu?esc(A.pemicu.teks):'tidak ada temuan bahaya'}`;
+    for(const kl of KL_IDS){const x=A.klaster?.[kl];if(!x)continue;
+      li.push([x.status,`<b>${KLAS_NAMA[kl]}</b>: ${x.temuan.length?`${STATUS[x.status].label} — ${esc(x.temuan[0].teks)}`:'normal'}`]);}
+    if(K0&&K0.area?.[k]){const s0=K0.area[k].status,d=ST_URUT[st]-ST_URUT[s0];li.push([d>0?'waspada':'normal',`Kemarin (${tglPendek(K0.tgl)}): ${STATUS[s0].label}${d>0?' <b class="up">▲ naik</b>':d<0?' <b class="down">▼ turun</b>':' (tetap)'}${K0.area[k].pemicu?` — ${esc(K0.area[k].pemicu)}`:''}`]);}
+  }
+  if(isOV()){const g=klasterSt('gempa',null);li.push([g.status,g.status==='normal'?'Tidak ada gempa ≥ M5 dekat aset dalam 72 jam dan tidak ada potensi tsunami.':`Gempa/tsunami: ${esc(g.temuan[0].teks)}`]);}
+  el.className=`card brief ${stCls(st)}`;
+  el.innerHTML=`<div><div class="eyebrow">${eyebrow}</div><h2>${head}</h2>${chips}<ul>${li.map(([s,x])=>`<li class="${stCls(s)}"><i></i><span>${x}</span></li>`).join('')}</ul></div>
+    <div class="act"><button type="button" class="pri" id="btnWA">Salin teks untuk WhatsApp</button><button type="button" id="btnPdf2">↓ Unduh laporan PDF</button><button type="button" id="btnPeta2">${IKON.peta.replace('<svg','<svg style="width:15px;height:15px;vertical-align:-3px;margin-right:4px"')}Lihat semua titik di peta</button></div>`;
+  el.querySelectorAll('[data-area]').forEach(b=>b.onclick=()=>selectTab(b.dataset.area));
+  $('#btnWA').onclick=()=>salin(teksWA(),'Teks briefing disalin — siap ditempel di WhatsApp');
+  $('#btnPdf2').onclick=()=>$('#btnPdf').click();
+  $('#btnPeta2').onclick=()=>{bukaPeta();$('#map').scrollIntoView({behavior:'smooth',block:'center'});};
+}
+
+/* ---------- ubin per jenis bahaya ---------- */
+function tile(o){return `<${o.go?'button type="button"':'div'} class="card tile ${stCls(o.st)}"${o.go?` data-go="${o.go}"`:''}><div class="lbl">${o.ikon||''}${o.lbl}</div><div class="val">${o.val}</div><div class="hint">${o.hint||''}</div></${o.go?'button':'div'}>`;}
+function bindTiles(el){el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>selectHal(b.dataset.go));}
+function renderTiles(){
+  const el=$('#kpis'),sc=isOV()?null:state.tab;if(!KLAS){el.innerHTML='';return;}
+  let h='';
+  if(isOV()){const rk=KLAS.rekap;h+=tile({lbl:'Kondisi area operasi',ikon:IKON.ikhtisar,st:rk.kritis.length?'kritis':rk.waspada.length?'waspada':rk.pantau.length?'pantau':'normal',
+    val:rk.kritis.length?`${rk.kritis.length} Kritis`:'Tidak ada Kritis',hint:`${rk.waspada.length} Waspada · ${rk.pantau.length} Pantau · ${rk.normal.length} Normal`});}
+  else{const A=KLAS.area[sc]||{},s=A.status||'normal';h+=tile({lbl:`Status ${sc}`,ikon:IKON.ikhtisar,st:s,val:`${badge(s==='normal'?null:s)}${A.R?` <span style="font-size:13px;color:var(--muted)">R ${A.R}</span>`:''}`,hint:A.pemicu?esc(A.pemicu.teks):'Tidak ada temuan bahaya'});}
+  for(const k of KL_IDS){const x=klasterSt(k,sc);
+    h+=tile({go:k,lbl:KLAS_NAMA[k],ikon:IKON[k],st:x.status,val:`${badge(x.status==='normal'?null:x.status)}${isOV()&&x.areas.length?` <span style="font-size:13px;font-weight:600;color:var(--ink-2)">${x.areas.join(', ')}</span>`:''}`,
+      hint:x.temuan.length?esc(x.temuan[0].teks).slice(0,150)+(x.temuan[0].teks.length>150?'…':''):'Tidak ada temuan'});}
+  el.innerHTML=h;bindTiles(el);
+}
+function renderPageTiles(){
+  const sc=isOV()?null:state.tab,area=sc,hs=hotspots(),r=DATA.radius.hotspot;
+  const h5=hs.filter(x=>x.status!=='luar');
+  const nRisk=h5.filter(x=>['kritis','waspada'].includes(hsSt(x))).length,nNon=h5.filter(x=>x.risiko?.nonVegetasi).length,nRep=h5.filter(x=>x.persisten).length;
+  const wx=(DATA.cuaca||[]).filter(w=>isOV()||w.area===state.tab).map(wxNow),aq=wx.filter(w=>w.aqi_us!=null).sort((a,b)=>b.aqi_us-a.aqi_us)[0];
+  // Api & Udara
+  let h=tile({lbl:'Hotspot berisiko (Waspada/Kritis)',ikon:IKON.api,st:nRisk?'waspada':'normal',val:`${nRisk} <span style="font-size:13px;color:var(--muted)">dari ${h5.length} ≤ ${r.pantau} km</span>`,hint:`≤ ${r.kritis} km: ${countBy(hs,area,'kritis')} · ${r.kritis}–${r.waspada} km: ${countBy(hs,area,'waspada')} · ${r.waspada}–${r.pantau} km: ${countBy(hs,area,'pantau')}`})+
+    tile({lbl:'Sumber panas non-vegetasi',ikon:IKON.api,st:'normal',val:fmt(nNon),hint:`hotspot di kawasan terbangun/terbuka/air (ESA WorldCover)${nRep?` · ${nRep} berulang di lokasi sama`:''}`});
+  if(isOV())h+=tile({lbl:'Hotspot nasional (24 jam)',ikon:IKON.api,st:'normal',val:fmt(DATA.hotspot?.total_nasional),hint:`s.d. ${jam(DATA.hotspot?.diperbarui)} · ${esc(DATA.hotspot?.sumber||'-')}`});
+  else{const pa=(DATA.hotspot?.provinsi_area||{})[area]||{};h+=tile({lbl:'Hotspot provinsi wilayah',ikon:IKON.api,st:'normal',val:fmt(Object.values(pa).reduce((a,b)=>a+b,0)),hint:Object.entries(pa).map(([p,n])=>`${esc(p)} ${n}`).join(' · ')||'–'});}
+  h+=tile({lbl:'Kualitas udara terburuk (model)',ikon:IKON.api,st:aq&&aq.aqi_us>150?'pantau':'normal',val:aq?`US AQI ${fmt(aq.aqi_us)}`:'–',hint:aq?`${esc(aq.nama)} (${aq.area}) · ${AQI_KAT(aq.aqi_us)}`:'data kualitas udara belum tersedia'});
+  $('#kpis-api').innerHTML=h;
+  // Hujan, Petir & Banjir
+  const pd=isOV()?pdAktif().filter(w=>w.kena):pdArea(state.tab);
+  const ptp=PT?.produk?.hari_ini?.per_area||{},ptA=(isOV()?AREAS:[state.tab]).map(a=>[a,ptp[a]]).filter(x=>x[1]);
+  const ptT=ptA.filter(([,v])=>v.terburuk==='tinggi'),ptN=ptA.reduce((s,[,v])=>s+(v.n_fasilitas||0),0);
+  const bjA=(isOV()?AREAS:[state.tab]).map(a=>[a,bjArea(a)]).filter(x=>x[1]&&x[1].terburuk);
+  const hj=wx.map(w=>[w,num0(w.prakiraan?.[0]?.hujan_mm)]).sort((a,b)=>b[1]-a[1])[0];
+  h=tile({lbl:'Peringatan dini BMKG aktif',ikon:IKON.air,st:pd.length?'pantau':'normal',val:pd.length?`${pd.length} mengenai aset`:'Tidak ada',hint:pd.length?esc(pd.map(w=>w.event||w.judul).slice(0,2).join(' · ')):`dicek ${PD?jam(PD.diambil):'–'}`})+
+    tile({lbl:'Petir di stasiun (model)',ikon:IKON.air,st:ptT.length?'pantau':'normal',val:ptT.length?`Tinggi di ${ptT.reduce((s,[,v])=>s+(v.n?.tinggi||0),0)} stasiun`:PT?'Tidak ada tingkat tinggi':'–',hint:PT?`${ptN} stasiun kompresor/metering/booster dipantau${ptT.length?` · ${ptT.map(([a,v])=>`${a} ${v.jam_rawan||''}`).join(' · ')}`:''}`:'data belum tersedia'})+
+    tile({lbl:'Banjir sungai di perlintasan (model)',ikon:IKON.air,st:bjA.some(([,v])=>v.terburuk==='tinggi')?'waspada':bjA.length?'pantau':'normal',val:bjA.length?bjA.map(([a,v])=>`${a} ${v.terburuk}`).join(' · '):'Tidak ada indikasi',hint:BJ?`GloFAS · dihitung ${jam(BJ.diambil)}`:'–'})+
+    tile({lbl:'Hujan tertinggi hari ini (model)',ikon:IKON.air,st:hj&&hj[1]>=50?'pantau':'normal',val:hj?`${fmt(hj[1],0)} mm`:'–',hint:hj?`${esc(hj[0].nama)} (${hj[0].area})`:''});
+  $('#kpis-air').innerHTML=h;
+  // Tanah & Longsor
+  const pa=(['hari_ini','besok'].map(p=>[p,TP?.produk?.[p]?.per_area||{}]));
+  const lvOf=(p,a)=>pa.find(x=>x[0]===p)[1][a]?.terburuk||null;
+  const scA=isOV()?AREAS:[state.tab],rank=lv=>lv?MGT_LV.indexOf(lv):9;
+  const worst=p=>scA.map(a=>[a,lvOf(p,a)]).filter(x=>x[1]).sort((x,y)=>rank(x[1])-rank(y[1]));
+  const wH=worst('hari_ini'),wB=worst('besok');
+  const kmS=p=>scA.reduce((s,a)=>{const v=pa.find(x=>x[0]===p)[1][a];return s+(v?['sangat_tinggi','tinggi','sedang'].reduce((t,l)=>t+(+v.pipa_km[l]||0),0):0);},0);
+  const fasN=scA.reduce((s,a)=>s+((pa[0][1][a]?.fasilitas||[]).filter(f=>f.level!=='zona').length),0);
+  const P=(DATA.gerakan_tanah||{}).prakiraan||{},zt=scA.reduce((s,a)=>s+(+(P.per_area?.[a]?.pipa_km?.tinggi)||0)+(+(P.per_area?.[a]?.pipa_km?.bandang)||0),0);
+  const lvSt=lv=>({sangat_tinggi:'kritis',tinggi:'waspada',sedang:'waspada',rendah:'pantau',zona:'pantau'})[lv]||'normal';
+  h=tile({lbl:'Tingkat terberat hari ini',ikon:IKON.tanah,st:lvSt(wH[0]?.[1]),val:wH.length?mgtBadge(wH[0][1]):'Tidak ada indikasi',hint:wH.length?wH.slice(0,4).map(([a,l])=>`${a} ${MGT_INFO[l].label.toLowerCase()}`).join(' · '):(TP?'model terpadu':'data model terpadu belum tersedia')})+
+    tile({lbl:'Tingkat terberat besok',ikon:IKON.tanah,st:lvSt(wB[0]?.[1]),val:wB.length?mgtBadge(wB[0][1]):'Tidak ada indikasi',hint:wB.length?wB.slice(0,4).map(([a,l])=>`${a} ${MGT_INFO[l].label.toLowerCase()}`).join(' · '):'prakiraan hujan besok'})+
+    tile({lbl:'Pipa tingkat sedang ke atas',ikon:IKON.tanah,st:kmS('hari_ini')>0?'waspada':'normal',val:`${fmt(kmS('hari_ini'),1)} km`,hint:`hari ini · besok ${fmt(kmS('besok'),1)} km · ${fasN} fasilitas berindikasi`})+
+    tile({lbl:'Zona prakiraan tinggi PVMBG',ikon:IKON.tanah,st:zt>0?'pantau':'normal',val:`${fmt(zt,1)} km pipa`,hint:`${esc(P.periode||'prakiraan bulanan')} — aktif bila hujan memicu`});
+  $('#kpis-tanah').innerHTML=h;
+  // Gempa & Tsunami
+  const qs=quakes('all').map(g=>({...g,...eqView(g)})),recent=qs.filter(g=>{const a=eqAge(g);return a!=null&&a<=GEMPA_BARU_JAM;});
+  const near=recent.slice().sort((a,b)=>a.jarak_km-b.jarak_km)[0],tsu=recent.filter(g=>g.tsunami),last=LIVE.gempa||(DATA.gempa||{}).terbaru;
+  const g=klasterSt('gempa',sc);
+  h=tile({lbl:'Status gempa & tsunami',ikon:IKON.gempa,st:g.status,val:badge(g.status==='normal'?null:g.status),hint:g.temuan.length?esc(g.temuan[0].teks):'Tidak ada gempa M ≥ 5 dekat aset dalam 72 jam'})+
+    tile({lbl:isOV()?'Gempa terdekat dari aset (7 hari)':`Gempa terdekat dari aset ${area} (7 hari)`,ikon:IKON.gempa,st:'normal',val:near?`M ${fmt(near.mag,1)}`:'–',hint:near?`${fmt(near.jarak_km)} km dari ${esc(near.aset)}${isOV()?` (${near.area})`:''} · ${when(near.datetime)} (${lalu(near.datetime)})`:'Tidak ada gempa tercatat dalam 7 hari terakhir'})+
+    tile({lbl:'Potensi tsunami (BMKG)',ikon:IKON.gempa,st:tsu.length?'kritis':'normal',val:tsu.length?'<span class="badge b-tsunami">⚠ BERPOTENSI TSUNAMI</span>':'Tidak ada indikasi',
+      hint:(tsu.length?`${esc(tsu[0].wilayah)} · ${when(tsu[0].datetime)}`:(LIVE.gempaOk?`Dicek langsung ke BMKG pukul ${jam(LIVE.gempaOk)}`:`Data BMKG terjadwal per ${when((DATA.gempa||{}).diperbarui||DATA.generated_at)}`))+`${last?` · gempa terakhir M ${fmt(last.mag,1)}, ${lalu(last.datetime)}`:''}. Resmi: <a href="https://inatews.bmkg.go.id/" target="_blank" rel="noopener">InaTEWS BMKG</a>`});
+  $('#kpis-gempa').innerHTML=h;
+}
+const num0=v=>Number.isFinite(+v)?+v:0;
+
+/* ---------- matriks area × jenis bahaya ---------- */
+const RAIN_W=mm=>mm>150?['#0b2f6b','#fff','ekstrem']:mm>100?['#1d4f9e','#fff','sangat lebat']:mm>=50?['#2f6fc4','#fff','lebat']:mm>=20?['#a9cdf2','#0b2f59','sedang']:mm>=0.5?['#e3effb','#1d4e89','ringan']:['var(--surface-2)','var(--muted)','tidak hujan'];
+function hujan3(a){
+  const wx=(DATA.cuaca||[]).filter(w=>w.area===a);const d=[0,1,2].map(i=>Math.max(0,...wx.map(w=>num0(w.prakiraan?.[i]?.hujan_mm))));
+  const nm=['Hari ini','Besok','Lusa'];
+  return `<div class="rain3">${d.map((mm,i)=>{const [bg,fg,k]=RAIN_W(mm);return `<span style="background:${bg};color:${fg}" title="${nm[i]}: ${fmt(mm,1)} mm (${k}) — titik pantau terbasah">${fmt(mm,0)}<small>${['hr ini','besok','lusa'][i]}</small></span>`;}).join('')}</div>`;
+}
+function renderMatrix(){
+  const el=$('#matrixBody');if(!KLAS){el.innerHTML='<div class="empty">Klasifikasi tidak tersedia.</div>';return;}
+  const K0=kemarin();
+  if(isOV()){
+    $('#matrixTitle').textContent='Matriks risiko: area × jenis bahaya';
+    $('#matrixNote').innerHTML=`9 modul data dirangkum menjadi 4 jenis bahaya. Setiap sel = temuan terberat jenis bahaya itu di area tersebut (sel abu-abu = normal). Klik sel untuk membuka halaman rinciannya, klik nama area untuk ikhtisar area. Kolom hujan = prakiraan hujan harian di titik pantau terbasah (kategori BMKG).`;
+    const ord=AREAS.slice().sort((a,b)=>ST_URUT[KLAS.area[b].status]-ST_URUT[KLAS.area[a].status]||KLAS.area[b].R-KLAS.area[a].R);
+    el.innerHTML=`<div class="tbl" style="max-height:none;overflow-x:auto"><table class="mx"><colgroup><col style="width:128px"><col style="width:124px">${KL_IDS.map(()=>'<col>').join('')}<col style="width:150px"></colgroup><thead><tr><th>Area</th><th>Status</th>${KL_IDS.map(k=>`<th><span class="h">${IKON[k]}${KLAS_NAMA[k]}</span></th>`).join('')}<th>Hujan 3 hari (mm)</th></tr></thead><tbody>`+
+      ord.map(a=>{const A=KLAS.area[a];let dl='';
+        if(K0&&K0.area?.[a]){const s0=K0.area[a].status,d=ST_URUT[A.status]-ST_URUT[s0];dl=d>0?`<div class="dl up">▲ dari ${STATUS[s0].label}</div>`:d<0?`<div class="dl down">▼ dari ${STATUS[s0].label}</div>`:`<div class="dl same">= kemarin</div>`;}
+        return `<tr><td><div class="ar" data-area="${a}" role="button" tabindex="0"><b><i class="line" style="background:${css(areaColor[a])};vertical-align:middle;margin-right:6px"></i>${a}</b><small>${esc((DATA.areas[a]?.nama||'').replace('Operation ',''))}</small></div></td>
+          <td><div class="ar" data-area="${a}" role="button" tabindex="0" style="background:none"><span style="white-space:nowrap">${badge(A.status==='normal'?null:A.status)}${A.R?` <small style="display:inline">R ${A.R}</small>`:''}</span>${dl}</div></td>`+
+          KL_IDS.map(k=>{const x=A.klaster?.[k]||{status:'normal',temuan:[]},t=x.temuan[0];const n=x.status==='normal';
+            return `<td><button type="button" class="c ${n?'n':stCls(x.status)}" data-area="${a}" data-hal="${k}" data-lbl="${KLAS_NAMA[k]}" title="${t?esc(t.teks):'Normal'}"><span class="s">${n?'✓ Normal':`${STATUS[x.status].icon} ${STATUS[x.status].label}`}${x.R&&!n?` <span style="font-weight:600;color:var(--muted)">R ${x.R}</span>`:''}</span><span class="t">${t?esc(t.teks):'Tidak ada temuan'}</span></button></td>`;}).join('')+
+          `<td>${hujan3(a)}</td></tr>`;}).join('')+`</tbody></table></div>`;
+    el.querySelectorAll('.ar[data-area]').forEach(b=>{b.onclick=()=>selectTab(b.dataset.area);b.onkeydown=e=>{if(e.key==='Enter')selectTab(b.dataset.area);};});
+    el.querySelectorAll('.c[data-hal]').forEach(b=>b.onclick=()=>{state.hal=b.dataset.hal;selectTab(b.dataset.area);});
+    return;
+  }
+  const k=state.tab,A=KLAS.area[k]||{};
+  $('#matrixTitle').textContent=`Profil bahaya ${k} — 4 jenis bahaya`;
+  $('#matrixNote').innerHTML=`Semua temuan di ${k} dikelompokkan per jenis bahaya, urut skor tertinggi. Tombol <b>↗ Peta</b> menuju titik pipa/fasilitas yang dimaksud.`;
+  el.innerHTML=`<div class="kprof">${KL_IDS.map(kl=>{const x=A.klaster?.[kl]||{status:'normal',temuan:[]};
+    return `<div class="kp ${stCls(x.status)}"><div class="hd"><span>${IKON[kl]}${KLAS_NAMA[kl]}</span>${badge(x.status==='normal'?null:x.status)}</div>
+      <ul>${x.temuan.length?x.temuan.slice(0,5).map((t,i)=>`<li>${esc(t.teks)}<div class="r">P ${t.P} × K ${t.K} = R ${t.R}${t.fokus?` · <button type="button" class="lnk" data-kl="${kl}" data-i="${i}">↗ Peta</button>`:''}</div></li>`).join(''):'<li class="r">Tidak ada temuan.</li>'}</ul>
+      <div class="more"><button type="button" class="lnk" data-hal="${kl}">Rincian ${KLAS_NAMA[kl]} ›</button></div></div>`;}).join('')}</div>`;
+  el.querySelectorAll('button[data-kl]').forEach(b=>b.onclick=()=>fokusTemuan({...A.klaster[b.dataset.kl].temuan[+b.dataset.i],area:k}));
+  el.querySelectorAll('.more button[data-hal]').forEach(b=>b.onclick=()=>selectHal(b.dataset.hal));
+}
+
+/* ---------- prioritas & lokasi ---------- */
+function renderPrio(){
+  const el=$('#prioList'),t=semuaTemuan(isOV()?null:state.tab).filter(x=>x.R>=3);
+  const maks=isOV()?10:15,tampil=t.slice(0,maks);
+  $('#prioTitle').textContent=isOV()?'Prioritas & lokasi — semua area':`Prioritas & lokasi — ${state.tab}`;
+  $('#prioNote').innerHTML=t.length?`${t.length} temuan Pantau ke atas, urut skor risiko${t.length>maks?` (${maks} teratas)`:''}. <b>↗ Peta</b> menuju titik pipa/fasilitas; koordinat & tautan bisa langsung dibagikan ke tim lapangan.`:'';
+  if(!t.length){el.innerHTML='<div class="empty">✓ Tidak ada temuan berstatus Pantau ke atas.</div>';return;}
+  el.innerHTML=tampil.map((x,i)=>{const f=x.fokus,ok=f&&Number.isFinite(+f.lat);
+    return `<div class="pi ${stCls(x.status)}"><div class="top">${badge(x.status==='normal'?null:x.status)}<b>${x.area}</b>${IKON[x.klaster]||''}<span style="color:var(--ink-2)">${esc(JENIS_LBL[x.jenis]||x.jenis)}</span><span style="margin-left:auto;color:var(--muted)">R ${x.R}</span></div>
+      <div class="t">${esc(x.teks)}</div><div class="sar">${esc(saran(x))}</div>
+      ${f?`<div class="loc">${ok?`<code>${(+f.lat).toFixed(5)}, ${(+f.lon).toFixed(5)}</code>`:''}<button type="button" class="go" data-i="${i}">↗ Peta</button>${ok?`<a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+f.lat},${+f.lon}" title="Buka di Google Maps">Maps ↗</a><a href="#" data-salin="${esc(lokasiUrl(f))}" title="Salin tautan lokasi untuk dibagikan">Salin tautan</a>`:''}</div>`:''}</div>`;}).join('');
+  el.querySelectorAll('.go').forEach(b=>b.onclick=()=>fokusTemuan(tampil[+b.dataset.i]));
+}
+
+/* ---------- berubah sejak kemarin & riwayat ---------- */
+function renderChanges(){
+  const el=$('#chgBody'),K0=kemarin();
+  if(!KLAS){el.innerHTML='';return;}
+  if(!K0){$('#chgNote').textContent='';el.innerHTML='<div class="empty">Riwayat status mulai terekam otomatis setiap pembaruan data. Perbandingan dengan kemarin tersedia mulai besok.</div>';return;}
+  $('#chgNote').innerHTML=`Status saat ini dibanding kondisi terakhir ${tglPendek(K0.tgl)}${K0.metode==='lama'?' — <i>kemarin masih dihitung dengan metode gerakan tanah lama (per area), sebagian perubahan gerakan tanah disebabkan metode baru</i>':''}.`;
+  const sc=isOV()?AREAS:[state.tab];
+  const rows=sc.map(a=>{const s=KLAS.area[a].status,s0=K0.area?.[a]?.status||'normal';return {a,s,s0,d:ST_URUT[s]-ST_URUT[s0],R:KLAS.area[a].R};})
+    .sort((x,y)=>(y.d>0)-(x.d>0)||(x.d<0)-(y.d<0)||y.R-x.R);
+  el.innerHTML=rows.map(r=>{const A=KLAS.area[r.a],B=K0.area?.[r.a]||{};
+    const why=r.d>0?(A.pemicu?A.pemicu.teks:''):r.d<0?(B.pemicu?`Kemarin: ${B.pemicu}`:''):(A.pemicu?A.pemicu.teks:'Tidak ada temuan');
+    return `<div class="ci" data-area="${r.a}"><span class="ar ${r.d>0?'up':r.d<0?'down':''}">${r.d>0?'▲':r.d<0?'▼':'='}</span><div><b>${r.a}</b> <span style="color:var(--muted)">${STATUS[r.s0].label} →</span> <b style="color:${css(STATUS[r.s].v)}">${STATUS[r.s].label}</b><div class="w">${esc(why)}</div></div></div>`;}).join('');
+  el.querySelectorAll('.ci').forEach(d=>d.onclick=()=>selectTab(d.dataset.area));
+}
+function renderHist(){
+  const el=$('#histBody'),H=(RIW&&RIW.hari)||{};const today=tglWIB();
+  const days=[];for(let i=29;i>=0;i--){days.push(tglWIB(new Date(Date.now()-i*864e5)));}
+  if(!Object.keys(H).length&&!KLAS){el.innerHTML='<div class="empty">Riwayat belum tersedia.</div>';return;}
+  $('#histNote').textContent='Status akhir tiap hari per area (hari ini = kondisi saat ini). Arahkan kursor ke kotak untuk pemicunya; kotak kosong = belum terekam.';
+  const sc=isOV()?AREAS:[state.tab];
+  el.innerHTML=`<div class="hist">${sc.map(a=>{const cnt={kritis:0,waspada:0,pantau:0};
+    const sq=days.map(d=>{let s,p;if(d===today&&KLAS){s=KLAS.area[a].status;p=KLAS.area[a].pemicu?.teks;}else if(H[d]?.area?.[a]){s=H[d].area[a].status;p=H[d].area[a].pemicu;}
+      if(!s)return `<i title="${tglPendek(d)}: belum terekam"></i>`;if(cnt[s]!=null)cnt[s]++;
+      return `<i class="${stCls(s)}${d===today?' today':''}" title="${tglPendek(d)}: ${STATUS[s].label}${p?' — '+esc(p):''}"></i>`;}).join('');
+    return `<b>${a}</b><div class="sq">${sq}</div><span class="sum">${cnt.kritis?`<b class="up">${cnt.kritis} Kritis</b> · `:''}${cnt.waspada} Waspada</span>`;}).join('')}
+    <span></span><div class="ax"><span>${tglPendek(days[0])}</span><span>hari ini</span></div></div>
+    <div class="legend">${['kritis','waspada','pantau','normal'].map(s=>`<span><i class="dot" style="background:${css(STATUS[s].v)}${s==='normal'?';opacity:.45':''}"></i>${STATUS[s].label}</span>`).join('')}</div>`;
+}
+
+/* ---------- fokus peta ke titik temuan ---------- */
+function popupLokasi(t){
+  const f=t.fokus,ok=Number.isFinite(+f.lat);
+  return `<div class="pop"><b>${esc(f.judul||JENIS_LBL[t.jenis]||'Lokasi')}</b> ${badge(t.status==='normal'?null:t.status)}`+popRows([['Area',esc(t.area||'')],['Temuan',esc(t.teks)],['Skor',t.P?`P ${t.P} × K ${t.K} = R ${t.R}`:''],
+    ['Koordinat',ok?`${(+f.lat).toFixed(5)}, ${(+f.lon).toFixed(5)}`:''],['Tindakan',esc(saran(t))]])+
+    (ok?`<div class="pop-act"><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+f.lat},${+f.lon}">Google Maps ↗</a><a href="#" data-salin="${esc(lokasiUrl(f))}">Salin tautan lokasi</a></div>`:'')+'</div>';
+}
+function sorot(lat,lon,warna,garis){
+  if(segHi){map.removeLayer(segHi);segHi=null;}
+  const g=[];
+  if(Array.isArray(garis)&&garis.length>1){const ll=garis.map(([x,y])=>[y,x]);g.push(L.polyline(ll,{color:css('--surface'),weight:12,opacity:.95}),L.polyline(ll,{color:warna,weight:6,opacity:1}));}
+  g.push(L.circleMarker([lat,lon],{radius:16,color:warna,weight:3,fill:false,className:'pulse'}),L.circleMarker([lat,lon],{radius:5,color:css('--surface'),weight:2,fillColor:warna,fillOpacity:1}));
+  segHi=L.layerGroup(g).addTo(map);
+}
+function fokusTemuan(t){
+  const f=t&&t.fokus;if(!f)return;
+  if(f.pd)return pdFokus(f.pd);
+  if(!$('#slot-'+state.hal))selectHal('ikhtisar',true);
+  if(!map||!Number.isFinite(+f.lat))return;
+  bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
+  const c=css((STATUS[t.status]||STATUS.pantau).v);
+  sorot(+f.lat,+f.lon,c,f.garis);
+  petaSiap(()=>{
+    if(Array.isArray(f.garis)&&f.garis.length>1)map.fitBounds(L.latLngBounds(f.garis.map(([x,y])=>[y,x])),{padding:[60,60],maxZoom:f.zoom||15});
+    else map.setView([+f.lat,+f.lon],f.zoom||13);
+    L.popup({maxWidth:340}).setLatLng([+f.lat,+f.lon]).setContent(popupLokasi(t)).openOn(map);});
+}
+function fokusTautan(f){
+  if(!map||!f)return;bukaPeta();sorot(f.lat,f.lon,css('--brand'));
+  petaSiap(()=>{map.setView([f.lat,f.lon],f.zoom||14);
+  L.popup().setLatLng([f.lat,f.lon]).setContent(`<div class="pop"><b>Lokasi yang dibagikan</b>${popRows([['Koordinat',`${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}`]])}<div class="pop-act"><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.lat},${f.lon}">Google Maps ↗</a></div></div>`).openOn(map);});
+  setTimeout(()=>$('#map').scrollIntoView({behavior:'smooth',block:'center'}),300);
+}
+
+/* ---------- Api & Udara: kualitas udara per titik pantau ---------- */
+function renderAQ(){
+  const rows=(DATA.cuaca||[]).filter(w=>isOV()||w.area===state.tab).map(wxNow).sort((a,b)=>(b.aqi_us??-1)-(a.aqi_us??-1));
+  $('#aqTitle').textContent=`Kualitas udara di titik pantau${isOV()?'':' '+state.tab} (model CAMS)`;
+  $('#aqNote').innerHTML=`Estimasi model CAMS global (±45 km) via Open-Meteo — <b>bukan ISPU</b> stasiun KLHK. US AQI = rata-rata 24 jam (EPA). AQI > 150 dihitung sebagai temuan Api &amp; Udara (K = 2) karena memengaruhi pekerjaan luar ruang; asap kebakaran lahan juga tampak di sini.`;
+  $('#aqTable').innerHTML=`<thead><tr>${isOV()?'<th>Wilayah</th>':''}<th>Titik pantau</th><th class="num">US AQI</th><th>Kategori</th><th class="num">PM2.5 µg/m³</th><th class="num">PM10 µg/m³</th><th>Jam data</th></tr></thead><tbody>`+
+    (rows.length?rows.map(w=>`<tr class="link" data-lat="${w.lat}" data-lon="${w.lon}">${isOV()?`<td>${esc(w.area)}</td>`:''}<td>${esc(w.nama)}</td><td class="num"><b>${fmt(w.aqi_us)}</b></td><td>${esc(AQI_KAT(w.aqi_us)||'–')}</td><td class="num">${fmt(w.pm25)}</td><td class="num">${fmt(w.pm10)}</td><td>${jam(w.pm_waktu||w.waktu)}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">Belum ada titik pantau.</td></tr>')+'</tbody>';
+  $('#aqTable').querySelectorAll('tr[data-lat]').forEach(r=>r.onclick=()=>focusMap(+r.dataset.lat,+r.dataset.lon,11,`<b>${esc(r.cells[isOV()?1:0].textContent)}</b><br>US AQI ${esc(r.cells[isOV()?2:1].textContent)}`));
+}
+
+/* ---------- Hujan, Petir & Banjir: petir di stasiun kompresor/metering/booster ---------- */
+const jam24=j=>`<span class="jam24" title="Per jam 00–23 WIB: kuning rendah · oranye sedang · merah tinggi · arsir = sudah lewat">${[...String(j||'').padEnd(24,'-')].slice(0,24).map(x=>`<i class="${x==='-'?'lx':'l'+x}"></i>`).join('')}</span>`;
+function ptPopup(f,p){const v=f[p]||{};return `<div class="pop"><b>${esc(f.aset)}</b> ${lsBadge(v.level)}<br><span class="tag">Prakiraan model</span>${popRows([['Jenis',esc((PT.jenis_nama||{})[f.jenis]||f.jenis)],['Area',esc(f.area)],[`Per jam (${LS_PROD[p]})`,jam24(v.jam)],['CAPE maks.',v.cape_maks!=null?fmt(v.cape_maks)+' J/kg':'–'],['Koordinat',`${f.lat}, ${f.lon} · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.lat},${f.lon}">Google Maps</a>`]])}<div class="warn">Bukan deteksi sambaran. Untuk keputusan kerja gunakan aturan 30-30 dan peringatan dini BMKG.</div></div>`;}
+function renderPT(){
+  document.querySelectorAll('#ptTabs button').forEach(x=>x.classList.toggle('on',x.dataset.k===state.pt));
+  const body=$('#ptBody');
+  if(!PT||!PT.fasilitas){$('#ptNote').textContent='Potensi badai petir (model) hanya untuk stasiun kompresor gas, stasiun metering/regulasi dan booster/pompa.';body.innerHTML=gagalInfo(PT)+butuhData('Update Bahaya Tambahan (petir, banjir sungai, GDACS)','4× sehari');return;}
+  const st=freshOf(PT.diambil,FRESH.enamjam,PT.status?.ok===false),A=PT.ambang||{};
+  $('#ptNote').innerHTML=`<span class="tag">Prakiraan model</span> <b>Bukan deteksi sambaran petir.</b> Hanya fasilitas yang memiliki peralatan di atas tanah & pekerjaan luar ruang: <b>stasiun kompresor gas, stasiun metering/regulasi, booster/pompa</b> (${fmt(PT.n_fasilitas)} stasiun; pipa tertanam tidak dinilai). Open-Meteo: CAPE, kode cuaca & hujan per jam di sel ±11 km yang memuat stasiun · ${frBadge(st,'dihitung '+when(PT.diambil))}. <b>Tinggi</b> = model memprakirakan badai petir & CAPE ≥ ${fmt(A.cape_tinggi)} J/kg · <b>Sedang</b> = model memprakirakan badai petir, atau CAPE ≥ ${fmt(A.cape_tinggi)} + hujan ≥ ${fmt(A.hujan_sedang_mm,1)} mm/jam · <b>Rendah</b> = CAPE ≥ ${fmt(A.cape_rendah)} + hujan ≥ ${fmt(A.hujan_rendah_mm,1)} mm/jam. Hanya tingkat Tinggi hari ini yang memengaruhi status (Pantau). Daftar stasiun dapat dikoreksi di config/monitoring.json → petir_model.fasilitas.`;
+  const p=state.pt,fs=(PT.fasilitas||[]).filter(f=>isOV()||f.area===state.tab);
+  if(PT._geser&&p==='besok'){body.innerHTML=`<div class="info">Sudah lewat tengah malam: prakiraan yang kemarin berlabel "besok" kini ditampilkan sebagai <b>hari ini</b>. Prakiraan untuk besok tersedia setelah pembaruan data berikutnya (4× sehari).</div>`;return;}
+  const rank={tinggi:0,sedang:1,rendah:2};
+  const tampil=fs.slice().sort((a,b)=>(rank[a[p]?.level]??9)-(rank[b[p]?.level]??9)||a.area.localeCompare(b.area)||a.aset.localeCompare(b.aset));
+  let h=gagalInfo(PT);
+  if(!tampil.length){body.innerHTML=h+`<div class="empty">Tidak ada stasiun kompresor/metering/booster terdaftar di ${isOV()?'aset':'wilayah '+state.tab} (lihat config/monitoring.json → petir_model.fasilitas).</div>`;return;}
+  const n=lv=>tampil.filter(f=>f[p]?.level===lv).length;
+  const pa=(PT.produk?.[p]?.per_area)||{};
+  h+=`<div class="gt-stats"><div><div class="n" style="color:${css('--critical')}">${n('tinggi')}</div><div class="k">Stasiun tingkat <b>Tinggi</b> (${LS_PROD[p]})</div></div><div><div class="n">${n('sedang')}</div><div class="k">Tingkat <b>Sedang</b></div></div><div><div class="n">${n('rendah')}</div><div class="k">Tingkat <b>Rendah</b></div></div>
+    <div><div class="n" style="font-size:16px;line-height:1.35;padding-top:4px">${(isOV()?AREAS:[state.tab]).map(a=>pa[a]?.jam_rawan?`${a} ${pa[a].jam_rawan}`:'').filter(Boolean).slice(0,3).join('<br>')||'–'}</div><div class="k">Jam rawan (tingkat ≥ sedang)</div></div></div>
+    <div class="tbl" style="margin-top:0;max-height:420px"><table><thead><tr>${isOV()?'<th>Wilayah</th>':''}<th>Stasiun</th><th>Jenis</th><th>Tingkat</th><th>Per jam 00–23 WIB</th><th>Jam rawan</th><th class="num">CAPE maks. (J/kg)</th></tr></thead><tbody>`+
+    tampil.map((f,i)=>{const v=f[p]||{};return `<tr class="link" data-i="${i}">${isOV()?`<td>${esc(f.area)}</td>`:''}<td><b>${esc(f.aset)}</b></td><td>${esc((PT.jenis_nama||{})[f.jenis]||f.jenis)}</td><td>${lsBadge(v.level)}</td><td>${jam24(v.jam)}</td><td style="white-space:nowrap">${esc(jamRawan(v.jam)||'–')}</td><td class="num">${fmt(v.cape_maks)}</td></tr>`;}).join('')+
+    `</tbody></table></div><div class="note" style="padding:6px 0 0">Klik baris untuk menuju stasiun di peta.</div>`;
+  body.innerHTML=h;
+  body.querySelectorAll('tr[data-i]').forEach(r=>r.onclick=()=>{const f=tampil[+r.dataset.i];focusMap(f.lat,f.lon,13,ptPopup(f,p));});
+}
+function jamRawan(j){const idx=[...String(j||'')].map((x,h)=>x!=='-'&&+x>=2?h:-1).filter(h=>h>=0);if(!idx.length)return null;
+  const out=[];let a=idx[0];for(let i=0;i<idx.length;i++){if(idx[i+1]!==idx[i]+1){out.push(`${String(a).padStart(2,'0')}–${String(idx[i]+1).padStart(2,'0')}`);a=idx[i+1];}}return out.join(', ')+' WIB';}
+
+/* ---------- Tanah & Longsor: model terpadu ---------- */
+const mgtArea=(k,p)=>(((TP||{}).produk||{})[p||state.mgt]||{}).per_area?.[k]||null;
+function mgtPopup(r,area){
+  return `<div class="pop"><b>${esc(r.aset)}</b> ${mgtBadge(r.level)}<br><span class="tag">Model terpadu ${LS_PROD[state.mgt]}</span>`+popRows([
+    ['Area',esc(area||r.area||'')],['Panjang ruas',r.km!=null?`${fmt(r.km,2)} km`:''],
+    ['Kerentanan (SK)',`<b>${r.SK}</b> dari 5 = geologi ${esc(r.G?r.G.replace('_',' '):'–')} · lereng ${kelasLereng(r.L)} · ${esc(LAHAN_NAMA[r.T]||'lahan ?')}`],
+    ['Pemicu hujan',r.rasio!=null?`${fmt(r.rasio*100)}% ambang ARI95 (PH ${r.PH})`:'–'],['Prakiraan PVMBG',r.prak?gtBadge(r.prak):'di luar zona terunduh'],
+    ['Koordinat',r.lat!=null?`${r.lat}, ${r.lon} · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+r.lat},${+r.lon}">Google Maps</a> · <a href="#" data-salin="${esc(lokasiUrl({lat:r.lat,lon:r.lon,zoom:15}))}">Salin tautan</a>`:'']])+
+    `<div class="warn">Keluaran model — <b>potensi bahaya</b>, bukan kepastian kejadian. Verifikasi kondisi lereng/ROW di lapangan.</div></div>`;
+}
+function fokusMgt(r,area){if(!map||r.lat==null)return;
+  if(!$('#slot-'+state.hal))selectHal('tanah',true);
+  bukaPeta();window.scrollTo({top:$('#map').getBoundingClientRect().top+scrollY-120,behavior:'smooth'});
+  sorot(+r.lat,+r.lon,css(MGT_INFO[r.level]?.v||'--serious'),r.garis);
+  petaSiap(()=>{if(Array.isArray(r.garis)&&r.garis.length>1)map.fitBounds(L.latLngBounds(r.garis.map(([x,y])=>[y,x])),{padding:[60,60],maxZoom:15});else map.setView([r.lat,r.lon],15);
+  L.popup({maxWidth:360}).setLatLng([r.lat,r.lon]).setContent(mgtPopup(r,area)).openOn(map);});}
+function metodeMgt(){
+  const M=TP?.metode;if(!M)return '';
+  const w=M.bobot||{},b=M.batas_pemicu||[.75,1,1.5],mx=M.matriks||{};
+  const sel=lv=>lv?mgtBadge(lv):'<span style="color:var(--muted)">–</span>';
+  return `<details class="klas-info mgt-met"><summary>Cara model terpadu bekerja</summary>
+    <p style="margin:8px 0 4px"><b>1. Kerentanan statis (SK 1–5) per titik 250 m</b> — overlay berbobot mengikuti parameter SNI 13-7124-2005: <b>geologi ${w.geologi}</b> (zona kerentanan PVMBG: sangat rendah 1 · rendah 2 · menengah 4 · tinggi 5) + <b>lereng ${w.lereng}</b> (Copernicus DEM: &lt;5° 1 · 5–10° 2 · 10–15° 3 · 15–25° 4 · ≥25° 5) + <b>tata guna lahan ${w.lahan}</b> (ESA WorldCover: pohon/mangrove/air 1 · semak/rawa 2 · rumput 3 · pertanian/terbangun 4 · lahan terbuka 5), dibagi jumlah bobot, dibatasi kelas lereng + 1 (lahan datar tidak bisa berkerentanan tinggi).</p>
+    <p style="margin:4px 0"><b>2. Pemicu hujan (PH 0–3)</b> — hujan anteseden 7 hari ÷ ambang ARI95 NASA (model LHASA): &lt; ${fmt(b[0]*100)}% → 0 · ${fmt(b[0]*100)}–${fmt(b[1]*100)}% → 1 · ${fmt(b[1]*100)}–${fmt(b[2]*100)}% → 2 · ≥ ${fmt(b[2]*100)}% → 3.</p>
+    <p style="margin:4px 0"><b>3. Matriks bahaya harian</b> (perluasan pohon keputusan LHASA 1.1; lahan datar &lt; 5° tidak dinilai):</p>
+    <table><thead><tr><th>SK \\ PH</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead><tbody>${[1,2,3,4,5].map(k=>`<tr><td><b>SK ${k}</b></td>${(mx[k]||[]).map(sel).map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <p style="margin:4px 0"><b>4. Lantai resmi PVMBG</b> — prakiraan bulanan berlaku "bila curah hujan di atas normal": zona tinggi/banjir bandang + PH ≥ 2 → tinggi, PH 1 → sedang, PH 0 → <i>zona (belum terpicu)</i>; zona menengah + PH ≥ 2 → sedang, PH 1 → rendah. Lahan datar &lt; 5° (kecuali alur banjir bandang): hanya PH ≥ 2 yang dinaikkan, maks. rendah. <b>Sangat tinggi</b> = model harian tinggi <i>dan</i> titik berada di zona prakiraan tinggi PVMBG.</p>
+    <p style="margin:4px 0;color:var(--muted)">Rujukan: ${(M.rujukan||[]).map(esc).join(' · ')}. Bobot & matriks dapat diubah di config/monitoring.json → gerakan_tanah_terpadu.</p></details>`;
+}
+function renderMGT(){
+  document.querySelectorAll('#mgtTabs button').forEach(x=>x.classList.toggle('on',x.dataset.k===state.mgt));
+  const body=$('#mgtBody');
+  if(!TP||!TP.produk){$('#mgtNote').textContent='Model gerakan tanah & longsor terpadu (PVMBG + LHASA + tutupan lahan) — dihitung oleh workflow Update Potensi Longsor.';
+    body.innerHTML=`<div class="info"><b>Data model terpadu belum ada.</b> Jalankan workflow <i>Update Potensi Longsor (NASA LHASA)</i> di tab Actions GitHub; selanjutnya otomatis 2× sehari. Sementara itu status memakai rumusan lama (rincian sumber di bawah).</div>`;return;}
+  const st=freshOf(TP.diambil,FRESH.terjadwal,TP.status?.ok===false),cak=TP.cakupan||{};
+  $('#mgtNote').innerHTML=`<span class="tag">Indikasi model</span> Satu penilaian per titik 250 m sepanjang pipa & tiap fasilitas yang <b>menyatukan</b> zona kerentanan & prakiraan bulanan <b>PVMBG</b>, kemiringan lereng & hujan anteseden <b>model LHASA</b>, dan <b>tutupan lahan ESA WorldCover</b> (bobot SNI 13-7124-2005). Sebelumnya PVMBG & LHASA digabung per area — kini per titik, sehingga yang dinilai adalah tempat yang sama. Cakupan data: PVMBG ${fmt((cak.pvmbg||0)*100)}% titik · tutupan lahan ${fmt((cak.lahan||0)*100)}% titik · ${frBadge(st,'dihitung '+when(TP.diambil))}${TP.status?.ok===false?` · <b>perhitungan terakhir gagal</b> (${esc(TP.status.pesan||'')}) — menampilkan hasil sebelumnya`:''}. Rujukan resmi tetap PVMBG; verifikasi di lapangan.`;
+  const P=TP.produk[state.mgt]||{},tg=P.tanggal?lsDay(P.tanggal):'';
+  $('#mgtTabs').querySelector('[data-k="hari_ini"]').textContent=`Hari ini${TP.produk.hari_ini?.tanggal?' · '+lsDay(TP.produk.hari_ini.tanggal):''}`;
+  $('#mgtTabs').querySelector('[data-k="besok"]').textContent=`Besok${TP.produk.besok?.tanggal?' · '+lsDay(TP.produk.besok.tanggal):''} (prakiraan hujan)`;
+  if(P.belum){body.innerHTML=`<div class="info">Sudah lewat tengah malam: hasil model yang kemarin berlabel "besok" kini ditampilkan sebagai <b>hari ini</b>. Prakiraan untuk besok tersedia setelah workflow <i>Update Potensi Longsor</i> berikutnya.</div>`;return;}
+  if(!P.per_area){body.innerHTML='<div class="empty">Belum ada data untuk produk ini.</div>';return;}
+  const legend=`<div class="note" style="padding:0 0 8px">${MGT_LV.map(l=>mgtBadge(l)).join(' ')} · "Tidak ada indikasi" = model tidak memicu (mis. hujan tinggi tetapi lahan datar atau kerentanan rendah), bukan jaminan lereng aman.</div>`;
+  if(isOV()){
+    $('#mgtTitle').textContent='Gerakan tanah & longsor terpadu — perbandingan antarwilayah';
+    const rows=AREAS.map(k=>{const a=P.per_area[k];if(!a)return '';const b=mgtArea(k,state.mgt==='hari_ini'?'besok':'hari_ini'),km=a.pipa_km||{},sk=a.kerentanan_km||{};
+      return `<tr class="link" data-id="${k}"><td style="white-space:nowrap"><i class="line" style="background:${css(areaColor[k])};vertical-align:middle;margin-right:6px"></i><b>${k}</b></td><td class="num">${fmt(a.total_pipa_km,1)}</td><td class="num">${fmt((+sk['4']||0)+(+sk['5']||0),1)}</td>
+        ${['sangat_tinggi','tinggi','sedang','rendah','zona'].map(l=>`<td class="num">${fmt(km[l],1)}</td>`).join('')}<td class="num">${fmt((a.fasilitas||[]).filter(f=>f.level!=='zona').length)}</td><td>${pbar(a.rasio_maks)}</td><td>${mgtBadge(a.terburuk)}</td><td>${b?mgtBadge(b.terburuk):'–'}</td></tr>`;}).join('');
+    body.innerHTML=metodeMgt()+legend+`<div class="tbl" style="margin-top:0"><table><thead><tr><th>Wilayah</th><th class="num">Panjang pipa (km)</th><th class="num">Kerentanan SK 4–5 (km)</th><th class="num">Sangat tinggi</th><th class="num">Tinggi</th><th class="num">Sedang</th><th class="num">Rendah</th><th class="num">Zona PVMBG</th><th class="num">Fasilitas berindikasi</th><th>Hujan tertinggi vs ambang</th><th>Terberat (${LS_PROD[state.mgt]})</th><th>Terberat (${state.mgt==='hari_ini'?'besok':'hari ini'})</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="note" style="padding:6px 0 0">Panjang dalam km pipa. Klik baris untuk membuka wilayah.</div>`;
+    body.querySelectorAll('tr.link').forEach(r=>r.onclick=()=>selectTab(r.dataset.id));return;
+  }
+  const k=state.tab,a=P.per_area[k];
+  $('#mgtTitle').textContent=`Gerakan tanah & longsor terpadu — ${k}`;
+  if(!a){body.innerHTML=metodeMgt()+'<div class="empty">Tidak ada aset wilayah ini dalam perhitungan.</div>';return;}
+  const km=a.pipa_km||{},ruas=a.ruas||[],fas=a.fasilitas||[],kom=a.komponen_km||{};
+  const SKI={5:{label:'SK 5',v:'--critical'},4:{label:'SK 4',v:'--serious'},3:{label:'SK 3',v:'--warning'},2:{label:'SK 2',v:'--axis'},1:{label:'SK 1',v:'--grid'}};
+  const LI={5:{label:'≥ 25°',v:'--critical'},4:{label:'15–25°',v:'--serious'},3:{label:'10–15°',v:'--warning'},2:{label:'5–10°',v:'--axis'},1:{label:'< 5°',v:'--grid'}};
+  const GI={tinggi:{label:'Tinggi',v:'--critical'},menengah:{label:'Menengah',v:'--serious'},rendah:{label:'Rendah',v:'--warning'},sangat_rendah:{label:'Sangat rendah',v:'--axis'},bandang:{label:'Banjir bandang',v:'--quake'},tidak_ada:{label:'Di luar zona terunduh',v:'--grid'}};
+  const TI=Object.fromEntries(Object.keys(kom.lahan||{}).map(c=>[c,{label:LAHAN_NAMA[c]||'Tidak diketahui',v:null,col:LC_WARNA[c]||'#bbb'}]));
+  const bar=(title,o,keys,info,total)=>{const w=v=>total>0?v/total*100:0;return `<div class="segbar"><div class="lbl"><b>${title}</b><span>total ${fmt(total,1)} km</span></div><div class="bar">${keys.map(x=>o[x]>0?`<i title="${info[x].label}: ${fmt(o[x],1)} km" style="width:${Math.max(.6,w(o[x]))}%;background:${info[x].col||css(info[x].v)}"></i>`:'').join('')}</div><div class="keys">${keys.filter(x=>o[x]>0).map(x=>`<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${info[x].col||css(info[x].v)}"></i>${info[x].label} <b style="color:var(--ink)">${fmt(o[x],1)} km</b></span>`).join('')}</div></div>`;};
+  const tot=a.total_pipa_km||0;
+  body.innerHTML=`<div class="gt-stats">
+      <div><div class="n" style="color:${css('--critical')}">${fmt((+km.sangat_tinggi||0)+(+km.tinggi||0),1)} km</div><div class="k">Pipa <b>Tinggi–Sangat tinggi</b> (${LS_PROD[state.mgt]})</div></div>
+      <div><div class="n">${fmt(km.sedang,1)} km</div><div class="k">Pipa tingkat <b>Sedang</b> · rendah ${fmt(km.rendah,1)} km</div></div>
+      <div><div class="n">${fmt(fas.filter(f=>f.level!=='zona').length)}</div><div class="k">Fasilitas berindikasi · ${fmt(fas.filter(f=>f.level==='zona').length)} di zona PVMBG belum terpicu</div></div>
+      <div><div class="n">${fmt((a.rasio_maks||0)*100)}%</div><div class="k">Hujan anteseden tertinggi terhadap ambang · zona PVMBG belum terpicu ${fmt(km.zona,1)} km</div></div></div>
+    ${legend}
+    ${bar(`Panjang pipa menurut tingkat bahaya terpadu (${LS_PROD[state.mgt]})`,km,MGT_LV,MGT_INFO,tot)}
+    <details class="fold sub" open><summary><span class="sub-t">Mengapa? Komponen kerentanan sepanjang pipa ${k}</span><span class="chev" aria-hidden="true"></span></summary><div style="padding:8px 12px 4px">
+    ${bar('Kerentanan statis gabungan (SK)',a.kerentanan_km||{},['5','4','3','2','1'],SKI,tot)}
+    ${bar('Kemiringan lereng (bobot 3)',kom.lereng||{},['5','4','3','2','1'],LI,tot)}
+    ${bar('Geologi — zona kerentanan PVMBG (bobot 3)',kom.geologi||{},['tinggi','bandang','menengah','rendah','sangat_rendah','tidak_ada'],GI,tot)}
+    ${bar('Tutupan / tata guna lahan — ESA WorldCover (bobot 2)',kom.lahan||{},Object.keys(kom.lahan||{}),TI,tot)}</div></details>
+    <div class="ls-cols">
+      <div><h4>Ruas pipa berindikasi${a.jumlah_ruas>ruas.length?` (${ruas.length} teratas dari ${a.jumlah_ruas})`:''}</h4><div class="tbl"><table><thead><tr><th>Ruas pipa</th><th>Tingkat</th><th class="num">km</th><th class="num">SK</th><th>Penyebab</th><th>Lokasi</th></tr></thead><tbody>
+        ${ruas.length?ruas.map((r,i)=>`<tr class="link" data-r="${i}"><td>${esc(r.aset)}</td><td>${mgtBadge(r.level)}</td><td class="num">${fmt(r.km,2)}</td><td class="num">${r.SK}</td><td style="font-size:12px">${esc(r.faktor||'')}</td><td style="white-space:nowrap;color:var(--brand)">${(+r.lat).toFixed(4)}, ${(+r.lon).toFixed(4)} ↗</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Tidak ada ruas berindikasi untuk ${LS_PROD[state.mgt]}.</td></tr>`}</tbody></table></div></div>
+      <div><h4>Fasilitas berindikasi</h4><div class="tbl"><table><thead><tr><th>Fasilitas</th><th>Tingkat</th><th>Penyebab</th></tr></thead><tbody>
+        ${fas.length?fas.map((f,i)=>`<tr class="link" data-f="${i}"><td>${esc(f.aset)}</td><td>${mgtBadge(f.level)}</td><td style="font-size:12px">${esc(f.faktor||'')}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">Tidak ada fasilitas berindikasi.</td></tr>'}</tbody></table></div></div>
+    </div>${metodeMgt()}`;
+  body.querySelectorAll('tr[data-r]').forEach(el=>el.onclick=()=>fokusMgt(ruas[+el.dataset.r],k));
+  body.querySelectorAll('tr[data-f]').forEach(el=>el.onclick=()=>fokusMgt(fas[+el.dataset.f],k));
+}
+/* lapisan peta tambahan: model terpadu & petir stasiun */
+function drawW2(){
+  const inTab=a=>isOV()||a===state.tab;
+  if(TPR){const rk=l=>MGT_LV.indexOf(l);
+    (TPR.features||[]).filter(f=>f.properties.produk===state.mgt&&inTab(f.properties.area)).sort((a,b)=>rk(b.properties.level)-rk(a.properties.level)).forEach(f=>{
+      const p=f.properties,zona=p.level==='zona',c=css(MGT_INFO[p.level]?.v||'--serious');
+      const mid=f.geometry.coordinates[Math.floor(f.geometry.coordinates.length/2)];
+      const r={...p,lat:mid[1],lon:mid[0],garis:f.geometry.coordinates};
+      L.geoJSON(f,{style:{color:zona?css('--ink-2'):c,weight:zona?5:7,opacity:zona?.55:.9,dashArray:zona?'2 6':null,lineCap:'round'}}).bindPopup(()=>mgtPopup(r,p.area),{maxWidth:360}).addTo(layers.mgt);});}
+  if(PT&&PT.fasilitas){const p='hari_ini',w={tinggi:'--critical',sedang:'--serious',rendah:'--warning'};
+    PT.fasilitas.filter(f=>inTab(f.area)).forEach(f=>{const lv=f[p]?.level,c=lv?css(w[lv]):css('--axis');
+      L.marker([f.lat,f.lon],{icon:L.divIcon({className:'',html:`<div class="pt-pin" style="background:${c}" title="${esc(f.aset)}">ϟ</div>`,iconSize:[22,22],iconAnchor:[11,11]}),zIndexOffset:lv?500:0}).bindPopup(()=>ptPopup(f,p),{maxWidth:340}).addTo(layers.pt);});}
+}
+function legendW2(){
+  let lg='';
+  if(TPR&&(TPR.features||[]).length)lg+=`<span style="margin-left:6px">Gerakan tanah terpadu (${LS_PROD[state.mgt]}):</span>`+MGT_LV.map(k=>`<span><i class="line" style="height:5px;background:${k==='zona'?css('--ink-2'):css(MGT_INFO[k].v)};${k==='zona'?'opacity:.55':''}"></i>${MGT_INFO[k].label}</span>`).join('');
+  if(PT&&(PT.fasilitas||[]).length)lg+=`<span style="margin-left:6px"><i class="pt-pin" style="display:inline-grid;width:16px;height:16px;font-size:10px;background:${css('--serious')}">ϟ</i>Petir di stasiun (tinggi/sedang/rendah/tidak ada)</span>`;
+  return lg;
 }
 
 /* ---------- cek langsung dari browser (opsional; bila gagal, data terjadwal tetap dipakai) ---------- */
@@ -1672,7 +2253,7 @@ async function liveWx(area){
   }catch(e){LIVE.wxErr=e.name==='AbortError'?'waktu habis':(e.message||String(e));return true;}
 }
 function renderLive(redrawMap){
-  safe('status',renderStatus);safe('kpi',renderKPIs,'#kpis');safe('daftar',renderLists,'#eqList');
+  safe('status',renderStatus);safe('ubin',renderTiles,'#kpis');safe('ubin halaman',renderPageTiles);safe('briefing',renderBrief,'#brief');safe('daftar',renderLists,'#eqList');
   safe('cuaca',renderWeather,'#wxGrid');safe('sumber',renderSources,'#srcTable');if(redrawMap)safe('peta',()=>drawMap(false));
 }
 async function liveChecks(){
@@ -1681,9 +2262,12 @@ async function liveChecks(){
 }
 
 function render(fit){
-  [['status',renderStatus],['tab',renderTabs],['judul',renderTitle,'#viewTitle'],['kpi',renderKPIs,'#kpis'],['status area',renderRisk,'#riskTable'],['kartu wilayah',renderOverviewAreas,'#ovAreas'],
-   ['peta',()=>drawMap(fit)],['daftar',renderLists,'#hsList'],['cuaca',renderWeather,'#wxGrid'],['peringatan BMKG',renderPD,'#pdBody'],['petir',renderPT,'#ptBody'],['banjir sungai',renderBJ,'#bjBody'],['GDACS',renderGD,'#gdBody'],['gerakan tanah',renderGT,'#gtBody'],['longsor',renderLS,'#lsBody'],
+  [['status',renderStatus],['tab',renderTabs],['halaman',renderPages],['judul',renderTitle,'#viewTitle'],['briefing',renderBrief,'#brief'],['ubin',renderTiles,'#kpis'],['ubin halaman',renderPageTiles],
+   ['matriks',renderMatrix,'#matrixBody'],['prioritas',renderPrio,'#prioList'],['perubahan',renderChanges,'#chgBody'],['riwayat',renderHist,'#histBody'],['status area',renderRisk,'#riskTable'],
+   ['peta',()=>drawMap(fit)],['daftar',renderLists,'#eqList'],['cuaca',renderWeather,'#wxGrid'],['udara',renderAQ,'#aqTable'],['peringatan BMKG',renderPD,'#pdBody'],['petir',renderPT,'#ptBody'],['banjir sungai',renderBJ,'#bjBody'],['GDACS',renderGD,'#gdBody'],
+   ['gerakan tanah terpadu',renderMGT,'#mgtBody'],['gerakan tanah',renderGT,'#gtBody'],['longsor',renderLS,'#lsBody'],
    ['grafik',renderCharts],['tabel hotspot',renderHsTable,'#hsTable'],['sumber data',renderSources,'#srcTable'],['footer',renderFoot]].forEach(([n,f,el])=>safe(n,f,el));
+  safe('halaman aktif',renderHal);
   safe('catatan',clampNotes);
 }
 
@@ -1691,7 +2275,8 @@ function render(fit){
 const FOLD_KEY='pg-fold';let FOLD={};try{FOLD=JSON.parse(localStorage.getItem(FOLD_KEY)||'{}')||{};}catch(e){}
 const folds=()=>[...document.querySelectorAll('details.fold')];
 let mapPerluFit=false;
-function syncFoldBtn(){const any=folds().some(d=>!d.hidden&&!d.classList.contains('sub')&&d.open);const b=$('#btnFold');b.textContent=any?'Tutup semua':'Buka semua';b.setAttribute('aria-expanded',any);}
+const tampak=d=>!d.hidden&&!d.closest('.hal[hidden]');
+function syncFoldBtn(){const any=folds().some(d=>tampak(d)&&!d.classList.contains('sub')&&d.open);const b=$('#btnFold');b.textContent=any?'Tutup semua':'Buka semua';b.setAttribute('aria-expanded',any);}
 function afterOpen(d){
   if(map&&d.contains($('#map'))){map.invalidateSize();if(mapPerluFit){mapPerluFit=false;safe('peta',()=>drawMap(true));}}
   if(AREAS.length&&d.querySelector('canvas'))safe('grafik',renderCharts);
@@ -1702,11 +2287,11 @@ folds().forEach(d=>{
   d.addEventListener('toggle',()=>{FOLD[d.id]=d.open;try{localStorage.setItem(FOLD_KEY,JSON.stringify(FOLD));}catch(e){}if(d.open)afterOpen(d);syncFoldBtn();});
 });
 mapPerluFit=!$('#mapCard').open;
-$('#btnFold').onclick=()=>{const any=folds().some(d=>!d.hidden&&!d.classList.contains('sub')&&d.open);folds().forEach(d=>{if(!d.classList.contains('sub'))d.open=!any;});};
+$('#btnFold').onclick=()=>{const any=folds().some(d=>tampak(d)&&!d.classList.contains('sub')&&d.open);folds().forEach(d=>{if(tampak(d)&&!d.classList.contains('sub'))d.open=!any;});};
 syncFoldBtn();
 // tautan #bagian: buka dulu bagiannya bila sedang tertutup, lalu gulir ke sana
-document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a)return;const t=document.getElementById(a.getAttribute('href').slice(1));
-  if(!t||!t.matches('details.fold'))return;e.preventDefault();t.open=true;t.scrollIntoView({behavior:'smooth',block:'start'});});
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a||a.dataset.salin!==undefined)return;const t=document.getElementById(a.getAttribute('href').slice(1));
+  if(!t||!t.matches('details.fold'))return;e.preventDefault();const hal=t.closest('.hal');if(hal&&hal.hidden)selectHal(hal.dataset.hal,true);t.open=true;setTimeout(()=>t.scrollIntoView({behavior:'smooth',block:'start'}),30);});
 // catatan panjang diringkas 2 baris; tombol "Selengkapnya" membukanya
 function clampNotes(){
   document.querySelectorAll('.fold-body>.note').forEach(n=>{
@@ -1723,9 +2308,13 @@ $('#fConf').onchange=e=>{state.conf=e.target.value;render(false)};
 $('#btnTheme').onclick=()=>{const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
   const nx=cur==='dark'?'light':'dark';document.documentElement.dataset.theme=nx;try{localStorage.setItem('pg-theme',nx)}catch(e){};render(false)};
 document.querySelectorAll('#lsTabs button').forEach(b=>b.onclick=()=>{state.ls=b.dataset.k;safe('longsor',renderLS,'#lsBody');safe('peta',()=>drawMap(false))});
-document.querySelectorAll('#ptTabs button').forEach(b=>b.onclick=()=>{state.pt=b.dataset.k;safe('petir',renderPT,'#ptBody');safe('peta',()=>drawMap(false))});
+document.querySelectorAll('#hsTabs button').forEach(b=>b.onclick=()=>{state.hsRad=b.dataset.k;safe('tabel hotspot',renderHsTable,'#hsTable')});
+document.querySelectorAll('#mgtTabs button').forEach(b=>b.onclick=()=>{state.mgt=b.dataset.k;safe('gerakan tanah terpadu',renderMGT,'#mgtBody');safe('peta',()=>drawMap(false))});
+document.querySelectorAll('#ptTabs button').forEach(b=>b.onclick=()=>{state.pt=b.dataset.k;safe('petir',renderPT,'#ptBody')});
 document.querySelectorAll('#eqTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#eqTabs button').forEach(x=>x.classList.toggle('on',x===b));state.eqTab=b.dataset.k;safe('daftar',renderLists,'#eqList')});
-window.addEventListener('hashchange',()=>{const id=decodeURIComponent(location.hash.slice(1)).toUpperCase();const t=AREAS.includes(id)?id:OV;if(t!==state.tab){state.tab=t;render(true);liveWx(t).then(c=>c&&renderLive(true));}});
+window.addEventListener('hashchange',()=>{const H=parseHash();const ubahArea=H.area!==state.tab,ubahHal=H.hal!==state.hal;
+  state.tab=H.area;state.hal=H.hal;if(ubahArea)render(true);else if(ubahHal){renderHal();safe('judul',renderTitle,'#viewTitle');safe('halaman',renderPages);}
+  if(ubahArea)liveWx(H.area).then(c=>c&&renderLive(true));if(H.fokus)fokusTautan(H.fokus);});
 // Muat ulang DATA (bukan halaman) tiap 15 menit: tab, tampilan peta & filter tidak tereset.
 async function refreshData(){for(const k in LOADERR)delete LOADERR[k];await loadData();render(false);liveChecks();}
 setInterval(refreshData,15*60*1000);

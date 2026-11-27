@@ -41,6 +41,11 @@ jobs:
         timeout-minutes: 16
         continue-on-error: true
 
+      - name: Rekam status harian per area (untuk "Berubah sejak kemarin")
+        run: node scripts/rekam_status.js
+        timeout-minutes: 2
+        continue-on-error: true
+
       - name: Simpan hasil ke repositori
         if: always()
         run: |

@@ -110,6 +110,53 @@
     ],
     "maks_ruas_per_wilayah": 40
   },
+  "gerakan_tanah_terpadu": {
+    "_petunjuk": "Model gerakan tanah & longsor terpadu (scripts/gerakan_tanah_terpadu.py, dijalankan oleh workflow LHASA). Kerentanan statis SK = (bobot.geologi·G + bobot.lereng·L + bobot.lahan·T) / jumlah bobot, mengikuti parameter & bobot SNI 13-7124-2005; G = zona kerentanan PVMBG, L = kelas lereng (Copernicus DEM), T = tutupan lahan ESA WorldCover. SK dibatasi kelas lereng + 1. Pemicu hujan PH = jumlah batas_pemicu (rasio hujan anteseden ÷ ambang ARI95) yang terlampaui. matriks = tingkat untuk tiap SK (1–5) pada PH 0, 1, 2, 3. Zona prakiraan PVMBG menjadi tingkat minimum bila dipicu hujan. lahan_maks_jarak_m = jarak maksimum ke ruas koridor tutupan lahan.",
+    "bobot": {
+      "geologi": 3,
+      "lereng": 3,
+      "lahan": 2
+    },
+    "batas_pemicu": [
+      0.75,
+      1.0,
+      1.5
+    ],
+    "matriks": {
+      "1": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "2": [
+        null,
+        null,
+        null,
+        "rendah"
+      ],
+      "3": [
+        null,
+        "rendah",
+        "sedang",
+        "sedang"
+      ],
+      "4": [
+        null,
+        "rendah",
+        "sedang",
+        "tinggi"
+      ],
+      "5": [
+        null,
+        "sedang",
+        "tinggi",
+        "tinggi"
+      ]
+    },
+    "lahan_maks_jarak_m": 800,
+    "maks_ruas_per_wilayah": 40
+  },
   "peringatan_cuaca": {
     "_petunjuk": "Peringatan dini cuaca ekstrem BMKG (nowcasting). Poligon wilayah peringatan ditumpangkan ke jalur pipa & fasilitas. radius_tampil_km = peringatan di sekitar aset yang tetap ditampilkan di peta walau tidak mengenai aset. heartbeat_menit = selang maksimum penulisan ulang berkas bila tidak ada perubahan.",
     "rss_url": "https://www.bmkg.go.id/alerts/nowcast/id",
@@ -118,11 +165,20 @@
     "maks_peringatan": 40
   },
   "petir_model": {
-    "_petunjuk": "Potensi petir dari model cuaca Open-Meteo (BUKAN deteksi sambaran). Tinggi = model memprakirakan badai petir & CAPE >= cape_tinggi; Sedang = model memprakirakan badai petir, atau CAPE >= cape_tinggi dengan hujan >= hujan_sedang_mm per jam; Rendah = CAPE >= cape_rendah dengan hujan >= hujan_rendah_mm per jam. Ambang CAPE mengikuti kategori umum meteorologi, bukan prosedur resmi.",
+    "_petunjuk": "Potensi petir dari model cuaca Open-Meteo (BUKAN deteksi sambaran), HANYA untuk stasiun kompresor gas, stasiun metering/regulasi dan booster/pompa. Jenis fasilitas dikenali dari nama aset (pola bawaan di scripts/petir_model.py); fasilitas.tambah = {nama persis: kompresor|metering|booster} untuk menambah/mengoreksi, fasilitas.kecuali = daftar nama yang tidak dipantau. Tinggi = model memprakirakan badai petir & CAPE >= cape_tinggi; Sedang = model memprakirakan badai petir, atau CAPE >= cape_tinggi dengan hujan >= hujan_sedang_mm per jam; Rendah = CAPE >= cape_rendah dengan hujan >= hujan_rendah_mm per jam. Ambang CAPE mengikuti kategori umum meteorologi, bukan prosedur resmi.",
     "cape_rendah": 1000,
     "cape_tinggi": 2500,
     "hujan_rendah_mm": 0.5,
-    "hujan_sedang_mm": 1.0
+    "hujan_sedang_mm": 1.0,
+    "fasilitas": {
+      "_petunjuk": "Stasiun di jalur pipa minyak Rokan (ORA) dianggap stasiun pompa (booster). Ubah bila tidak sesuai.",
+      "tambah": {
+        "Station SPO Duri": "booster",
+        "Station Batang": "booster",
+        "Station Dumai": "booster"
+      },
+      "kecuali": []
+    }
   },
   "banjir_sungai": {
     "_petunjuk": "Potensi banjir sungai model GloFAS v4 (Open-Meteo Flood API), hanya di sel sungai 5 km yang dilalui jalur pipa. Sel dianggap sungai bila median debit 5 tahun >= sungai_min_median_m3s. Tingkat: Tinggi = puncak prakiraan >= maksimum riwayat; Sedang >= persentil_sedang; Rendah >= persentil_rendah. sel_per_run = jumlah sel yang riwayatnya diunduh tiap run (dicicil untuk menghemat kuota API). Hapus data/banjir/sel_statis.json untuk membangun ulang dari awal.",
@@ -135,26 +191,22 @@
     "persentil_sedang": 0.995
   },
   "gdacs": {
-    "_petunjuk": "Siklon tropis (TC), banjir besar (FL) dan erupsi gunung api (VO) dari GDACS. radius_tampil_km = jarak maksimum kejadian ke aset agar ditampilkan. Gempa (EQ) dan kebakaran (WF) sengaja tidak diambil karena sudah dipantau dari BMKG dan SiPongi.",
+    "_petunjuk": "Siklon tropis (TC) dan erupsi gunung api (VO) dari GDACS. radius_tampil_km = jarak maksimum kejadian ke aset agar ditampilkan. Gempa (EQ) dan kebakaran (WF) tidak diambil karena sudah dipantau dari BMKG dan SiPongi; banjir (FL) tidak diambil karena lokasinya hanya titik perkiraan dan banjir di perlintasan pipa sudah dipantau modul banjir sungai (GloFAS).",
     "jenis": [
       "TC",
-      "FL",
       "VO"
     ],
     "hari_ke_belakang": 10,
     "kejadian_aktif_hari": 3,
     "radius_tampil_km": {
       "TC": 1500,
-      "FL": 150,
       "VO": 150
     },
     "tc_pantau_km": 500,
     "dekat_km": {
-      "FL": 25,
       "VO": 30
     },
     "pantau_km": {
-      "FL": 100,
       "VO": 100
     }
   },

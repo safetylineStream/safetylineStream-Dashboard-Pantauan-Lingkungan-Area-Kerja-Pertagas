@@ -1,27 +1,45 @@
 # PERTAGAS WASPADA
 **Watch & Analytics for Spatial Pipeline Anomaly & Disaster Awareness** — dashboard pemantauan geohazard & lingkungan jalur pipa PT Pertamina Gas, by Fungsi HSSE Pertamina Gas.
 
-Dashboard ini memantau **hotspot karhutla**, **gempa bumi & tsunami**, **gerakan tanah (PVMBG)**, serta **cuaca, kelembapan dan kualitas udara** di sekitar jalur pipa dan fasilitas Pertagas per wilayah kerja. Datanya diperbarui otomatis oleh GitHub Actions dan ditampilkan lewat GitHub Pages.
+Dashboard ini memantau bahaya alam dan lingkungan di sekitar jalur pipa dan fasilitas Pertagas per wilayah kerja. Sembilan modul data dirangkum menjadi **4 jenis bahaya**:
+
+| Jenis bahaya | Modul di dalamnya |
+|---|---|
+| **Api & Udara** | Hotspot karhutla (SiPongi+/FIRMS) + tutupan lahan ESA WorldCover, kualitas udara (CAMS) |
+| **Hujan, Petir & Banjir** | Peringatan dini cuaca ekstrem BMKG, prakiraan hujan, **potensi petir khusus stasiun kompresor/metering/booster**, banjir sungai (GloFAS), siklon tropis (GDACS) |
+| **Tanah & Longsor** | **Model gerakan tanah & longsor terpadu** = zona & prakiraan PVMBG + model hujan LHASA + kemiringan lereng + tutupan/tata guna lahan, dinilai per titik 250 m |
+| **Gempa & Tsunami** | BMKG InaTEWS, gunung api (GDACS) |
+
+Datanya diperbarui otomatis oleh GitHub Actions dan ditampilkan lewat GitHub Pages. Setiap temuan membawa **koordinat**: tombol **↗ Peta** langsung memperbesar peta ke ruas pipa atau fasilitas yang dimaksud.
 
 ```
  SiPongi+ (hotspot)  ─┐
- BMKG InaTEWS (gempa) ─┼─► GitHub Actions (06:00 & 17:00 WIB) ─► scripts/fetch_all.py
- BMKG / Open-Meteo    ─┤        │  bandingkan jarak ke aset (data/assets.geojson)
+ BMKG InaTEWS (gempa) ─┼─► GitHub Actions (06:00 & 17:00 WIB) ─► scripts/fetch_all.py ─► rekam_status.js
+ BMKG / Open-Meteo    ─┤        │  bandingkan jarak ke aset (data/assets.geojson)       (riwayat status 90 hari)
  PVMBG gerakan tanah  ─┘        │  potong zona gerakan tanah dengan jalur pipa & fasilitas
                                 ▼
-                     data/latest.json + data/history/  ──► index.html (GitHub Pages)
+                     data/latest.json + data/history/  ──┐
+ Open-Meteo hujan + ARI95 NASA ─► lhasa.py ─► gerakan_tanah_terpadu.py ─► data/lhasa/terpadu.json ─┤
+ Open-Meteo CAPE/petir ─► petir_model.py (stasiun saja) ─► data/petir_model/petir.json ───────────┤
+                                                                                                    ▼
+                                             klasifikasi.js (R = P × K) ─► index.html (GitHub Pages) + laporan.js (PDF)
 ```
 
 | Folder / file | Isi |
 |---|---|
-| `index.html` | Halaman dashboard (peta, KPI, ringkasan wilayah, cuaca, tren) |
+| `index.html` | Halaman dashboard: Ikhtisar + satu halaman per jenis bahaya + Sumber & metode |
+| `klasifikasi.js` | Klasifikasi status multi-bahaya R = P × K per temuan, area dan jenis bahaya (dipakai dashboard, laporan & riwayat) |
+| `laporan.js` | Laporan PDF (rangkuman direksi & laporan detail area) dibuat langsung di browser |
 | `assets_raw/` | File KMZ/KML/SHP aset per wilayah kerja (sumber asli) |
 | `config/assets_sources.json` | Aturan folder mana di KMZ yang dianggap *jalur pipa* dan *fasilitas* |
 | `config/monitoring.json` | Radius kritis/waspada/pantau, titik cuaca, provinsi pantauan |
 | `scripts/build_assets.py` | Mengubah KMZ/SHP → `data/assets.geojson` |
 | `scripts/fetch_all.py` | Mengambil data harian dan menghitung jarak ke aset |
 | `scripts/gerakan_tanah.py` | Mengambil data gerakan tanah PVMBG dan menghitung panjang pipa/fasilitas di tiap zona |
-| `scripts/lhasa.py` | Menghitung potensi longsor harian (algoritma NASA LHASA 1.1) di sepanjang seluruh jalur pipa & fasilitas → `data/lhasa/` |
+| `scripts/lhasa.py` | Menghitung potensi longsor harian (algoritma NASA LHASA 1.1) di sepanjang seluruh jalur pipa & fasilitas → `data/lhasa/`, lalu menjalankan model terpadu |
+| `scripts/gerakan_tanah_terpadu.py` | Model gerakan tanah & longsor terpadu (PVMBG + LHASA + tutupan lahan, bobot SNI 13-7124-2005) → `data/lhasa/terpadu.json` |
+| `scripts/petir_model.py` | Potensi petir per jam, khusus stasiun kompresor, metering/regulasi & booster → `data/petir_model/petir.json` |
+| `scripts/rekam_status.js` | Merekam status akhir harian tiap area & jenis bahaya → `data/history/status_area.json` (90 hari) |
 | `lhasa_statis/` | Ambang hujan ARI95 resmi NASA (potongan Indonesia) dan, opsional, peta kerentanan manual `kerentanan.tif` |
 | `gerakan_tanah_raw/` | (Opsional) file peta gerakan tanah manual bila layanan online tidak bisa diakses |
 | `.github/workflows/` | Jadwal otomatis (update harian & build aset) |
@@ -105,6 +123,22 @@ Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagi
 ## Bagian B — Operasional harian (command & operate)
 
 ### B1. Membaca dashboard
+
+**Struktur halaman (WASPADA 2.0).** Baris atas memilih *wilayah* (Ringkasan semua / ONSA / OCSA / …); baris kedua memilih *halaman*:
+
+| Halaman | Isi |
+|---|---|
+| **Ikhtisar** | Briefing hari ini (bisa disalin untuk WhatsApp), ubin 4 jenis bahaya, **matriks risiko area × jenis bahaya** (+ hujan 3 hari), peta, **Prioritas & lokasi** (temuan Pantau ke atas, urut skor, dengan koordinat, tombol ↗ Peta, Google Maps & salin tautan), *Berubah sejak kemarin*, *Riwayat status 30 hari* |
+| **Api & Udara** | Hotspot dekat aset, kualitas udara per titik pantau, tren hotspot |
+| **Hujan, Petir & Banjir** | Peringatan dini BMKG, **potensi petir per stasiun** (bilah per jam 00–23 WIB, jam rawan), banjir sungai, GDACS, cuaca & prakiraan |
+| **Tanah & Longsor** | **Model terpadu** (perbandingan antarwilayah atau rincian per wilayah: tingkat, komponen kerentanan, ruas & fasilitas berindikasi) + *Rincian sumber*: panel LHASA & PVMBG lengkap seperti sebelumnya |
+| **Gempa & Tsunami** | Gempa terkini & dirasakan, potensi tsunami |
+| **Sumber & metode** | Rincian skor semua temuan (P × K), status tiap sumber data |
+
+Peta selalu ikut ke halaman yang dibuka, dengan lapisan yang sesuai halaman itu (tetap bisa diubah lewat tombol lapisan). Tombol ⛶ di kiri peta = layar penuh (Esc untuk keluar).
+
+**Tautan langsung:** alamat halaman bisa dibagikan, mis. `…/#OKA/tanah` (wilayah OKA, halaman Tanah & Longsor) atau `…/#OKA/tanah@-1.01120,117.04130,14` (sekaligus memperbesar peta ke titik itu). Tautan lokasi dibuat otomatis lewat **Salin tautan** di daftar prioritas dan di popup peta.
+
 | Elemen | Arti | Tindak lanjut yang disarankan |
 |---|---|---|
 | ▲ **Kritis** (≤ 1 km dari pipa/fasilitas) | Titik panas sangat dekat aset | Informasikan ke area terkait untuk *ground check* segera; siagakan APAR/regu, koordinasi Manggala Agni/BPBD |
@@ -118,10 +152,12 @@ Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagi
 | Gerakan tanah — **zona kerentanan Tinggi** | Kondisi geologi dasar yang rentan (tidak berubah bulanan) | Masukkan ke penilaian risiko geohazard/integritas pipa; prioritaskan inspeksi dan monitoring pergerakan tanah |
 | RH, suhu, angin, PM2.5 | RH rendah + angin kencang = risiko rambatan api naik; PM2.5 tinggi = indikasi asap | Pertimbangkan pembatasan *hot work* / pekerjaan lapangan |
 
-- **Tab wilayah** di bagian atas: **Ringkasan semua** menampilkan kartu tiap wilayah (klik kartu untuk membuka tabnya), lalu satu tab untuk tiap wilayah kerja (ONSA, OCSA, ODA, OSSA, OWJA). Angka kecil di tab menunjukkan jumlah hotspot dengan status terburuk di wilayah itu. Tanda ✓ berarti tidak ada hotspot dalam radius.
-- Di tab wilayah, peta langsung terfokus ke wilayah tersebut. Jarak gempa dihitung ke aset **wilayah itu**, dan panel cuaca menampilkan kondisi terkini serta prakiraan 3 hari tiap titik pantau. Grafik tren dipecah per status, dan grafik provinsi hanya memuat provinsi tempat wilayah itu beroperasi.
-- Tab bisa dibuka langsung lewat alamat, misalnya `.../pertagas-env-dashboard/#OSSA`. Tautan ini praktis untuk dikirim ke tim area.
+- **Tab wilayah** di bagian atas: **Ringkasan semua**, lalu satu tab untuk tiap wilayah kerja. Lambang di tab = status wilayah itu (✓ Normal).
+- Di tab wilayah, peta langsung terfokus ke wilayah tersebut. Jarak gempa dihitung ke aset **wilayah itu**, dan panel cuaca menampilkan kondisi terkini serta prakiraan 3 hari tiap titik pantau. Grafik tren dipecah per jarak ke aset, dan angka hotspot provinsi (kartu di atas) hanya memuat provinsi tempat wilayah itu beroperasi.
+- Tab bisa dibuka langsung lewat alamat, misalnya `.../#OSSA` atau `.../#OSSA/air`. Tautan ini praktis untuk dikirim ke tim area.
 - Pilih **Kepercayaan** untuk menyaring hotspot berkeyakinan rendah.
+- Tabel **Hotspot dekat aset** di bawah peta: pilih *≤ 5 km · dinilai risiko* (urut skor R) atau *≤ 25 km · semua tersimpan* (urut jarak).
+- Halaman **Tanah & Longsor** memuat model terpadu; panel rinci LHASA (hari ini/besok, ruas, kerentanan lereng) dan PVMBG (prakiraan & zona kerentanan) tetap tersedia di kartu *Rincian sumber* di halaman yang sama.
 - Klik baris hotspot atau gempa untuk langsung menuju lokasinya di peta. Popup hotspot memuat tautan Google Maps untuk tim lapangan.
 - Ikon lapisan di kanan atas peta: ganti ke **Citra satelit**, atau nyalakan **Titik cuaca**.
 - Hotspot adalah **indikasi titik panas dari satelit**, bukan kepastian kebakaran. Selalu verifikasi di lapangan.
@@ -141,7 +177,7 @@ Jika belum ada kredensial, dashboard tetap berjalan; cadangan manual ada di bagi
 | Radius kritis/waspada/pantau | `config/monitoring.json` | `hotspot.radius_km`, `gempa.radius_km` |
 | Titik cuaca (tambah/hapus lokasi) | `config/monitoring.json` | `titik_cuaca` |
 | Memakai data cuaca **BMKG resmi** | `config/monitoring.json` | isi `adm4` (lihat B5) |
-| Provinsi di grafik | `config/monitoring.json` | `provinsi_pantauan` (tab Ringkasan), `provinsi_area` (tab wilayah) |
+| Provinsi di kartu angka hotspot provinsi | `config/monitoring.json` | `provinsi_pantauan` (tab Ringkasan), `provinsi_area` (tab wilayah) |
 | Jam update | `.github/workflows/update-data.yml` | `cron` (jam UTC = WIB − 7) |
 
 Contoh: update setiap 3 jam → ganti kedua baris cron dengan `- cron: "0 */3 * * *"`.
@@ -189,26 +225,47 @@ Layanan nowcast NASA LHASA tidak bisa diakses dari GitHub Actions dan berkasnya 
 - **Keterbatasan:** ambang ARI95 NASA dibuat dari hujan satelit IMERG, sedangkan hujan harian di sini dari model cuaca Open-Meteo, jadi nilainya bisa sedikit bergeser. Hasilnya indikatif untuk kesiapsiagaan dan wajib diverifikasi di lapangan; rujukan resmi tetap PVMBG.
 - Riwayat harian per wilayah tersimpan di `data/lhasa/riwayat.csv`.
 
+### B8a. Model gerakan tanah & longsor terpadu (PVMBG + LHASA + tutupan lahan)
+Sebelumnya prakiraan PVMBG dan model LHASA dinilai **per area** lalu digabung, sehingga keduanya bisa menunjuk tempat berbeda. Kini keduanya disatukan **per titik** (setiap 250 m sepanjang pipa dan setiap fasilitas), ditambah parameter tata guna/tutupan lahan. Kode: `scripts/gerakan_tanah_terpadu.py`, dijalankan otomatis di akhir `lhasa.py`.
+
+1. **Kerentanan statis SK 1–5** = overlay berbobot parameter **SNI 13-7124-2005**:
+   `SK = (3·geologi + 3·lereng + 2·lahan) ÷ 8`, dibulatkan, maks. kelas lereng + 1.
+   - *Geologi*: zona kerentanan gerakan tanah PVMBG di titik itu (sangat rendah 1 · rendah 2 · menengah 4 · tinggi 5).
+   - *Lereng*: kelas kemiringan Copernicus DEM yang sama dengan LHASA (< 5° 1 … ≥ 25° 5).
+   - *Lahan*: kelas ESA WorldCover koridor pipa (pohon/mangrove/air 1 · semak/rawa 2 · rumput 3 · pertanian/terbangun 4 · lahan terbuka 5) — vegetasi berakar dalam menahan lereng, lahan terbuka/olahan melemahkannya.
+   - Komponen yang tidak tersedia di titik itu dikeluarkan dan bobot sisanya dinormalkan ulang.
+2. **Pemicu hujan PH 0–3** = hujan anteseden 7 hari ÷ ambang ARI95 NASA (langkah 1–2 LHASA): < 75% → 0 · 75–100% → 1 · 100–150% → 2 · ≥ 150% → 3.
+3. **Matriks bahaya harian SK × PH** (perluasan pohon keputusan LHASA 1.1) → rendah / sedang / tinggi. Lahan datar < 5° tidak dinilai model harian.
+4. **Lantai resmi PVMBG**: prakiraan bulanan berlaku "bila curah hujan di atas normal", maka dipicu PH — zona tinggi/banjir bandang: PH ≥ 2 → tinggi, PH 1 → sedang, PH 0 → **zona** (potensi, belum terpicu); zona menengah: PH ≥ 2 → sedang, PH 1 → rendah. Di lahan datar (kecuali alur banjir bandang) hanya PH ≥ 2 yang dinaikkan, maks. rendah — mencegah alarm palsu di rawa/dataran karena poligon PVMBG berskala regional.
+5. **Tingkat akhir** = yang terberat dari 3 dan 4; **sangat tinggi** bila model harian tinggi *dan* titik berada di zona prakiraan tinggi PVMBG (dua penilaian independen sepakat di tempat yang sama).
+
+- **Pengaruh ke status:** P = 5/4/3/2/1 untuk sangat tinggi/tinggi/sedang/rendah/zona; K = 3 (pipa) atau 4 (fasilitas). Ruas atau fasilitas terburuk hari ini/besok menjadi temuan, lengkap dengan koordinat dan garis ruasnya.
+- **Keluaran:** `data/lhasa/terpadu.json` (ringkasan per wilayah: km pipa per tingkat, km per kelas SK/lereng/geologi/lahan, ruas & fasilitas berindikasi dengan faktor penyebab) dan `data/lhasa/terpadu_ruas.geojson` (lapisan peta *Gerakan tanah terpadu*).
+- **Pengaturan:** `config/monitoring.json` → `gerakan_tanah_terpadu` (bobot, batas pemicu, matriks, jarak maks. ke data tutupan lahan).
+- **Mengapa bukan LHASA 2.0?** LHASA 2.0 (Stanley dkk. 2021) memakai kelembapan tanah dan model *machine learning* yang dilatih pada katalog longsor global; data kelembapan tanah yang tersedia gratis memiliki bias musiman dan model terlatihnya tidak dapat dijalankan dari GitHub Actions. Parameter yang paling berpengaruh di LHASA 2.0 (lereng, hujan anteseden, geologi, tutupan lahan) sudah tercakup di model ini dengan data resmi Indonesia (PVMBG).
+- **Keterbatasan:** indikasi model untuk kesiapsiagaan, bukan pengganti informasi resmi PVMBG; tetap verifikasi lapangan. DEM 90 m tidak menangkap lereng galian/timbunan ROW yang sempit.
+
 ---
 
 ### B8b. Modul tambahan berbasis lokasi aset (tanpa API key)
-Empat modul ini hanya menampilkan data yang **mengenai atau mendekati jalur pipa/fasilitas**; data yang tidak bisa ditumpangkan ke aset tidak diambil.
+Tiga modul ini hanya menampilkan data yang **mengenai atau mendekati jalur pipa/fasilitas**; data yang tidak bisa ditumpangkan ke aset tidak diambil.
 
 | Modul | Sumber | Cara ditumpangkan ke aset | Jadwal | Berkas |
 |---|---|---|---|---|
 | **Peringatan dini cuaca ekstrem** | BMKG nowcasting (RSS + CAP) — peringatan resmi, berlaku ±1–3 jam | Poligon wilayah peringatan diiris dengan jalur pipa (km pipa) dan fasilitas di dalamnya | tiap ±15 menit (workflow **Update Peringatan Dini Cuaca (BMKG)**) | `data/peringatan_cuaca/` |
-| **Potensi petir (model)** | Open-Meteo Forecast: CAPE, kode cuaca, hujan per jam — **prakiraan, bukan deteksi sambaran** | Grid 0,1° (±11 km); hanya sel yang dilalui pipa/memuat fasilitas | 4× sehari | `data/petir_model/` |
 | **Potensi banjir sungai (model)** | Open-Meteo Flood API — GloFAS v4 (Copernicus/ECMWF), grid ±5 km | Hanya **sel sungai yang dilalui jalur pipa** (median debit 5 tahun ≥ 10 m³/s) | 4× sehari | `data/banjir/` |
-| **Siklon tropis & bencana besar** | GDACS (PBB & Komisi Eropa): siklon tropis, banjir besar, erupsi | Jarak geodesik ke aset; zona angin & kerucut lintasan siklon diiris dengan aset | 4× sehari | `data/gdacs/` |
+| **Siklon tropis & gunung api** | GDACS (PBB & Komisi Eropa): siklon tropis, erupsi gunung api | Jarak geodesik ke aset; zona angin & kerucut lintasan siklon diiris dengan aset | 4× sehari | `data/gdacs/` |
+| **Potensi petir di stasiun (model)** | Open-Meteo: CAPE, kode cuaca & hujan per jam | **Hanya stasiun kompresor gas, stasiun metering/regulasi dan booster/pompa** (peralatan di atas tanah & pekerjaan luar ruang); pipa tertanam tidak dinilai | 4× sehari | `data/petir_model/` |
 
 Tiga modul terakhir dijalankan workflow **Update Bahaya Tambahan (petir, banjir sungai, GDACS)** pukul 05:40, 11:40, 17:40 dan 23:40 WIB.
 
+- **Petir:** stasiun dipilih otomatis dari nama fasilitas (mis. *SKG, Compressor, Booster, Pump, Metering, SM/SMG, MRS, PRS, ORF, Station*); valve, tie-in, pig launcher/receiver dan kantor dikecualikan. Koreksi daftar di `config/monitoring.json` → `petir_model.fasilitas` (`tambah` / `kecuali`). Tingkat per jam: **Tinggi** = model memprakirakan badai petir & CAPE ≥ 2.500 J/kg; **Sedang** = badai petir, atau CAPE ≥ 2.500 + hujan ≥ 1 mm/jam; **Rendah** = CAPE ≥ 1.000 + hujan ≥ 0,5 mm/jam. Dashboard menampilkan bilah 24 jam dan **jam rawan** (tingkat ≥ sedang) untuk menjadwalkan *hot work* & pekerjaan di ketinggian. Bukan deteksi sambaran — di lapangan tetap gunakan aturan 30-30 dan peringatan BMKG.
+
 - **Peringatan BMKG:** berkas hanya ditulis ulang bila daftar peringatan di sekitar aset berubah atau sudah 60 menit, jadi commit tidak terjadi tiap 15 menit. Peringatan yang sudah berakhir disembunyikan otomatis oleh dashboard. Wajib mencantumkan BMKG sebagai sumber.
-- **Potensi petir:** tingkat per jam — *Tinggi* = model memprakirakan badai petir dan CAPE ≥ 2.500 J/kg; *Sedang* = model memprakirakan badai petir, atau CAPE ≥ 2.500 J/kg dengan hujan ≥ 1 mm/jam; *Rendah* = CAPE ≥ 1.000 J/kg dengan hujan ≥ 0,5 mm/jam. Ambang ini pendekatan umum meteorologi, **bukan prosedur resmi Pertagas** — ubah di `config/monitoring.json` → `petir_model`. Modul ini tidak bisa menyatakan kapan/di mana petir menyambar.
 - **Banjir sungai:** bekerja tiga tahap otomatis. (1) *Saring*: jalur pipa dipetakan ke sel GloFAS. (2) *Ambang*: riwayat debit 5 tahun tiap sel berdebit diunduh sekali dan diringkas (median, persentil 98, persentil 99,5, maksimum) — **dicicil 30 sel per run**, sungai terbesar lebih dulu, sehingga daftar sel sungai baru lengkap setelah beberapa hari; kartu menampilkan berapa sel yang masih menunggu. (3) *Prakiraan*: puncak debit 7 hari dibanding ambang sel itu sendiri — *Tinggi* ≥ maksimum 5 tahun, *Sedang* ≥ persentil 99,5, *Rendah* ≥ persentil 98. Ini keluaran model, bukan pos duga air; sungai kecil dan genangan lokal tidak terwakili. Untuk mempercepat tahap 2: **Run workflow** dan isi `sel_per_run` (mis. 60). Hapus `data/banjir/sel_statis.json` untuk membangun ulang.
-- **GDACS:** level Green/Orange/Red adalah perkiraan dampak kemanusiaan, bukan peringatan resmi BMKG/BNPB. Lokasi banjir GDACS berupa titik perkiraan. Gempa dan kebakaran tidak diambil dari GDACS karena sudah dipantau dari BMKG dan SiPongi.
+- **GDACS:** level Green/Orange/Red adalah perkiraan dampak kemanusiaan, bukan peringatan resmi BMKG/BNPB. Gempa, kebakaran dan banjir tidak diambil dari GDACS karena sudah dipantau dari BMKG, SiPongi dan modul banjir sungai (GloFAS) — lokasi banjir GDACS hanya titik perkiraan.
 - **Lisensi Open-Meteo:** layanan gratisnya untuk pemakaian non-komersial. Bila dashboard dinilai pemakaian komersial, gunakan paket berbayar/API key atau server sendiri.
-- **Pengaruh ke status area:** lihat "Cara status dihitung" di dashboard — keempat modul bernilai konservatif dan tidak ikut aturan kenaikan gabungan.
+- **Pengaruh ke status area:** lihat "Cara status dihitung" di dashboard — ketiga modul bernilai konservatif dan tidak ikut aturan kenaikan gabungan.
 
 ---
 
@@ -218,8 +275,8 @@ Tombol hitam **↓ Unduh …(PDF)** di samping filter kepercayaan hotspot membua
 
 | Tab yang dibuka | Isi PDF |
 |---|---|
-| **Ringkasan semua** | *Rangkuman direksi*: status keseluruhan, status & pemicu tiap area, lokasi prioritas (hotspot berdekatan digabung per klaster), tren 8 hari, rekomendasi, status sumber data (±3 halaman). |
-| **Tab wilayah** (mis. OKA) | *Laporan detail area*: status & penentu status (P × K = R), peta skematis (seluruh jalur + perbesaran di hotspot berisiko tertinggi), daftar hotspot ≤ 5 km, gempa 7 hari, longsor (LHASA) & gerakan tanah (PVMBG), cuaca & udara per titik pantau, peringatan BMKG/petir/banjir/GDACS, tren, rekomendasi (±4–6 halaman). |
+| **Ringkasan semua** | *Rangkuman direksi*: status keseluruhan, status & pemicu tiap area, geohazard (model gerakan tanah terpadu), petir di stasiun, lokasi prioritas (hotspot berdekatan digabung per klaster), tren 8 hari, rekomendasi, status sumber data (±3–4 halaman). |
+| **Tab wilayah** (mis. OKA) | *Laporan detail area*: status & penentu status (P × K = R), peta skematis, daftar hotspot ≤ 5 km, gempa 7 hari, **gerakan tanah & longsor terpadu** (ruas & fasilitas dengan SK, faktor penentu, koordinat) + rincian sumber LHASA & PVMBG, cuaca & udara per titik pantau, peringatan BMKG/banjir/GDACS, **petir per stasiun** (jam rawan), tren, rekomendasi yang menyebut lokasi (±5–7 halaman). |
 
 Subjudul bernomor dan berhuruf kapital, dengan sub-poin. Rekomendasi adalah usulan otomatis dari data — sesuaikan dengan penilaian lapangan sebelum diteruskan. Kode ada di `laporan.js`; pustaka jsPDF/AutoTable (`vendor/`) dan font Carlito (`fonts/`, lisensi SIL OFL) disimpan di repositori sendiri dan baru dimuat saat tombol diklik.
 
@@ -245,8 +302,17 @@ Subjudul bernomor dan berhuruf kapital, dengan sub-poin. Rekomendasi adalah usul
 Sejak November 2026 status Kritis / Waspada / Pantau / Normal **tidak lagi ditentukan oleh jarak satu hotspot**.
 Status dihitung di `klasifikasi.js` dengan skor risiko **R = P × K** (peluang × konsekuensi, 1–5):
 Kritis R 15–25 · Waspada 8–14 · Pantau 3–7 · Normal 1–2. Status **per area** = skor tertinggi di area itu dari
-hotspot, gempa/tsunami, gerakan tanah PVMBG + model longsor LHASA, serta cuaca & kualitas udara.
+semua temuan; setiap temuan juga dikelompokkan ke salah satu dari **4 jenis bahaya** (Api & Udara · Hujan, Petir &
+Banjir · Tanah & Longsor · Gempa & Tsunami) untuk matriks risiko di Ikhtisar.
 Status satu area tidak memengaruhi area lain. Penjelasan lengkap ada di dashboard ("Cara status dihitung").
+
+* **Gerakan tanah & longsor** dinilai oleh model terpadu (B8a). Bila `terpadu.json` belum ada, dipakai rumusan
+  lama per area (prakiraan PVMBG + LHASA).
+* **Petir** hanya untuk stasiun: tingkat Tinggi hari ini → P 3 × K 2 = R 6 (Pantau).
+* Setiap temuan membawa **lokasi fokus** (titik/garis ruas) untuk tombol ↗ Peta dan tautan lokasi.
+* **Riwayat status:** `scripts/rekam_status.js` (langkah terakhir *Update Data Harian*) menyimpan status akhir harian tiap
+  area & jenis bahaya ke `data/history/status_area.json` (90 hari) — dipakai panel *Berubah sejak kemarin* dan
+  *Riwayat status 30 hari*. Hari-hari sebelum model terpadu aktif diisi ulang dari riwayat git dengan rumusan gerakan tanah lama.
 
 * **Hotspot** hanya dianggap titik api lahan bila berada di lahan bervegetasi. Tutupan lahan diambil dari
   **ESA WorldCover 10 m 2021** dalam radius 500 m (`scripts/tutupan_lahan.py`, dijalankan oleh *Update Data Harian*).

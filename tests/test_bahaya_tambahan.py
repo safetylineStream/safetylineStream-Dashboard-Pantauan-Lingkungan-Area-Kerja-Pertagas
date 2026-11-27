@@ -1,4 +1,4 @@
-"""Uji modul bahaya tambahan (peringatan dini BMKG, banjir sungai, potensi petir, GDACS) — tanpa jaringan."""
+"""Uji modul bahaya tambahan (peringatan dini BMKG, banjir sungai, potensi petir di fasilitas kunci, GDACS) — tanpa jaringan."""
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -95,22 +95,43 @@ def test_petir_level_per_jam():
     assert pm.level_jam(None, None, None) == 0
 
 
-def test_petir_produk_dan_sel():
+def test_petir_hanya_fasilitas_kunci():
+    j = pm.jenis_fasilitas
+    c = {}
+    assert j("SKG Pangkalan Brandan", c) == "kompresor" and j("CPP Pagerungan Station", c) == "kompresor"
+    assert j("Metering Station Duri", c) == "metering" and j("SM Arun", c) == "metering" and j("MRS PT Inalum", c) == "metering"
+    assert j("ORF Semarang Station", c) == "metering" and j("Meter Pusri 2", c) == "metering"
+    assert j("Booster Station KM 77", c) == "booster" and j("St. Booster PBR", c) == "booster" and j("Shipping Pump", c) == "booster"
+    for bukan in ("LBCV 2 SENBAL", "MLBV 18\" Payamala", "Manifold KM 102", "JUMPER PSG 24\"", "Tie-in Libo (TP-015)",
+                  "ADK Pig Launcher", "Kantor SM PLN Keramasan", "04-SBV-001A", "Rumah Valve P Batu"):
+        assert j(bukan, c) is None, bukan
+    # koreksi manual lewat config
+    assert j("Station Batang", {"tambah": {"Station Batang": "booster"}}) == "booster"
+    assert j("SM Arun", {"kecuali": ["SM Arun"]}) is None
+    pilih = pm.pilih_fasilitas([{"area": "A", "aset": "Metering Station X", "lon": 100, "lat": 0},
+                                {"area": "A", "aset": "LBCV 1", "lon": 100.1, "lat": 0}], {})
+    assert [f["aset"] for f in pilih] == ["Metering Station X"] and pilih[0]["jenis"] == "metering"
+
+
+def test_petir_produk_jam_rawan_dan_ringkasan():
     now = datetime(2026, 11, 13, 10, 0, tzinfo=WIB)
     t = [f"2026-11-13T{h:02d}:00" for h in range(24)] + [f"2026-11-14T{h:02d}:00" for h in range(24)]
-    cape = [0] * 48
-    kode = [0] * 48
-    hujan = [0] * 48
+    cape, kode, hujan = [0] * 48, [0] * 48, [0] * 48
     cape[8], kode[8] = 3000, 95        # 08:00 sudah lewat → tidak dihitung
     cape[15], kode[15], hujan[15] = 3000, 95, 4
+    kode[16] = 95
     kode[24 + 14] = 95
     pr, hari = pm.produk_sel({"time": t, "cape": cape, "weather_code": kode, "precipitation": hujan}, now)
     assert hari == {"hari_ini": "2026-11-13", "besok": "2026-11-14"}
     assert pr["hari_ini"]["level"] == "tinggi" and pr["hari_ini"]["jam"][8] == "-" and pr["hari_ini"]["jam"][15] == "3"
     assert pr["besok"]["level"] == "sedang" and pr["besok"]["jam"][14] == "2"
-    sel = pm.sel_aset(GARIS, FAS)
-    assert (100.05, 0.05) in sel and abs(sum(sum(s["pipa"].values()) for s in sel.values()) - 111.2) < 3
+    assert pm.jam_rawan(pr["hari_ini"]["jam"]) == "15–17 WIB"
+    assert pm.jam_rawan("0" * 24) is None
     assert pm.gabung_jam(["-01", "-20", "--3"]) == "-23"
+    fas = [{"area": "A", "aset": "SKG X", "jenis": "kompresor", **pr}, {"area": "A", "aset": "SM Y", "jenis": "metering", **pr}]
+    ra = pm.ringkas_area(fas, ["A", "B"], "hari_ini")
+    assert ra["A"]["terburuk"] == "tinggi" and ra["A"]["n_fasilitas"] == 2 and ra["A"]["fasilitas"]["tinggi"] == ["SKG X", "SM Y"]
+    assert ra["A"]["jam_rawan"] == "15–17 WIB" and ra["A"]["jenis"]["kompresor"] == 1 and "B" not in ra
 
 
 def gd_fitur(jenis, eid, lon, lat, level="Orange", aktif="true", todate="2026-11-13T00:00:00"):
@@ -124,18 +145,19 @@ def test_gdacs_jarak_dan_skor():
     from shapely.geometry import Polygon
     aset = gd.Aset(GARIS, FAS)
     now = datetime(2026, 11, 13, 12, 0, tzinfo=WIB)
-    feats = [gd_fitur("FL", 1, 100.2, 0.1),                     # ±11 km dari pipa A, Orange → P 3
+    feats = [gd_fitur("VO", 1, 100.2, 0.1),                     # ±11 km dari pipa A, Orange → P 3
              gd_fitur("VO", 2, 110.6, -7.2, level="Green"),     # ±66 km dari B, Green → P 1
-             gd_fitur("FL", 3, 130.0, 5.0),                     # jauh → dibuang
-             gd_fitur("EQ", 4, 100.2, 0.1),                     # jenis tidak dipantau
-             gd_fitur("FL", 5, 100.2, 0.1, aktif="false", todate="2026-10-01T00:00:00"),  # sudah lama berakhir
+             gd_fitur("VO", 3, 130.0, 5.0),                     # jauh → dibuang
+             gd_fitur("EQ", 4, 100.2, 0.1),                     # jenis tidak dipantau (sudah dari BMKG)
+             gd_fitur("FL", 7, 100.2, 0.1),                     # banjir tidak dipantau (sudah dari GloFAS)
+             gd_fitur("VO", 5, 100.2, 0.1, aktif="false", todate="2026-10-01T00:00:00"),  # sudah lama berakhir
              gd_fitur("TC", 6, 108.0, -9.0, level="Red")]
     zona = [("poly_orange_0", Polygon([(109.5, -8), (110.5, -8), (110.5, -7.3), (109.5, -7.3)])),
             ("poly_cones", Polygon([(109, -9), (111, -9), (111, -6.9), (109, -6.9)]))]
     kej, gj = gd.proses(feats, aset, ambil_geom=lambda url: zona, now=now)
     per = {k["id"]: k for k in kej}
-    assert set(per) == {"FL1", "VO2", "TC6"}
-    assert per["FL1"]["per_area"]["A"]["P"] == 3 and per["FL1"]["per_area"]["B"]["P"] == 0
+    assert set(per) == {"VO1", "VO2", "TC6"}
+    assert per["VO1"]["per_area"]["A"]["P"] == 3 and per["VO1"]["per_area"]["B"]["P"] == 0
     assert per["VO2"]["per_area"]["B"]["P"] == 1
     assert per["TC6"]["per_area"]["B"]["P"] == 4 and per["TC6"]["per_area"]["B"]["jarak_km"] == 0   # di zona angin Orange
     assert per["TC6"]["per_area"]["A"]["P"] == 0                                                   # > 500 km
