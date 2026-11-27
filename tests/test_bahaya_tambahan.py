@@ -1,4 +1,4 @@
-"""Uji modul bahaya tambahan (peringatan dini BMKG, banjir sungai, GDACS) — tanpa jaringan."""
+"""Uji modul bahaya tambahan (peringatan dini BMKG, banjir sungai, potensi petir di fasilitas kunci, GDACS) — tanpa jaringan."""
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -9,6 +9,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 import banjir_sungai as bj  # noqa: E402
 import gdacs as gd  # noqa: E402
 import peringatan_cuaca as pc  # noqa: E402
+import petir_model as pm  # noqa: E402
 import umum  # noqa: E402
 
 WIB = timezone(timedelta(hours=7))
@@ -83,6 +84,54 @@ def test_banjir_nilai_prakiraan_mulai_hari_ini():
     d = {"time": ["2026-11-12", "2026-11-13", "2026-11-14", "2026-11-15"], "river_discharge": [900, 100, 300, None], "river_discharge_max": [900, 120, 420, 500]}
     assert bj.nilai_prakiraan(d, "2026-11-13") == (100, 300, "2026-11-14", 420)
     assert bj.nilai_prakiraan({"time": [], "river_discharge": []}, "2026-11-13") == (None, None, None, None)
+
+
+def test_petir_level_per_jam():
+    assert pm.level_jam(3000, 95, 5) == 3
+    assert pm.level_jam(800, 95, 0) == 2          # model memprakirakan badai petir
+    assert pm.level_jam(2600, 61, 2) == 2         # CAPE tinggi + hujan
+    assert pm.level_jam(1500, 61, 1) == 1
+    assert pm.level_jam(1500, 3, 0) == 0          # CAPE saja tanpa hujan tidak dihitung
+    assert pm.level_jam(None, None, None) == 0
+
+
+def test_petir_hanya_fasilitas_kunci():
+    j = pm.jenis_fasilitas
+    c = {}
+    assert j("SKG Pangkalan Brandan", c) == "kompresor" and j("CPP Pagerungan Station", c) == "kompresor"
+    assert j("Metering Station Duri", c) == "metering" and j("SM Arun", c) == "metering" and j("MRS PT Inalum", c) == "metering"
+    assert j("ORF Semarang Station", c) == "metering" and j("Meter Pusri 2", c) == "metering"
+    assert j("Booster Station KM 77", c) == "booster" and j("St. Booster PBR", c) == "booster" and j("Shipping Pump", c) == "booster"
+    for bukan in ("LBCV 2 SENBAL", "MLBV 18\" Payamala", "Manifold KM 102", "JUMPER PSG 24\"", "Tie-in Libo (TP-015)",
+                  "ADK Pig Launcher", "Kantor SM PLN Keramasan", "04-SBV-001A", "Rumah Valve P Batu"):
+        assert j(bukan, c) is None, bukan
+    # koreksi manual lewat config
+    assert j("Station Batang", {"tambah": {"Station Batang": "booster"}}) == "booster"
+    assert j("SM Arun", {"kecuali": ["SM Arun"]}) is None
+    pilih = pm.pilih_fasilitas([{"area": "A", "aset": "Metering Station X", "lon": 100, "lat": 0},
+                                {"area": "A", "aset": "LBCV 1", "lon": 100.1, "lat": 0}], {})
+    assert [f["aset"] for f in pilih] == ["Metering Station X"] and pilih[0]["jenis"] == "metering"
+
+
+def test_petir_produk_jam_rawan_dan_ringkasan():
+    now = datetime(2026, 11, 13, 10, 0, tzinfo=WIB)
+    t = [f"2026-11-13T{h:02d}:00" for h in range(24)] + [f"2026-11-14T{h:02d}:00" for h in range(24)]
+    cape, kode, hujan = [0] * 48, [0] * 48, [0] * 48
+    cape[8], kode[8] = 3000, 95        # 08:00 sudah lewat → tidak dihitung
+    cape[15], kode[15], hujan[15] = 3000, 95, 4
+    kode[16] = 95
+    kode[24 + 14] = 95
+    pr, hari = pm.produk_sel({"time": t, "cape": cape, "weather_code": kode, "precipitation": hujan}, now)
+    assert hari == {"hari_ini": "2026-11-13", "besok": "2026-11-14"}
+    assert pr["hari_ini"]["level"] == "tinggi" and pr["hari_ini"]["jam"][8] == "-" and pr["hari_ini"]["jam"][15] == "3"
+    assert pr["besok"]["level"] == "sedang" and pr["besok"]["jam"][14] == "2"
+    assert pm.jam_rawan(pr["hari_ini"]["jam"]) == "15–17 WIB"
+    assert pm.jam_rawan("0" * 24) is None
+    assert pm.gabung_jam(["-01", "-20", "--3"]) == "-23"
+    fas = [{"area": "A", "aset": "SKG X", "jenis": "kompresor", **pr}, {"area": "A", "aset": "SM Y", "jenis": "metering", **pr}]
+    ra = pm.ringkas_area(fas, ["A", "B"], "hari_ini")
+    assert ra["A"]["terburuk"] == "tinggi" and ra["A"]["n_fasilitas"] == 2 and ra["A"]["fasilitas"]["tinggi"] == ["SKG X", "SM Y"]
+    assert ra["A"]["jam_rawan"] == "15–17 WIB" and ra["A"]["jenis"]["kompresor"] == 1 and "B" not in ra
 
 
 def gd_fitur(jenis, eid, lon, lat, level="Orange", aktif="true", todate="2026-11-13T00:00:00"):

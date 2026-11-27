@@ -1,9 +1,10 @@
 name: Update Bahaya Tambahan (petir, banjir sungai, GDACS)
 
 # Tiga modul berbasis lokasi aset, semuanya tanpa API key:
-#   - Potensi petir (prakiraan model Open-Meteo — bukan deteksi sambaran)
+#   - Potensi petir (prakiraan model Open-Meteo — bukan deteksi sambaran) KHUSUS stasiun kompresor,
+#     stasiun metering/regulasi dan booster/pompa
 #   - Potensi banjir sungai (model GloFAS via Open-Meteo Flood) di sel sungai yang dilalui pipa
-#   - Siklon tropis & bencana besar (GDACS)
+#   - Siklon tropis & erupsi gunung api (GDACS)
 # Jam GitHub = UTC: 22:40, 04:40, 10:40, 16:40 UTC = 05:40, 11:40, 17:40, 23:40 WIB.
 # Ambang banjir (riwayat 5 tahun per sel sungai) diunduh bertahap tiap run sampai lengkap.
 on:
@@ -42,12 +43,12 @@ jobs:
       - name: Install dependensi
         run: pip install -r requirements.txt
 
-      - name: Potensi petir (model)
+      - name: Potensi petir (model) di stasiun kompresor, metering & booster
         run: python scripts/petir_model.py
         timeout-minutes: 6
         continue-on-error: true
 
-      - name: Siklon tropis & bencana besar (GDACS)
+      - name: Siklon tropis & gunung api (GDACS)
         run: python scripts/gdacs.py
         timeout-minutes: 5
         continue-on-error: true
