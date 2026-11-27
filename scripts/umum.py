@@ -1,6 +1,6 @@
 """
 umum.py — utilitas bersama modul bahaya tambahan PERTAGAS WASPADA
-(peringatan_cuaca.py, banjir_sungai.py, gdacs.py).
+(peringatan_cuaca.py, banjir_sungai.py, petir_model.py, gdacs.py).
 
 Semua modul itu berbasis spasial: setiap data ditumpangkan ke jalur pipa & fasilitas di data/assets.geojson.
 """

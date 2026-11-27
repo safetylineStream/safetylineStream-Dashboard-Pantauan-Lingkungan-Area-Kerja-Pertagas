@@ -28,6 +28,8 @@ Hasil:
   data/lhasa/ruas.geojson           → ruas pipa berstatus rendah–tinggi (lapisan peta)
   data/lhasa/riwayat.csv            → riwayat harian per wilayah (bukti audit)
   data/lhasa/kerentanan_cache.json  → kelas kerentanan tiap titik sampel (dihitung ulang bila aset berubah)
+  data/lhasa/terpadu.json           → model gerakan tanah terpadu (PVMBG + LHASA + tutupan lahan), lihat
+  data/lhasa/terpadu_ruas.geojson     scripts/gerakan_tanah_terpadu.py
 """
 import csv
 import hashlib
@@ -399,6 +401,44 @@ def update_riwayat(per_area):
         w.writerows(rows)
 
 
+# ------------------------------------------------------------------ model gerakan tanah terpadu (PVMBG + LHASA + tutupan lahan)
+def terpadu(areas, lines, facs, kelas, ksumber, rasio_produk, tgl_produk):
+    """Jalankan model terpadu. Gagal → LHASA tetap tersimpan; hasil terpadu lama ditandai basi."""
+    try:
+        import gerakan_tanah_terpadu as mgt
+        t = time.time()
+        hasil, fitur = mgt.hitung(areas, lines, facs, kelas, rasio_produk, tgl_produk, ksumber,
+                                  now_iso=NOW.isoformat(timespec="minutes"))
+        hasil["status"] = {"ok": True}
+        hasil["durasi_detik"] = round(time.time() - t, 1)
+        (OUT / "terpadu.json").write_text(json.dumps(hasil, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        (OUT / "terpadu_ruas.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": fitur},
+                                                             ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        for k, v in hasil["produk"].get("hari_ini", {}).get("per_area", {}).items():
+            log(f"  terpadu {k}: terburuk {v['terburuk']} · " +
+                " · ".join(f"{lv} {v['pipa_km'][lv]:.1f}" for lv in mgt.LEVELS if v["pipa_km"][lv]) +
+                f" km · fasilitas {len(v['fasilitas'])}")
+        log(f"Model terpadu selesai ({hasil['durasi_detik']} dtk) · cakupan PVMBG {hasil['cakupan']['pvmbg']:.0%}, "
+            f"tutupan lahan {hasil['cakupan']['lahan']:.0%}")
+    except Exception as e:  # noqa
+        traceback.print_exc()
+        tandai_terpadu_basi(f"model terpadu: {e}")
+
+
+def tandai_terpadu_basi(pesan):
+    f = OUT / "terpadu.json"
+    if not f.exists():
+        return
+    try:
+        lama = json.loads(f.read_text(encoding="utf-8"))
+        for p in lama.get("produk", {}).values():
+            p["stale"] = True
+        lama["status"] = {"ok": False, "pesan": str(pesan)[:300], "diperiksa": NOW.isoformat(timespec="minutes")}
+        f.write_text(json.dumps(lama, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    except Exception:  # noqa
+        pass
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
@@ -423,11 +463,12 @@ def main():
         P, tanggal, nsel = hujan_sel(xs, ys)
         out["hujan_sumber"] = f"Open-Meteo ({nsel} sel 0,1°)"
         out["tanggal_hujan"] = tanggal
-        fc_all = []
+        fc_all, rasio_produk, tgl_produk = [], {}, {}
         for key, akhir in (("hari_ini", 6), ("besok", 7)):
             log(f"Model {key} (hari terakhir {tanggal[akhir]}):")
             ar = ari(P, akhir)
             rasio = ar / a95
+            rasio_produk[key], tgl_produk[key] = rasio, tanggal[akhir]
             lv = klasifikasi(rasio, kelas)
             per_area, fc = ringkas(areas, lines, facs, lv, rasio, ar, a95, kelas)
             for f in fc:
@@ -438,6 +479,7 @@ def main():
         (OUT / "ruas.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": fc_all},
                                                      ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         update_riwayat(out["produk"]["hari_ini"]["per_area"])
+        terpadu(areas, lines, facs, kelas, ksumber, rasio_produk, tgl_produk)
     except Exception as e:  # noqa
         traceback.print_exc()
         for key in ("hari_ini", "besok"):
@@ -447,6 +489,7 @@ def main():
         for k in ("kerentanan_sumber", "kerentanan_id", "hujan_sumber", "tanggal_hujan"):
             if k in prev and k not in out:
                 out[k] = prev[k]
+        tandai_terpadu_basi(str(e))
     out["durasi_detik"] = round(time.time() - t0)
     (OUT / "lhasa.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     log(f"Selesai dalam {out['durasi_detik']} detik →", OUT / "lhasa.json")
