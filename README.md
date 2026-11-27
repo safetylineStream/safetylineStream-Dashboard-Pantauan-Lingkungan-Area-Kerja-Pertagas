@@ -312,7 +312,7 @@ Status satu area tidak memengaruhi area lain. Penjelasan lengkap ada di dashboar
 * Setiap temuan membawa **lokasi fokus** (titik/garis ruas) untuk tombol ↗ Peta dan tautan lokasi.
 * **Riwayat status:** `scripts/rekam_status.js` (langkah terakhir *Update Data Harian*) menyimpan status akhir harian tiap
   area & jenis bahaya ke `data/history/status_area.json` (90 hari) — dipakai panel *Berubah sejak kemarin* dan
-  *Riwayat status 30 hari*. Hari sebelum 28 Nov 2026 diisi ulang dari riwayat git dengan rumusan gerakan tanah lama.
+  *Riwayat status 30 hari*. Hari-hari sebelum model terpadu aktif diisi ulang dari riwayat git dengan rumusan gerakan tanah lama.
 
 * **Hotspot** hanya dianggap titik api lahan bila berada di lahan bervegetasi. Tutupan lahan diambil dari
   **ESA WorldCover 10 m 2021** dalam radius 500 m (`scripts/tutupan_lahan.py`, dijalankan oleh *Update Data Harian*).
