@@ -1,0 +1,36 @@
+[
+{
+"lat": -6.18232,
+"lon": 106.35387,
+"conf": "medium",
+"sumber": "NASA-NOAA20",
+"waktu_utc": "2026-11-27T18:38:00.000000Z",
+"waktu": "Sabtu, 28 November 2026 01:38:00",
+"prov": "Banten",
+"kab": "Serang",
+"kec": "Cikande",
+"desa": "Bakung",
+"jarak_km": 1.04,
+"area": "OWJA",
+"aset": "Jalur Pipa OWJA #26",
+"jenis_aset": "pipa",
+"fasilitas": "LBCV 22 Cisem",
+"jarak_fasilitas_km": 197.5,
+"status": "waspada",
+"berulang_hari": 4,
+"persisten": true,
+"tutupan": {
+"kode": 40,
+"label": "Lahan pertanian (sawah/tegalan)",
+"porsi": 0.818,
+"kategori": "vegetasi_rendah",
+"kategori_label": "Vegetasi rendah (pertanian, rumput)",
+"persen": {
+"40": 0.818,
+"10": 0.105,
+"30": 0.05,
+"50": 0.015
+}
+}
+}
+]
